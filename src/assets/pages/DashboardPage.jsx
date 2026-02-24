@@ -2,7 +2,6 @@ import React from "react";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { Icon } from "@iconify/react";
-import API from '../../api';
 import "../styles/DashboardPage.css";
 import API_URL from "../../api";
 
@@ -17,8 +16,6 @@ const DashboardPage = () => {
   const [summary, setSummary] = useState({});
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState("Guest");
-
-  // const res = API.get("/products");
 
   useEffect(() => {
     // 1. Get the 'user' string from localStorage

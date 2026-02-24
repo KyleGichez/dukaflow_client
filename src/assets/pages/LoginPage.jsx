@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
+import API_URL from "../../api";
 import "../styles/LoginPage.css";
 
 const LoginPage = () => {
@@ -22,7 +23,7 @@ const LoginPage = () => {
     e.preventDefault();
     try {
       // 2. Pass 'credentials' here (not formData)
-      const res = await axios.post("http://localhost:5000/api/auth/login", credentials);
+      const res = await axios.post(`${API_URL}/api/auth/login`, credentials);
       
       if (res.status === 200) {
         localStorage.setItem("token", res.data.token);
