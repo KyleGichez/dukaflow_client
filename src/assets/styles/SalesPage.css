@@ -1,0 +1,114 @@
+.sales-wrapper{
+    width: 100%;
+    background-color: var(background-color);
+    min-height: 150vh;
+}
+
+.sales-content{
+    width: 70%;
+    margin: 0 auto;
+    padding-top: 120px;
+}
+
+.sales-content-menu ul{
+    border:1px solid var(--border-color);
+    border-radius: 5px;
+    background-color: #ffff;
+    cursor: pointer;
+}
+
+.sales-content-menu ul li{
+    padding:15px 20px;
+    border-bottom: 1px solid var(--border-color);
+    font-weight: bold;
+    text-transform: uppercase;
+    color: var(--text-primary);
+}
+
+.sales-content-menu ul li:hover{
+    background-color: #d3d3d3;
+}
+
+.sales-table{
+    padding: 20px 25px;
+    background-color: #ffff;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+}
+
+.sales-btn-wrapper{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.add-sales-btn{
+    width: auto;
+    padding: 5px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    background-color: var(--primary-color);
+    cursor: pointer;
+    color: #ffff;
+}
+
+.add-sales-btn:hover{
+    background-color: #2f26d6;
+}
+
+.sales-table h2{
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 5px;
+    margin-bottom: 10px;
+}
+
+.form-input select{
+    border: 1px solid var(--border-color);
+    background-color: #ffff;
+}
+
+@media screen and (max-width: 768px) {
+    html,
+    body {
+      overflow-x: hidden;
+    }
+  
+    .sales-content {
+      width: 100%;
+      padding: 0 20px;
+      padding-top: 30%;
+    }
+  
+    .sales-content-wrapper-menu {
+      display: none;
+    }
+  
+    .table-auto {
+      width: 100%;
+      font-size: 14px;
+      display: block;
+      white-space: nowrap; /* Allows horizontal scrolling without squishing text */
+    }
+  
+    .sales-table{
+      width: 100%;
+      overflow-x: auto;
+    }
+  
+    .modal-wrapper{
+      width: 300px;
+    }
+  
+    .form-modal .flex{
+      display: block;
+    }
+  
+    .modal-buttons-wrapper{
+      width: 100%;
+    }
+     
+    .modal-add-btn{
+      margin-right: 30px;
+    }
+  
+  }

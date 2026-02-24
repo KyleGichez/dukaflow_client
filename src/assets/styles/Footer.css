@@ -1,0 +1,23 @@
+.footer-wrapper{
+    width: 100%;
+    border-top: 1px solid var(--border-color);
+}
+
+.footer-content{
+    width: 70%;
+    margin: 0 auto;
+    padding: 15px 0;
+}
+
+@media screen and (max-width: 768px){
+    .footer-content{
+        width: 100%;
+        padding: 15px 20px;
+        display: flex;
+        flex-direction: column-reverse;
+        /* padding-bottom: 70px; */
+    }
+    .footer-content p{
+        margin: 5px 0;
+    }
+}

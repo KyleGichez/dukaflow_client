@@ -1,0 +1,163 @@
+.product-wrapper {
+  width: 100%;
+  min-height: 150vh;
+  background-color: var(background-color);
+}
+
+.product-content {
+  width: 70%;
+  margin: 0 auto;
+  padding-top: 120px;
+}
+
+.product-content-menu ul {
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  background-color: #ffff;
+  cursor: pointer;
+}
+
+.product-content-menu ul li {
+  padding: 15px 20px;
+  border-bottom: 1px solid var(--border-color);
+  font-weight: bold;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.product-content-menu ul li:hover {
+  background-color: #d3d3d3;
+}
+
+.product-table {
+  padding: 20px 25px;
+  background-color: #ffff;
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+}
+
+.product-btn-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.add-product-btn {
+  width: auto;
+  padding: 5px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  background-color: var(--primary-color);
+  cursor: pointer;
+  color: #ffff;
+}
+
+.add-product-btn:hover,
+.edit-btn:hover,
+.modal-add-btn:hover {
+  background-color: #2f26d6;
+}
+
+.edit-btn {
+  width: auto;
+  background-color: var(--primary-color);
+  padding: 5px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  color: #ffff;
+  cursor: pointer;
+}
+
+.delete-btn {
+  width: auto;
+  background-color: var(--danger-color);
+  padding: 5px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  color: #ffff;
+  cursor: pointer;
+}
+
+.delete-btn:hover,
+.modal-close-btn:hover {
+  background-color: #e82f2f;
+}
+
+.product-table h2 {
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 5px;
+  margin-bottom: 10px;
+}
+
+.modal-wrapper {
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  transition: all 0.5s ease-in-out;
+}
+
+.modal-close-btn {
+  background-color: var(--danger-color);
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  color: #fff;
+}
+
+.modal-add-btn {
+  background-color: var(--primary-color);
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  color: #fff;
+}
+
+.form-input {
+  width: 100%;
+}
+
+.form-input input {
+  border: 1px solid var(--border-color);
+}
+
+@media screen and (max-width: 768px) {
+  html,
+  body {
+    overflow-x: hidden;
+  }
+
+  .product-content {
+    width: 100%;
+    padding: 0 20px;
+    padding-top: 30%;
+  }
+
+  .product-content-wrapper-menu {
+    display: none;
+  }
+
+  .table-auto {
+    width: 100%;
+    font-size: 14px;
+    display: block;
+    white-space: nowrap; /* Allows horizontal scrolling without squishing text */
+  }
+
+  .product-table{
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .modal-wrapper{
+    width: 300px;
+  }
+
+  .form-modal .flex{
+    display: block;
+  }
+
+  .modal-buttons-wrapper{
+    width: 100%;
+  }
+   
+  .modal-add-btn{
+    margin-right: 30px;
+  }
+}

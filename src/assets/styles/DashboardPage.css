@@ -1,0 +1,191 @@
+.dashboard-wrapper{
+    width: 100%;
+    min-height: 150vh;
+}
+
+.dashboard-content{
+    width: 70%;
+    margin: 0 auto;
+    padding-top: 120px;
+}
+
+.content-stats-card{
+    width: 200px;
+    height: 130px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    background-color: #ffff;
+}
+
+.content-stat-card{
+    padding: 10px 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.content-stat-card h3{
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 5px;
+}
+
+.dashboard-content-menu ul{
+    border:1px solid var(--border-color);
+    border-radius: 5px;
+    background-color: #ffff;
+    cursor: pointer;
+}
+
+.dashboard-content-menu ul li{
+    padding:15px 20px;
+    border-bottom: 1px solid var(--border-color);
+    font-weight: bold;
+    text-transform: uppercase;
+    color: var(--text-primary);
+}
+
+.dashboard-content-menu ul li:hover{
+    background-color: #d3d3d3;
+}
+
+.dashboard-product-stats-left{
+    width: 50%;
+    height: 200px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    background-color: #ffff;
+    padding: 10px 15px;
+}
+
+.dashboard-product-stats-left h4{
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 5px;
+}
+
+.dashboard-product-stats-right{
+    width: 50%;
+    min-height: 200px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    background-color: #ffff;
+    padding: 10px 15px;
+}
+
+.dashboard-product-stats-right h4{
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 5px;
+}
+
+h1,h2,h3,h4{
+    color: var(--text-primary);
+}
+
+.dashboard-product-sales{
+    background-color: #fff;
+    padding: 10px 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    min-height: 220px;
+}
+
+.dashboard-product-sales h5{
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 5px;
+    margin-bottom: 10px;
+}
+
+th,td{
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+}
+
+.menu-item.active{
+    background-color: #d3d3d3;
+}
+
+.skeleton {
+    background: #e0e0e0;
+    background-image: linear-gradient(90deg, #e0e0e0 0px, #f0f0f0 40px, #e0e0e0 80px);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite linear;
+    border-radius: 4px;
+  }
+  
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  
+  .skeleton-card { height: 100px; width: 100%; }
+  .skeleton-row { height: 40px; width: 100%; margin-bottom: 8px; }
+
+/* -- MOBILE VIEW -- */
+@media screen and (max-width: 768px) {
+    html, body {
+        overflow-x: hidden;
+    }
+
+    .dashboard-wrapper {
+        padding: 0 20px;
+    }
+
+    .dashboard-content {
+        width: 100%;
+        margin: 0;
+    }
+
+    /* Hide the sidebar on mobile */
+    .dashboard-content-wrapper-menu {
+        display: none;
+    }
+
+    /* Change flex to column so content stacks */
+    .dashboard-content-wrapper {
+        flex-direction: column;
+    }
+
+    /* Stack the 4 summary cards vertically */
+    .dashboard-content-stats-cards {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .content-stats-card{
+        width: 100%;
+    }
+
+    /* Stack the Product Details and Top Selling sections */
+    .dashboard-product-detail {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .dashboard-product-stats-left, 
+    .dashboard-product-stats-right {
+        width: 100%;
+    }
+
+    .dashboard-product-sales{
+        margin-bottom: 20px;
+    }
+
+    /* Table adjustments for small screens */
+    .table-auto {
+        width: 100%;
+        font-size: 14px;
+        display: block;
+        white-space: nowrap; /* Allows horizontal scrolling without squishing text */
+    }
+
+    .sales-table{
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    h1 {
+        font-size: 1.5rem;
+        text-align: left;
+    }
+}
