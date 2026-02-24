@@ -14,11 +14,11 @@ const DashboardPage = () => {
   const [sales, setSales] = useState([]);
   const [products, setProducts] = useState([]);
   const [filter, setFilter] = useState(['today']);
-  const [summary, setSummary] = useState([]);
+  const [summary, setSummary] = useState({});
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState("Guest");
 
-  const res = API.get("/products");
+  // const res = API.get("/products");
 
   useEffect(() => {
     // 1. Get the 'user' string from localStorage
