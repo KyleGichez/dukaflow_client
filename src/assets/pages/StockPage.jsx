@@ -23,6 +23,7 @@ const StockPage = () => {
     "bags",
     "packets",
     "meters",
+    "litres",
   ];
 
   const [formData, setFormData] = useState(initialFormState);

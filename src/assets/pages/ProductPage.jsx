@@ -15,7 +15,7 @@ const ProductPage = () => {
     units: "",
   };
 
-  const unitOptions = ["pieces", "kgs", "bags", "packets", "meters"];
+  const unitOptions = ["pieces", "kgs", "bags", "packets", "meters", "litres"];
 
   const [formData, setFormData] = useState(initialFormState);
   const [products, setProducts] = useState([]);
