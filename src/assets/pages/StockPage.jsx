@@ -285,7 +285,7 @@ const StockPage = () => {
                       height="24"
                     />
                   </span>
-                  <a href="/settings">Settings</a>
+                  <a href="/stock">Settings</a>
                 </li>
               </ul>
             </div>

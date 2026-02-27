@@ -265,7 +265,7 @@ const SalesPage = () => {
                       height="24"
                     />
                   </span>
-                  <a href="/settings">Settings</a>
+                  <a href="/sales">Settings</a>
                 </li>
               </ul>
             </div>

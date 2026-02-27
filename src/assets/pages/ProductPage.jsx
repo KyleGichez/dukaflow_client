@@ -275,7 +275,7 @@ const ProductPage = () => {
                       height="24"
                     />
                   </span>
-                  <a href="/settings">Settings</a>
+                  <a href="/products">Settings</a>
                 </li>
               </ul>
             </div>

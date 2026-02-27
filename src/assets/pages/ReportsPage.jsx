@@ -336,7 +336,7 @@ const ReportsPage = () => {
                       height="24"
                     />
                   </span>
-                  <a href="/settings">Settings</a>
+                  <a href="/summary">Settings</a>
                 </li>
               </ul>
             </div>
