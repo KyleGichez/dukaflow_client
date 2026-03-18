@@ -1,9 +1,10 @@
 import React from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { Icon } from "@iconify/react";
 import "../styles/DashboardPage.css";
-import API_URL from "../../api";
+// import API_URL from "../../api";
+import api from "../../../src/api/axios";
 
 const DashboardPage = () => {
   function getTodaysDate() {
@@ -12,142 +13,91 @@ const DashboardPage = () => {
 
   const [sales, setSales] = useState([]);
   const [products, setProducts] = useState([]);
-  const [filter, setFilter] = useState(['today']);
-  const [summary, setSummary] = useState({});
+  const [filter, setFilter] = useState("today");
+  const [summary, setSummary] = useState({
+    totalRevenue: 0,
+    totalItemsSold: 0,
+    totalTransactions: 0,
+    totalStockValue: 0,
+    paymentBreakdown: {},
+  });
   const [loading, setLoading] = useState(true);
-  const [userName, setUserName] = useState("Guest");
+  const [userName, setUserName] = useState("User");
 
-  useEffect(() => {
-    // 1. Get the 'user' string from localStorage
-    const savedUser = localStorage.getItem("user");
-    
-    if (savedUser) {
-      // 2. Parse it back into an object
-      const userData = JSON.parse(savedUser);
+  // 1. Memoized Fetch Function (allows for manual refresh)
+  const loadDashboard = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [summaryRes, salesRes, prodRes] = await Promise.all([
+        api.get(`/sales/summary?range=${filter}`),
+        api.get(`/sales?range=${filter}`),
+        api.get(`/products`),
+      ]);
+
+      // Update states with real data from backend
+      setSummary(summaryRes.data);
+      setSales(salesRes.data);
       
-      // 3. Set the name (using FName to match your schema)
-      setUserName(userData.FName || "User");
+      const formattedProducts = prodRes.data.map((p) => ({
+        id: p._id,
+        item: p.name,
+        category: p.category || "Unconfirmed",
+        qty: p.quantity,
+        units: p.units,
+        price: p.price,
+      }));
+      setProducts(formattedProducts);
+
+    } catch (error) {
+      console.error("Dashboard Load Error:", error);
+      // Fallback to empty state on error to prevent UI crash
+      setSummary({
+        totalRevenue: 0,
+        totalItemsSold: 0,
+        totalTransactions: 0,
+        totalStockValue: 0,
+        paymentBreakdown: {},
+      });
+    } finally {
+      setLoading(false);
     }
-  }, []);
-
-  useEffect(() => {
-    const fetchReportData = async () => {
-      setLoading(true);
-      try {
-        // Fetch both the summary cards and the table list based on filter
-        const [summaryRes, salesRes] = await Promise.all([
-          axios.get(`${API_URL}/api/sales/summary?range=${filter}`),
-          axios.get(`${API_URL}/api/sales?range=${filter}`),
-        ]);
-
-        setSummary(summaryRes.data);
-        setSales(salesRes.data);
-      } catch (error) {
-        console.error("Error fetching report data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchReportData();
   }, [filter]);
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        // Fetch products and today's sales
-        const [prodRes, salesRes] = await Promise.all([
-          axios.get(`${API_URL}/api/products`),
-          axios.get(`${API_URL}/api/sales?range=today`),
-        ]);
+    const savedUser = localStorage.getItem("user");
+    if (savedUser) {
+      const userData = JSON.parse(savedUser);
+      setUserName(userData.FName || "User");
+    }
+    loadDashboard();
+  }, [loadDashboard]);
 
-        // Map backend 'name' to 'item' and 'quantity' to 'qty' to match your existing logic
-        const formattedProducts = prodRes.data.map((p) => ({
-          id: p._id,
-          item: p.name,
-          category: p.category || "Unconfirmed",
-          qty: p.quantity,
-          units: p.units,
-          price: p.price,
-        }));
-
-        setProducts(formattedProducts);
-        setSales(salesRes.data);
-      } catch (error) {
-        console.error("Error loading dashboard:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchDashboardData();
-  }, []);
-
-  const stockStatus = products.map((product) => {
-    const totalSold = sales
-      .filter((sale) => (sale.productId?._id || sale.productId) === product.id)
-      .reduce((sum, sale) => sum + sale.quantitySold, 0); // Backend uses quantitySold
-
-    const remaining = product.qty; // Backend quantity is already the current remaining stock
-
-    return { ...product, sold: totalSold, remaining };
-  });
-
-  // Calculate stats based on stockStatus
-  const totalQuantityInitial = products.reduce((sum, p) => sum + p.qty, 0);
+  // --- Derived Calculations ---
   const allCategories = [...new Set(products.map((p) => p.category))].length;
   const productsRemaining = products.filter((p) => p.qty > 0).length;
-  const stockValue = products.reduce((sum, p) => sum + p.qty * p.price, 0);
-  // 1. Get unique categories from the live product list
-  const uniqueCategories = [
-    ...new Set(products.map((product) => product.category)),
-  ];
-
-  const totalCategories = uniqueCategories.length;
-
-  // 2. Calculate empty categories (where all products in that category have 0 quantity)
-  const emptyCategories = uniqueCategories.filter((category) => {
-    const productsInCategory = products.filter(
-      (product) => product.category === category
-    );
-    // If every product in this category has 0 qty, the category is "empty"
-    return productsInCategory.every((p) => p.qty === 0);
-  }).length;
-
-  // 3. Count unconfirmed items
-  // This checks for "Unconfirmed", empty strings, or missing category fields
-  // In Dashboard.jsx
-  const unconfirmedItemsCount = products.filter(
-    (p) =>
-      !p.category ||
-      p.category.trim() === "" ||
-      p.category.toLowerCase() === "unconfirmed"
-  ).length;
-
-  // Ensure low stock count is actually calculated correctly (e.g., less than 5 units)
   const lowStockCount = products.filter((p) => p.qty > 0 && p.qty <= 5).length;
 
-  // Daily Report logic using backend field names
-  const report = {
-    totalRevenue: sales.reduce((sum, s) => sum + (s.totalPrice || 0), 0),
-    totalItemsSold: sales.reduce((sum, s) => sum + (s.quantitySold || 0), 0),
-  };
+  const uniqueCategories = [...new Set(products.map((p) => p.category))];
+  const emptyCategories = uniqueCategories.filter((cat) => 
+    products.filter(p => p.category === cat).every(p => p.qty === 0)
+  ).length;
 
-  // Calculate Top Selling Items from live sales data
+  const unconfirmedItemsCount = products.filter(
+    (p) => !p.category || p.category.toLowerCase() === "unconfirmed"
+  ).length;
+
   const topSellingItems = Object.values(
     sales.reduce((acc, sale) => {
       const name = sale.productId?.name || "Unknown";
-      if (!acc[name]) {
-        acc[name] = { name, totalSold: 0, units: sale.productId?.units || "" };
-      }
-      acc[name].totalSold += sale.quantitySold;
+      if (!acc[name]) acc[name] = { name, totalSold: 0, units: sale.productId?.units || "" };
+      acc[name].totalSold += (sale.quantitySold || 0);
       return acc;
     }, {})
-  )
-    .sort((a, b) => b.totalSold - a.totalSold) // Sort by highest quantity
-    .slice(0, 4); // Take top 4
+  ).sort((a, b) => b.totalSold - a.totalSold).slice(0, 4);
 
-  const recentSales = sales
-    .sort((a, b) => new Date(b.date) - new Date(a.date)) // Sort by newest first
-    .slice(0, 5); // Take only the first 5 items
+  const recentSales = [...sales]
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .slice(0, 5);
 
   if (loading) {
     return (
@@ -412,8 +362,8 @@ const DashboardPage = () => {
               <div className="content-stats-card">
                 <div className="content-stat-card">
                   <h3 className="font-bold uppercase">Today's Sales</h3>
-                  <p>Ksh {report.totalRevenue.toLocaleString()}</p>
-                  <p>{report.totalItemsSold} items sold</p>
+                  <p>Ksh {summary.totalRevenue.toLocaleString()}</p>
+                  <p>{summary.totalItemsSold} items sold</p>
                 </div>
               </div>
               <div className="content-stats-card">
@@ -433,7 +383,7 @@ const DashboardPage = () => {
               <div className="content-stats-card">
                 <div className="content-stat-card">
                   <h3 className="font-bold uppercase">Stock Value</h3>
-                  <p>Ksh {stockValue.toLocaleString()}</p>
+                  <p>Ksh {summary.totalStockValue.toLocaleString()}</p>
                   <p>Date: {getTodaysDate()}</p>
                 </div>
               </div>
@@ -459,7 +409,7 @@ const DashboardPage = () => {
                     <span>
                       <a href="/stock">All Categories</a>
                     </span>
-                    <span>{totalCategories}</span>
+                    <span>{allCategories}</span>
                   </p>
                   <p className="flex justify-between my-2">
                     <span>
@@ -468,7 +418,7 @@ const DashboardPage = () => {
                       </a>
                     </span>
                     <span className="text-green-700">
-                      {totalQuantityInitial.toLocaleString()}
+                      {products.reduce((sum, p) => sum + p.qty, 0).toLocaleString()}
                     </span>
                   </p>
                   <p className="flex justify-between my-2">
@@ -568,13 +518,13 @@ const DashboardPage = () => {
                   </table>
                 </div>
                 <div className="mt-4 text-right">
-                    <a
-                      href="/sales"
-                      className="text-blue-600 hover:underline text-sm font-medium"
-                    >
-                      View All Sales →
-                    </a>
-                  </div>
+                  <a
+                    href="/sales"
+                    className="text-blue-600 hover:underline text-sm font-medium"
+                  >
+                    View All Sales →
+                  </a>
+                </div>
               </div>
             </div>
           </div>

@@ -55,10 +55,34 @@ const StockPage = () => {
 
   // ✅ Fetch stock items properly
   useEffect(() => {
-    fetch(`${API_URL}/api/stock`)
-      .then((res) => res.json())
-      .then((data) => setStockItems(data))
-      .catch((err) => console.error(err));
+    // Get your token from wherever you store it (localStorage is common)
+    const token = localStorage.getItem("token"); 
+  
+    fetch(`${API_URL}/api/stock`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}` // ⬅️ Add this!
+      }
+    })
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error("Failed to fetch stock");
+        }
+        return res.json();
+      })
+      .then((data) => {
+        // Ensure data is an array before setting state
+        if (Array.isArray(data)) {
+          setStockItems(data);
+        } else {
+          setStockItems([]); 
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        setStockItems([]); // Reset to empty array on error to prevent .map crash
+      });
   }, []);
 
   useEffect(() => {

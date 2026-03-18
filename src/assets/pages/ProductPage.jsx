@@ -5,6 +5,7 @@ import { Icon } from "@iconify/react";
 import toast from "react-hot-toast";
 import "../styles/ProductPage.css";
 import API_URL from "../../api";
+import api from '../../../src/api/axios';
 
 const ProductPage = () => {
   const initialFormState = {
@@ -65,12 +66,16 @@ const ProductPage = () => {
     });
   }, [products, searchTerm, selectedCategory, filterType, categoryFilter]);
 
-  // ✅ Fetch products properly
+  // ✅Fetch products using the authenticated API instance
   useEffect(() => {
-    fetch(`${API_URL}/api/products`)
-      .then((res) => res.json())
-      .then((data) => setProducts(data))
-      .catch((err) => console.error(err));
+    api.get("/products")
+      .then((res) => setProducts(res.data))
+      .catch((err) => {
+        console.error(err);
+        if (err.response?.status === 401) {
+          toast.error("Session expired. Please login again.");
+        }
+      });
   }, []);
 
   // ✅ Prevent scroll when modal open
@@ -88,62 +93,34 @@ const ProductPage = () => {
     });
   };
 
+  // ✅ 2. Handle Submit (POST/PUT) with Auth
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    const method = isEditing ? "PUT" : "POST";
-    const url = isEditing
-      ? `${API_URL}/api/products/${editId}`
-      : `${API_URL}/api/products`;
+    const request = isEditing 
+      ? api.put(`/products/${editId}`, formData) 
+      : api.post("/products", formData);
 
-    fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(formData),
-    })
+    request
       .then((res) => {
-        if (!res.ok) {
-          return res.json().then((err) => Promise.reject(err));
-        }
-        return res.json();
-      })
-      .then((data) => {
         if (isEditing) {
-          setProducts(
-            products.map((product) => (product._id === editId ? data : product))
-          );
-          toast.success("Product updated successfully!", {
-            style: {
-              background: "#16a34a",
-              color: "#fff",
-            },
-          });
+          setProducts(products.map((p) => (p._id === editId ? res.data : p)));
+          toast.success("Product updated successfully!");
         } else {
-          setProducts([...products, data]);
-          toast.success("Product saved successfully!", {
-            style: {
-              background: "#16a34a",
-              color: "#fff",
-            },
-          });
+          setProducts([...products, res.data]);
+          toast.success("Product saved successfully!");
         }
-
         setFormData(initialFormState);
         setIsEditing(false);
         setEditId(null);
         setShowModal(false);
       })
       .catch((err) => {
-        console.error(err);
-        toast.error(err.message || "Operation failed", {
-          style: {
-            background: "#dc2626",
-            color: "#fff",
-          },
-        });
+        const msg = err.response?.data?.message || "Operation failed";
+        toast.error(msg);
       });
   };
-
+  
   const handleEdit = (product) => {
     setFormData({
       name: product.name,
@@ -158,30 +135,18 @@ const ProductPage = () => {
     setShowModal(true);
   };
 
-  const handleDelete = (id) => {
-    fetch(`${API_URL}/api/products/${id}`, {
-      method: "DELETE",
+  // ✅ Corrected
+const handleDelete = (id) => {
+  api.delete(`/products/${id}`)
+    .then(() => {
+      setProducts(products.filter((product) => product._id !== id));
+      toast.success("Product deleted successfully!");
     })
-      .then((res) => res.json())
-      .then(() => {
-        setProducts(products.filter((product) => product._id !== id));
-        toast.success("Product deleted successfully!", {
-          style: {
-            background: "#16a34a",
-            color: "#fff",
-          },
-        });
-      })
-      .catch((err) => {
-        console.error(err);
-        toast.error("Failed to delete product", {
-          style: {
-            background: "#dc2626",
-            color: "#fff",
-          },
-        });
-      });
-  };
+    .catch((err) => {
+      console.error(err);
+      toast.error("Failed to delete product");
+    });
+};
 
   const confirmDelete = (id) => {
     toast(

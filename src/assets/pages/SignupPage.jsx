@@ -58,10 +58,7 @@ const SignupPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post(
-        `${API_URL}/api/auth/signup`,
-        formData
-      );
+      const res = await axios.post(`${API_URL}/api/auth/signup`, formData);
 
       if (res.status === 201) {
         toast.success("Account created successfully! Please login.", {
@@ -74,8 +71,10 @@ const SignupPage = () => {
       }
     } catch (err) {
       console.error("Signup failed:", err.response?.data || err.message);
-      const errorMessage = err.response?.data?.message || "Error! Something went on during signup.";
-      
+      const errorMessage =
+        err.response?.data?.message ||
+        "Error! Something went on during signup.";
+
       toast.error(errorMessage, {
         style: {
           background: "#dc2626", // Red-600
@@ -83,8 +82,8 @@ const SignupPage = () => {
           fontWeight: "500",
         },
         iconTheme: {
-          primary: '#fff',
-          secondary: '#dc2626',
+          primary: "#fff",
+          secondary: "#dc2626",
         },
       });
     }
@@ -94,7 +93,7 @@ const SignupPage = () => {
     <div className="signuppage-wrapper">
       <div className="signuppage-content">
         <form onSubmit={handleSubmit} method="" className="signup-form">
-          <legend className="mb-2">Sign Up Form:</legend>
+          <legend className="mb-2">Register Your Business:</legend>
           <fieldset>
             <div className="flex gap-[10px]">
               <div className="form-input">

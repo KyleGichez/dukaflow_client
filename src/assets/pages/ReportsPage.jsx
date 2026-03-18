@@ -65,16 +65,30 @@ const ReportsPage = () => {
     const fetchReportData = async () => {
       setLoading(true);
       try {
-        // Fetch both the summary cards and the table list based on filter
+        // 1. Get the token from localStorage
+        const token = localStorage.getItem("token");
+        
+        // 2. Define the headers
+        const config = {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        };
+
+        // 3. Pass the config object as the second argument to axios.get
         const [summaryRes, salesRes] = await Promise.all([
-          axios.get(`${API_URL}/api/sales/summary?range=${filter}`),
-          axios.get(`${API_URL}/api/sales?range=${filter}`),
+          axios.get(`${API_URL}/api/sales/summary?range=${filter}`, config),
+          axios.get(`${API_URL}/api/sales?range=${filter}`, config),
         ]);
 
         setSummary(summaryRes.data);
         setSales(salesRes.data);
       } catch (error) {
         console.error("Error fetching report data:", error);
+        // If it's a 401, you might want to redirect to login
+        if (error.response?.status === 401) {
+            console.error("Session expired or invalid token");
+        }
       } finally {
         setLoading(false);
       }

@@ -37,17 +37,42 @@ const SalesPage = () => {
 
   // 1. Fetch Products and Sales on load
   useEffect(() => {
-    // Fetch Products
-    fetch(`${API_URL}/api/products`)
-      .then((res) => res.json())
-      .then((data) => setProducts(data))
-      .catch((err) => console.error("Product fetch error:", err));
-
-    // Fetch Sales
-    fetch(`${API_URL}/api/sales`)
-      .then((res) => res.json())
-      .then((data) => setDbSales(data))
-      .catch((err) => console.error("Sales fetch error:", err));
+    const token = localStorage.getItem("token");
+    const headers = {
+      "Authorization": `Bearer ${token}`,
+      "Content-Type": "application/json",
+    };
+  
+    // 1. Fetch Products
+    fetch(`${API_URL}/api/products`, { headers })
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch products");
+        return res.json();
+      })
+      .then((data) => {
+        // Ensure data is an array before setting state
+        setProducts(Array.isArray(data) ? data : []);
+      })
+      .catch((err) => {
+        console.error("Product fetch error:", err);
+        setProducts([]); // Fallback to empty array
+      });
+  
+    // 2. Fetch Sales
+    fetch(`${API_URL}/api/sales`, { headers })
+      .then((res) => {
+        if (!res.ok) throw new Error("Error");
+        return res.json();
+      })
+      .then((data) => {
+        // If the backend returns an error object {message: "..."}, 
+        // this check prevents dbSales from becoming that object.
+        setDbSales(Array.isArray(data) ? data : []);
+      })
+      .catch((err) => {
+        console.error("Sales fetch error:", err);
+        setDbSales([]); // Fallback to empty array to prevent .filter() crash
+      });
   }, []);
 
   const filteredSales = dbSales.filter((sale) => {
@@ -72,7 +97,11 @@ const SalesPage = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const url = `${API_URL}/api/sales`;
+    const token = localStorage.getItem("token");
+    const headers = { 
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}` 
+    };
 
     const payload = {
       productId: formData.productId,
@@ -81,31 +110,9 @@ const SalesPage = () => {
       date: formData.date,
     };
 
-    // 1. Find the selected product
-    const selectedProduct = products.find((p) => p._id === formData.productId);
-
-    // 2. Safety Check: Did they actually select a valid product?
-    if (!selectedProduct) {
-      return toast.error("Please select a valid product from the list.", {
-        style: { background: "#dc2626", color: "#fff" },
-      });
-    }
-
-    // 3. Stock Check: Is there enough?
-    if (Number(formData.quantitySold) > selectedProduct.quantity) {
-      return toast.error(
-        `Insufficient stock! Only ${selectedProduct.quantity} ${
-          selectedProduct.unit || "pcs"
-        } available.`,
-        {
-          style: { background: "#dc2626", color: "#fff" },
-        }
-      );
-    }
-
-    fetch(url, {
+    fetch(`${API_URL}/api/sales`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify(payload),
     })
       .then(async (res) => {
@@ -114,62 +121,40 @@ const SalesPage = () => {
         return data;
       })
       .then((data) => {
-        toast.success("Sale recorded successfully!", {
-          style: {
-            background: "#16a34a",
-            color: "#fff",
-          },
-        });
+        toast.success("Sale recorded!");
         setFormData(initialState);
         setShowModal(false);
+        setDbSales((prev) => [data, ...prev]);
 
-        // 'data' is the sale object itself, not 'data.sale'
-        setDbSales((prevSales) => [...prevSales, data]);
-
-        // Refresh products to show updated stock in dropdown
-        fetch(`${API_URL}/api/products`)
+        // Refresh products WITH TOKEN
+        fetch(`${API_URL}/api/products`, { headers })
           .then((res) => res.json())
-          .then((data) => setProducts(data));
-      });
+          .then((data) => setProducts(Array.isArray(data) ? data : []));
+      })
+      .catch(err => toast.error(err.message));
   };
 
   const handleDelete = async (id) => {
+    const token = localStorage.getItem("token");
     try {
       const response = await fetch(`${API_URL}/api/sales/${id}`, {
         method: "DELETE",
+        headers: { "Authorization": `Bearer ${token}` }
       });
 
       if (response.ok) {
-        // Remove from UI
         setDbSales(dbSales.filter((sale) => sale._id !== id));
-        toast.success("Sale deleted and stock restored", {
-          style: {
-            background: "#16a34a",
-            color: "#fff",
-          },
-        });
-
-        // Refresh products to show updated stock in the "Add Sale" dropdown
-        fetch("http://localhost:5000/api/products")
+        toast.success("Deleted successfully");
+        
+        // Refresh products WITH TOKEN
+        fetch(`${API_URL}/api/products`, { 
+          headers: { "Authorization": `Bearer ${token}` } 
+        })
           .then((res) => res.json())
-          .then((data) => setProducts(data));
-      } else {
-        const errorData = await response.json();
-        toast.error(errorData.message || "Failed to delete", {
-          style: {
-            background: "#dc2626",
-            color: "#fff",
-          },
-        });
+          .then((data) => setProducts(Array.isArray(data) ? data : []));
       }
     } catch (err) {
-      console.error(err);
-      toast.error("Server error while deleting", {
-        style: {
-          background: "#dc2626",
-          color: "#fff",
-        },
-      });
+      toast.error("Delete failed");
     }
   };
 
