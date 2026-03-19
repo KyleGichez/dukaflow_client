@@ -103,7 +103,7 @@ const SignupPage = () => {
                   name="CompanyName"
                   value={formData.companyName}
                   onChange={handleChange}
-                  placeholder="Enter your first name"
+                  placeholder="Enter your business name"
                   required
                 />
               </div>
