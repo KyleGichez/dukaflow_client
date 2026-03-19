@@ -8,6 +8,7 @@ import "../styles/SignupPage.css";
 
 const SignupPage = () => {
   const [formData, setFormData] = useState({
+    CompanyName: "",
     FName: "",
     LName: "",
     Email: "",
@@ -95,6 +96,17 @@ const SignupPage = () => {
         <form onSubmit={handleSubmit} method="" className="signup-form">
           <legend className="mb-2">Register Your Business:</legend>
           <fieldset>
+          <div className="form-input">
+                <label htmlFor="CompanyName">Buisness Name</label>
+                <input
+                  type="text"
+                  name="CompanyName"
+                  value={formData.companyName}
+                  onChange={handleChange}
+                  placeholder="Enter your first name"
+                  required
+                />
+              </div>
             <div className="flex gap-[10px]">
               <div className="form-input">
                 <label htmlFor="FName">First Name</label>
