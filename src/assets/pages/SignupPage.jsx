@@ -97,7 +97,7 @@ const SignupPage = () => {
           <legend className="mb-2">Register Your Business:</legend>
           <fieldset>
           <div className="form-input">
-                <label htmlFor="CompanyName">Buisness Name</label>
+                <label htmlFor="CompanyName">Business Name</label>
                 <input
                   type="text"
                   name="CompanyName"
