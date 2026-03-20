@@ -11,6 +11,26 @@ const DashboardPage = () => {
     return new Date().toLocaleDateString();
   }
 
+  // 1. Get the user string from localStorage
+  const userString = localStorage.getItem("user");
+  
+  // 2. Parse it back into an object (or use an empty object if null)
+  const user = userString ? JSON.parse(userString) : null;
+
+  // 3. Calculate days left (only if user exists)
+  const daysLeft = user?.trialEndDate 
+    ? Math.ceil((new Date(user.trialEndDate) - new Date()) / (1000 * 60 * 60 * 24)) 
+    : 0;
+
+    {
+      user && daysLeft > 0 && daysLeft <= 3 && (
+        <div className="bg-yellow-100 text-yellow-800 p-3 rounded mb-4">
+          Your free trial ends in {daysLeft} days. Upgrade now to avoid
+          interruption!
+        </div>
+      );
+    }
+
   const [sales, setSales] = useState([]);
   const [products, setProducts] = useState([]);
   const [filter, setFilter] = useState("today");
@@ -37,7 +57,7 @@ const DashboardPage = () => {
       // Update states with real data from backend
       setSummary(summaryRes.data);
       setSales(salesRes.data);
-      
+
       const formattedProducts = prodRes.data.map((p) => ({
         id: p._id,
         item: p.name,
@@ -47,7 +67,6 @@ const DashboardPage = () => {
         price: p.price,
       }));
       setProducts(formattedProducts);
-
     } catch (error) {
       console.error("Dashboard Load Error:", error);
       // Fallback to empty state on error to prevent UI crash
@@ -64,6 +83,12 @@ const DashboardPage = () => {
   }, [filter]);
 
   useEffect(() => {
+    if (user.trialExpired) {
+      onOpenPayment("Monthly", 1000);
+    }
+  }, []);
+
+  useEffect(() => {
     const savedUser = localStorage.getItem("user");
     if (savedUser) {
       const userData = JSON.parse(savedUser);
@@ -78,8 +103,8 @@ const DashboardPage = () => {
   const lowStockCount = products.filter((p) => p.qty > 0 && p.qty <= 5).length;
 
   const uniqueCategories = [...new Set(products.map((p) => p.category))];
-  const emptyCategories = uniqueCategories.filter((cat) => 
-    products.filter(p => p.category === cat).every(p => p.qty === 0)
+  const emptyCategories = uniqueCategories.filter((cat) =>
+    products.filter((p) => p.category === cat).every((p) => p.qty === 0)
   ).length;
 
   const unconfirmedItemsCount = products.filter(
@@ -89,11 +114,14 @@ const DashboardPage = () => {
   const topSellingItems = Object.values(
     sales.reduce((acc, sale) => {
       const name = sale.productId?.name || "Unknown";
-      if (!acc[name]) acc[name] = { name, totalSold: 0, units: sale.productId?.units || "" };
-      acc[name].totalSold += (sale.quantitySold || 0);
+      if (!acc[name])
+        acc[name] = { name, totalSold: 0, units: sale.productId?.units || "" };
+      acc[name].totalSold += sale.quantitySold || 0;
       return acc;
     }, {})
-  ).sort((a, b) => b.totalSold - a.totalSold).slice(0, 4);
+  )
+    .sort((a, b) => b.totalSold - a.totalSold)
+    .slice(0, 4);
 
   const recentSales = [...sales]
     .sort((a, b) => new Date(b.date) - new Date(a.date))
@@ -346,7 +374,7 @@ const DashboardPage = () => {
                 </li>
                 <li className="menu-item flex items-center gap-[10px]">
                   <span>
-                  <Icon icon="fa:users" width="24" height="24" />
+                    <Icon icon="fa:users" width="24" height="24" />
                   </span>
                   <a href="/staff">Staff</a>
                 </li>
@@ -414,7 +442,9 @@ const DashboardPage = () => {
                       </a>
                     </span>
                     <span className="text-green-700">
-                      {products.reduce((sum, p) => sum + p.qty, 0).toLocaleString()}
+                      {products
+                        .reduce((sum, p) => sum + p.qty, 0)
+                        .toLocaleString()}
                     </span>
                   </p>
                   <p className="flex justify-between my-2">
