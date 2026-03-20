@@ -14,55 +14,31 @@ import ReportsPage from "./assets/pages/ReportsPage";
 import ProtectedRoute from "./assets/components/ProtectedRoutes/ProtectedRoute";
 import MobileMenu from "./assets/components/Mobilemenu/MobileMenu";
 import StaffPage from "./assets/pages/StaffPage";
-import PaymentModal from "./assets/pages/PaymentModal";
+import SubscriptionPage from "./assets/pages/SubscriptionPage";
 
 function App() {
-  // 3. Global State for Payment Modal
-  const [isPayModalOpen, setIsPayModalOpen] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState({ name: "Monthly", amount: 1000 });
-
-  // Function to trigger the modal from any child component
-  const openPayment = (planName, price) => {
-    setSelectedPlan({ name: planName, amount: price });
-    setIsPayModalOpen(true);
-  };
-
   return (
     <>
       <Toaster position="top-center" reverseOrder={false} />
       <Router>
-        {/* 4. Pass openPayment to Navbar so you can have a "Renew" button there */}
-        <Navbar onOpenPayment={() => openPayment("Monthly", 1000)} />
+        <Navbar />
         <MobileMenu />
-        
         <Routes>
           <Route path="/" element={<LoginPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
-          
-          {/* 5. Pass openPayment to Dashboard if you want "Upgrade" cards there */}
           <Route path="/dashboard" element={
             <ProtectedRoute>
-              <DashboardPage onOpenPayment={openPayment} />
+              <DashboardPage/>
             </ProtectedRoute>
           }/>
-          
           <Route path="/products" element={<ProtectedRoute><ProductPage /></ProtectedRoute>} />
           <Route path="/stock" element={<ProtectedRoute><StockPage /></ProtectedRoute>} />
           <Route path="/sales" element={<ProtectedRoute><SalesPage /></ProtectedRoute>} />
           <Route path="/summary" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
           <Route path="/staff" element={<ProtectedRoute><StaffPage /></ProtectedRoute>} />
+          <Route path="/subscription" element={<ProtectedRoute><SubscriptionPage /></ProtectedRoute>} />
         </Routes>
-
-        {/* 6. The Modal is placed outside Routes so it can overlay any page */}
-        {isPayModalOpen && (
-          <PaymentModal 
-            plan={selectedPlan.name} 
-            amount={selectedPlan.amount} 
-            onClose={() => setIsPayModalOpen(false)} 
-          />
-        )}
-        
         <Footer />
       </Router>
     </>
