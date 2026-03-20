@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Package, Database, ShoppingCart, BarChart3 } from "lucide-react";
+import { LayoutDashboard, Package, Database, ShoppingCart, BarChart3, Users } from "lucide-react";
 
 const MobileMenu = () => {
   const [user, setUser] = useState(null);
@@ -25,11 +25,12 @@ const MobileMenu = () => {
     { name: "Stock", path: "/stock", icon: <Database size={20} /> },
     { name: "Sales", path: "/sales", icon: <ShoppingCart size={20} /> },
     { name: "Reports", path: "/summary", icon: <BarChart3 size={20} /> },
+    { name: "Staff", path: "/staff", icon: <Users size={20} /> },
   ];
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 z-50 w-full h-16 bg-white border-t border-gray-200 shadow-lg">
-      <div className="grid h-full grid-cols-5 mx-auto">
+      <div className="grid h-full grid-cols-6 mx-auto">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
           return (

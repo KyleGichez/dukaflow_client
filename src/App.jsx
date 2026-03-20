@@ -13,6 +13,7 @@ import SalesPage from "./assets/pages/SalesPage";
 import ReportsPage from "./assets/pages/ReportsPage";
 import ProtectedRoute from "./assets/components/ProtectedRoutes/ProtectedRoute";
 import MobileMenu from "./assets/components/Mobilemenu/MobileMenu";
+import StaffPage from "./assets/pages/StaffPage";
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
           <Route path="/stock" element={<ProtectedRoute><StockPage /></ProtectedRoute>} />
           <Route path="/sales" element={<ProtectedRoute><SalesPage /></ProtectedRoute>} />
           <Route path="/summary" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
+          <Route path="/staff" element={<ProtectedRoute><StaffPage /></ProtectedRoute>} />
         </Routes>
       </Router>
       <Footer />

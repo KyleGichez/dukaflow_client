@@ -5,7 +5,7 @@ import { Icon } from "@iconify/react";
 import toast from "react-hot-toast";
 import "../styles/ProductPage.css";
 import API_URL from "../../api";
-import api from '../../../src/api/axios';
+import api from "../../../src/api/axios";
 
 const ProductPage = () => {
   const initialFormState = {
@@ -15,6 +15,8 @@ const ProductPage = () => {
     price: "",
     units: "",
   };
+
+  const user = JSON.parse(localStorage.getItem("user"));
 
   const unitOptions = ["pieces", "kgs", "bags", "packets", "meters", "litres"];
 
@@ -68,7 +70,8 @@ const ProductPage = () => {
 
   // ✅Fetch products using the authenticated API instance
   useEffect(() => {
-    api.get("/products")
+    api
+      .get("/products")
       .then((res) => setProducts(res.data))
       .catch((err) => {
         console.error(err);
@@ -97,8 +100,8 @@ const ProductPage = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    const request = isEditing 
-      ? api.put(`/products/${editId}`, formData) 
+    const request = isEditing
+      ? api.put(`/products/${editId}`, formData)
       : api.post("/products", formData);
 
     request
@@ -120,7 +123,7 @@ const ProductPage = () => {
         toast.error(msg);
       });
   };
-  
+
   const handleEdit = (product) => {
     setFormData({
       name: product.name,
@@ -136,17 +139,18 @@ const ProductPage = () => {
   };
 
   // ✅ Corrected
-const handleDelete = (id) => {
-  api.delete(`/products/${id}`)
-    .then(() => {
-      setProducts(products.filter((product) => product._id !== id));
-      toast.success("Product deleted successfully!");
-    })
-    .catch((err) => {
-      console.error(err);
-      toast.error("Failed to delete product");
-    });
-};
+  const handleDelete = (id) => {
+    api
+      .delete(`/products/${id}`)
+      .then(() => {
+        setProducts(products.filter((product) => product._id !== id));
+        toast.success("Product deleted successfully!");
+      })
+      .catch((err) => {
+        console.error(err);
+        toast.error("Failed to delete product");
+      });
+  };
 
   const confirmDelete = (id) => {
     toast(
@@ -183,7 +187,7 @@ const handleDelete = (id) => {
   };
 
   return (
-    <div className="product-wrapper">  
+    <div className="product-wrapper">
       <div className="product-content">
         <h1 className="text-2xl font-bold uppercase mb-[20px]">Products</h1>
         <div className="product-content-wrapper flex gap-[20px]">
@@ -234,13 +238,9 @@ const handleDelete = (id) => {
                 </li>
                 <li className="menu-item flex items-center gap-[10px]">
                   <span>
-                    <Icon
-                      icon="material-symbols:settings"
-                      width="24"
-                      height="24"
-                    />
+                  <Icon icon="fa:users" width="24" height="24" />
                   </span>
-                  <a href="/products">Settings</a>
+                  <a href="/staff">Staff</a>
                 </li>
               </ul>
             </div>
@@ -334,7 +334,10 @@ const handleDelete = (id) => {
                             />
                           </span>
                         </h1>
-                        <form onSubmit={handleSubmit} className="mb-[20px] form-modal">
+                        <form
+                          onSubmit={handleSubmit}
+                          className="mb-[20px] form-modal"
+                        >
                           <legend>
                             {isEditing
                               ? "Edit Current Product"

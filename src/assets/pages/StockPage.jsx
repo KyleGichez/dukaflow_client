@@ -303,13 +303,9 @@ const StockPage = () => {
                 </li>
                 <li className="menu-item flex items-center gap-[10px]">
                   <span>
-                    <Icon
-                      icon="material-symbols:settings"
-                      width="24"
-                      height="24"
-                    />
+                  <Icon icon="fa:users" width="24" height="24" />
                   </span>
-                  <a href="/stock">Settings</a>
+                  <a href="/staff">Staff</a>
                 </li>
               </ul>
             </div>
