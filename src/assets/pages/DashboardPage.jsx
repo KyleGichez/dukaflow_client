@@ -13,23 +13,26 @@ const DashboardPage = () => {
 
   // 1. Get the user string from localStorage
   const userString = localStorage.getItem("user");
-  
+  const role = userString?.role;
+
   // 2. Parse it back into an object (or use an empty object if null)
   const user = userString ? JSON.parse(userString) : null;
 
   // 3. Calculate days left (only if user exists)
-  const daysLeft = user?.trialEndDate 
-    ? Math.ceil((new Date(user.trialEndDate) - new Date()) / (1000 * 60 * 60 * 24)) 
+  const daysLeft = user?.trialEndDate
+    ? Math.ceil(
+        (new Date(user.trialEndDate) - new Date()) / (1000 * 60 * 60 * 24)
+      )
     : 0;
 
-    {
-      user && daysLeft > 0 && daysLeft <= 3 && (
-        <div className="bg-yellow-100 text-yellow-800 p-3 rounded mb-4">
-          Your free trial ends in {daysLeft} days. Upgrade now to avoid
-          interruption!
-        </div>
-      );
-    }
+  {
+    user && daysLeft > 0 && daysLeft <= 3 && (
+      <div className="bg-yellow-100 text-yellow-800 p-3 rounded mb-4">
+        Your free trial ends in {daysLeft} days. Upgrade now to avoid
+        interruption!
+      </div>
+    );
+  }
 
   const [sales, setSales] = useState([]);
   const [products, setProducts] = useState([]);
@@ -175,16 +178,6 @@ const DashboardPage = () => {
                     />
                   </span>
                   <a href="/summary">Reports</a>
-                </li>
-                <li className="menu-item flex items-center gap-[10px]">
-                  <span>
-                    <Icon
-                      icon="material-symbols:settings"
-                      width="24"
-                      height="24"
-                    />
-                  </span>
-                  <a href="/settings">Settings</a>
                 </li>
               </ul>
             </div>
@@ -372,18 +365,22 @@ const DashboardPage = () => {
                   </span>
                   <a href="/summary">Reports</a>
                 </li>
-                <li className="menu-item flex items-center gap-[10px]">
-                  <span>
-                    <Icon icon="fa:users" width="24" height="24" />
-                  </span>
-                  <a href="/staff">Staff</a>
-                </li>
-                <li className="menu-item flex items-center gap-[10px]">
-                  <span>
-                    <Icon icon="si:add-fill" width="24" height="24" />
-                  </span>
-                  <a href="/subscription">Subscription</a>
-                </li>
+                {role === "admin" && (
+                  <>
+                    <li className="menu-item flex items-center gap-[10px]">
+                      <span>
+                        <Icon icon="fa:users" width="24" height="24" />
+                      </span>
+                      <a href="/staff">Staff</a>
+                    </li>
+                    <li className="menu-item flex items-center gap-[10px]">
+                      <span>
+                        <Icon icon="si:add-fill" width="24" height="24" />
+                      </span>
+                      <a href="/subscription">Subscription</a>
+                    </li>
+                  </>
+                )}
               </ul>
             </div>
           </div>
