@@ -117,7 +117,7 @@ const StaffPage = () => {
     <div className="staff-wrapper">
       <div className="staff-content">
         <h1 className="text-2xl font-bold uppercase mb-[20px]">
-          Staff Members
+          Staff
         </h1>
         <div className="staff-content-wrapper flex gap-[20px]">
           <div className="staff-content-wrapper-menu">
@@ -170,6 +170,12 @@ const StaffPage = () => {
                     <Icon icon="fa:users" width="24" height="24" />
                   </span>
                   <a href="/staff">Staff</a>
+                </li>
+                <li className="menu-item flex items-center gap-[10px]">
+                  <span>
+                    <Icon icon="si:add-fill" width="24" height="24" />
+                  </span>
+                  <a href="/subscription">Subscription</a>
                 </li>
               </ul>
             </div>

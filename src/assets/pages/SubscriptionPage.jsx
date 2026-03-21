@@ -57,12 +57,12 @@ const Subscription = ({ onClose }) => {
               Lipa Na M-PESA
             </span>
           </div>
-          <button
+          {/* <button
             onClick={onClose}
             className="text-white hover:text-gray-200 text-2xl font-bold"
           >
             &times;
-          </button>
+          </button> */}
         </div>
 
         <div className="p-6">
