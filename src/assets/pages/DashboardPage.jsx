@@ -11,11 +11,7 @@ const DashboardPage = () => {
     return new Date().toLocaleDateString();
   }
 
-  // 1. Get the user string from localStorage
   const userString = localStorage.getItem("user");
-  const role = userString?.role;
-
-  // 2. Parse it back into an object (or use an empty object if null)
   const user = userString ? JSON.parse(userString) : null;
 
   // 3. Calculate days left (only if user exists)
@@ -365,22 +361,18 @@ const DashboardPage = () => {
                   </span>
                   <a href="/summary">Reports</a>
                 </li>
-                {role === "admin" && (
-                  <>
-                    <li className="menu-item flex items-center gap-[10px]">
-                      <span>
-                        <Icon icon="fa:users" width="24" height="24" />
-                      </span>
-                      <a href="/staff">Staff</a>
-                    </li>
-                    <li className="menu-item flex items-center gap-[10px]">
-                      <span>
-                        <Icon icon="si:add-fill" width="24" height="24" />
-                      </span>
-                      <a href="/subscription">Subscription</a>
-                    </li>
-                  </>
-                )}
+                <li className="menu-item flex items-center gap-[10px]">
+                  <span>
+                  <Icon icon="fa:users" width="24" height="24" />
+                  </span>
+                  <a href="/staff">Staff</a>
+                </li>
+                <li className="menu-item flex items-center gap-[10px]">
+                  <span>
+                    <Icon icon="si:add-fill" width="24" height="24" />
+                  </span>
+                  <a href="/subscription">Subscription</a>
+                </li>
               </ul>
             </div>
           </div>

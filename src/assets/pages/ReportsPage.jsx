@@ -12,7 +12,7 @@ const ReportsPage = () => {
   }
 
   const user = JSON.parse(localStorage.getItem("user"));
-  const role = user?.role;
+
 
   const exportToExcel = () => {
     // 1. Prepare clean data
@@ -334,22 +334,18 @@ const ReportsPage = () => {
                   </span>
                   <a href="/summary">Reports</a>
                 </li>
-                {role === "admin" && (
-                  <>
-                    <li className="menu-item flex items-center gap-[10px]">
-                      <span>
-                        <Icon icon="fa:users" width="24" height="24" />
-                      </span>
-                      <a href="/staff">Staff</a>
-                    </li>
-                    <li className="menu-item flex items-center gap-[10px]">
-                      <span>
-                        <Icon icon="si:add-fill" width="24" height="24" />
-                      </span>
-                      <a href="/subscription">Subscription</a>
-                    </li>
-                  </>
-                )}
+                <li className="menu-item flex items-center gap-[10px]">
+                  <span>
+                  <Icon icon="fa:users" width="24" height="24" />
+                  </span>
+                  <a href="/staff">Staff</a>
+                </li>
+                <li className="menu-item flex items-center gap-[10px]">
+                  <span>
+                    <Icon icon="si:add-fill" width="24" height="24" />
+                  </span>
+                  <a href="/subscription">Subscription</a>
+                </li>
               </ul>
             </div>
           </div>
