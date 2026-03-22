@@ -9,7 +9,7 @@ const Subscription = ({ onClose }) => {
   const [loading, setLoading] = useState(false);
 
   // Define pricing logic
-  const price = selectedPlan === "monthly" ? 1500 : 18000;
+  const price = selectedPlan === "monthly" ? 2500 : 30000;
 
   const handlePayment = async () => {
     setLoading(true);
