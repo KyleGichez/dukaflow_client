@@ -82,7 +82,7 @@ const Subscription = ({ onClose }) => {
               >
                 <span className="text-sm font-bold">Monthly</span>
                 <span className="text-lg font-mono font-black text-gray-800">
-                  1,500
+                  2,500
                 </span>
               </button>
               <button
@@ -98,7 +98,7 @@ const Subscription = ({ onClose }) => {
                 </span>
                 <span className="text-sm font-bold">Yearly</span>
                 <span className="text-lg font-mono font-black text-gray-800">
-                  18,000
+                  30,000
                 </span>
               </button>
             </div>
