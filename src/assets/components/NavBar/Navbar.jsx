@@ -9,11 +9,9 @@ const Navbar = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    console.log("Navbar mounted");
     const loadUser = () => {
       const savedUser = localStorage.getItem("user");
-      console.log("localStorage user:", savedUser);
-  
+        
       if (savedUser) {
         setUser(JSON.parse(savedUser));
       } else {
@@ -31,7 +29,6 @@ const Navbar = () => {
   }, []);
 
   useEffect(() => {
-    console.log("Navbar user state updated:", user);
   }, [user]);
 
 
