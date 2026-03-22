@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { Icon } from "@iconify/react";
 import "../styles/DashboardPage.css";
-// import API_URL from "../../api";
+import { db } from "../../../src/db.js";
 import api from "../../../src/api/axios";
 
 const DashboardPage = () => {
@@ -95,6 +95,43 @@ const DashboardPage = () => {
     }
     loadDashboard();
   }, [loadDashboard]);
+
+  const useOfflineSync = () => {
+    useEffect(() => {
+      const handleSync = async () => {
+        if (navigator.onLine) {
+          const offlineSales = await db.offlineSales.toArray();
+          
+          if (offlineSales.length > 0) {
+            console.log("Syncing offline sales to cloud...");
+            try {
+              const token = localStorage.getItem("token");
+              
+              // Push each sale to your Render API
+              for (const sale of offlineSales) {
+                await axios.post("https://dukaflow-server.onrender.com/api/sales", sale, {
+                  headers: { Authorization: `Bearer ${token}` }
+                });
+                // Remove from phone once successfully uploaded
+                await db.offlineSales.delete(sale.id);
+              }
+              
+              console.log("Sync Complete!");
+            } catch (err) {
+              console.error("Sync failed, will retry later.");
+            }
+          }
+        }
+      };
+  
+      // Listen for the browser coming back online
+      window.addEventListener("online", handleSync);
+      // Also try to sync when the app first loads
+      handleSync();
+  
+      return () => window.removeEventListener("online", handleSync);
+    }, []);
+  };
 
   // --- Derived Calculations ---
   const allCategories = [...new Set(products.map((p) => p.category))].length;

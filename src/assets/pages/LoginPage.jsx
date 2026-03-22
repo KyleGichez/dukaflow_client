@@ -39,6 +39,13 @@ const LoginPage = () => {
           duration: 3000,
         });
 
+        // SAVE THE EXPIRY DATE FOR OFFLINE CHECKS
+        if (user.trialEndDate) {
+          localStorage.setItem("expiry", user.trialEndDate);
+        } else if (user.subscription?.endDate) {
+          localStorage.setItem("expiry", user.subscription.endDate);
+        }
+
         // 3. Navigation Logic
         // If your Navbar depends on localStorage and doesn't use Context,
         // navigate first, THEN reload to ensure the new user state is picked up.

@@ -4,6 +4,7 @@ import { Icon } from "@iconify/react";
 import toast from "react-hot-toast";
 import "../styles/SalesPage.css";
 import API_URL from "../../api";
+import { db } from "../../../src/db.js";
 
 const SalesPage = () => {
   const initialState = {
@@ -15,7 +16,6 @@ const SalesPage = () => {
   };
 
   const user = JSON.parse(localStorage.getItem("user"));
-
 
   const [formData, setFormData] = useState(initialState);
   const [products, setProducts] = useState([]);
@@ -42,10 +42,10 @@ const SalesPage = () => {
   useEffect(() => {
     const token = localStorage.getItem("token");
     const headers = {
-      "Authorization": `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     };
-  
+
     // 1. Fetch Products
     fetch(`${API_URL}/api/products`, { headers })
       .then((res) => {
@@ -60,7 +60,7 @@ const SalesPage = () => {
         console.error("Product fetch error:", err);
         setProducts([]); // Fallback to empty array
       });
-  
+
     // 2. Fetch Sales
     fetch(`${API_URL}/api/sales`, { headers })
       .then((res) => {
@@ -68,7 +68,7 @@ const SalesPage = () => {
         return res.json();
       })
       .then((data) => {
-        // If the backend returns an error object {message: "..."}, 
+        // If the backend returns an error object {message: "..."},
         // this check prevents dbSales from becoming that object.
         setDbSales(Array.isArray(data) ? data : []);
       })
@@ -98,43 +98,79 @@ const SalesPage = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
     const token = localStorage.getItem("token");
-    const headers = { 
+    const expiry = localStorage.getItem("expiry");
+    const now = new Date();
+
+    // 1. OFFLINE SUBSCRIPTION CHECK
+    if (expiry && new Date(expiry) < now) {
+      return toast.error(
+        "Subscription expired. Please connect to internet to renew."
+      );
+    }
+
+    const headers = {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}` 
+      Authorization: `Bearer ${token}`,
     };
 
     const payload = {
       productId: formData.productId,
       quantitySold: Number(formData.quantitySold),
       paymentMethod: formData.paymentMethod,
-      date: formData.date,
+      date: formData.date || new Date().toISOString(),
+      isOffline: !navigator.onLine, // Tag it so you know it was made offline
     };
 
-    fetch(`${API_URL}/api/sales`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(payload),
-    })
-      .then(async (res) => {
+    // 2. TRY ONLINE FIRST
+    if (navigator.onLine) {
+      try {
+        const res = await fetch(`${API_URL}/api/sales`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify(payload),
+        });
+
         const data = await res.json();
-        if (!res.ok) return Promise.reject(data);
-        return data;
-      })
-      .then((data) => {
-        toast.success("Sale recorded!");
+        if (!res.ok) throw new Error(data.message || "Server error");
+
+        toast.success("Sale recorded online!");
         setFormData(initialState);
         setShowModal(false);
         setDbSales((prev) => [data, ...prev]);
 
-        // Refresh products WITH TOKEN
-        fetch(`${API_URL}/api/products`, { headers })
-          .then((res) => res.json())
-          .then((data) => setProducts(Array.isArray(data) ? data : []));
-      })
-      .catch(err => toast.error(err.message));
+        // Refresh products from server
+        const prodRes = await fetch(`${API_URL}/api/products`, { headers });
+        const prodData = await prodRes.json();
+        setProducts(Array.isArray(prodData) ? prodData : []);
+      } catch (err) {
+        toast.error(`Online sync failed: ${err.message}. Saving locally...`);
+        saveToOffline(payload);
+      }
+    } else {
+      // 3. IF TOTALLY OFFLINE, SAVE TO DEXIE IMMEDIATELY
+      saveToOffline(payload);
+    }
+  };
+
+  // Helper function to handle Dexie storage
+  const saveToOffline = async (payload) => {
+    try {
+      await db.offlineSales.add(payload);
+      toast.info(
+        "Saved to phone (Offline). It will sync when internet returns."
+      );
+
+      // Update local UI state so the user sees the sale immediately
+      setDbSales((prev) => [payload, ...prev]);
+      setFormData(initialState);
+      setShowModal(false);
+    } catch (err) {
+      toast.error("Failed to save even offline. Check storage space.");
+    }
   };
 
   const handleDelete = async (id) => {
@@ -142,16 +178,16 @@ const SalesPage = () => {
     try {
       const response = await fetch(`${API_URL}/api/sales/${id}`, {
         method: "DELETE",
-        headers: { "Authorization": `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (response.ok) {
         setDbSales(dbSales.filter((sale) => sale._id !== id));
         toast.success("Deleted successfully");
-        
+
         // Refresh products WITH TOKEN
-        fetch(`${API_URL}/api/products`, { 
-          headers: { "Authorization": `Bearer ${token}` } 
+        fetch(`${API_URL}/api/products`, {
+          headers: { Authorization: `Bearer ${token}` },
         })
           .then((res) => res.json())
           .then((data) => setProducts(Array.isArray(data) ? data : []));
@@ -247,7 +283,7 @@ const SalesPage = () => {
                 </li>
                 <li className="menu-item flex items-center gap-[10px]">
                   <span>
-                  <Icon icon="fa:users" width="24" height="24" />
+                    <Icon icon="fa:users" width="24" height="24" />
                   </span>
                   <a href="/staff">Staff</a>
                 </li>
