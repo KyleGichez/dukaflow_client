@@ -53,7 +53,6 @@ const StaffPage = () => {
       setNewStaff(initialFormState);
       fetchStaff(); // Refresh table
       toast.success("Staff member added successfully!");
-      console.log("Staff Details:", newStaff);
     } catch (err) {
       console.error("Failed to add staff:", err.response?.data);
       const errorMsg = err.response?.data?.message || "Failed to add staff";

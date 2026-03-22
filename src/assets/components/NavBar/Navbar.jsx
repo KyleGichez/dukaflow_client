@@ -12,7 +12,6 @@ const Navbar = () => {
     const savedUser = localStorage.getItem("user");
     if (savedUser) {
       const userData = JSON.parse(savedUser);
-      console.log("Navbar found user:", userData); // Check your console!
       setUser(userData);
     }
   }, []);
