@@ -1,5 +1,5 @@
 import "./App.css";
-import { useState } from "react"; // 1. Added useState
+import { useState, useEffect } from "react";
 import Navbar from "./assets/components/NavBar/Navbar";
 import Footer from "./assets/components/Footer/Footer";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
@@ -17,6 +17,24 @@ import StaffPage from "./assets/pages/StaffPage";
 import SubscriptionPage from "./assets/pages/SubscriptionPage";
 
 function App() {
+
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      // Wait for the window to finish loading
+      window.addEventListener("load", () => {
+        navigator.serviceWorker
+          .register("/sw.js")
+          .then((reg) => console.log("SW Registered at:", reg.scope))
+          .catch((err) => {
+            // Log specifically if it's an InvalidStateError to ignore minor noise
+            if (err.name !== 'InvalidStateError') {
+              console.error("SW Registration failed:", err);
+            }
+          });
+      });
+    }
+  }, []);
+
   return (
     <>
       <Toaster position="top-center" reverseOrder={false} />

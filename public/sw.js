@@ -1,41 +1,39 @@
 const CACHE_NAME = "dukaflow-cache-v1";
+// Only cache the essential, static entry points. 
+// The browser will handle the rest via the fetch listener.
 const urlsToCache = [
   "/",
   "/index.html",
-  "/static/js/bundle.js", 
   "/manifest.json",
   "/favicon.ico",
   "/logo192.png"
 ];
 
-// Install the service worker and cache files
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log("Opened cache");
+      // Use {mode: 'no-cors'} if any resources are from a different domain
       return cache.addAll(urlsToCache);
     })
   );
 });
 
-// Intercept requests and serve from cache if offline
+// Use a "Network First, then Cache" strategy for the API 
+// and "Cache First" for assets.
 self.addEventListener("fetch", (event) => {
   event.respondWith(
     caches.match(event.request).then((response) => {
-      // Return cached file if found, otherwise fetch from network
       return response || fetch(event.request);
     })
   );
 });
 
-// Clean up old caches
 self.addEventListener("activate", (event) => {
-  const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (!cacheWhitelist.includes(cacheName)) {
+          if (cacheName !== CACHE_NAME) {
             return caches.delete(cacheName);
           }
         })
