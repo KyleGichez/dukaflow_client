@@ -9,17 +9,37 @@ const Navbar = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const savedUser = localStorage.getItem("user");
-    if (savedUser) {
-      const userData = JSON.parse(savedUser);
-      setUser(userData);
-    }
+    console.log("Navbar mounted");
+    const loadUser = () => {
+      const savedUser = localStorage.getItem("user");
+      console.log("localStorage user:", savedUser);
+  
+      if (savedUser) {
+        setUser(JSON.parse(savedUser));
+      } else {
+        setUser(null);
+      }
+    };
+  
+    loadUser();
+  
+    window.addEventListener("userChanged", loadUser);
+  
+    return () => {
+      window.removeEventListener("userChanged", loadUser);
+    };
   }, []);
+
+  useEffect(() => {
+    console.log("Navbar user state updated:", user);
+  }, [user]);
+
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     setUser(null);
+    window.dispatchEvent(new Event("userChanged"));
     navigate("/login");
   };
 

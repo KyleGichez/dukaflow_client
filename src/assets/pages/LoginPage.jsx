@@ -22,54 +22,21 @@ const LoginPage = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+  
     try {
-      // 1. Use the 'api' instance instead of raw axios
       const res = await api.post("/auth/login", credentials);
 
-      if (res.status === 200) {
-        // 2. Store the token and user details
-        // This includes the ownerId and role we added to the backend!
-        localStorage.setItem("token", res.data.token);
-        localStorage.setItem("user", JSON.stringify(res.data.user));
-        toast.success(`Welcome back, ${res.data.user.FName}!`, {
-          style: {
-            background: "#16a34a",
-            color: "#fff",
-          },
-          duration: 3000,
-        });
-
-        // SAVE THE EXPIRY DATE FOR OFFLINE CHECKS
-        if (user.trialEndDate) {
-          localStorage.setItem("expiry", user.trialEndDate);
-        } else if (user.subscription?.endDate) {
-          localStorage.setItem("expiry", user.subscription.endDate);
-        }
-
-        // 3. Navigation Logic
-        // If your Navbar depends on localStorage and doesn't use Context,
-        // navigate first, THEN reload to ensure the new user state is picked up.
-        navigate("/dashboard");
-
-        // Optional: Only use this if your Navbar doesn't update automatically
-        setTimeout(() => {
-          window.location.reload();
-        }, 100);
-      }
+      const user = res.data.user;
+  
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(user));
+  
+      window.dispatchEvent(new Event("userChanged"));
+  
+      navigate("/dashboard");
+  
     } catch (err) {
       console.error("Login Error:", err);
-
-      // 4. Enhanced Error Feedback
-      const errorMessage =
-        err.response?.data?.message || "Invalid Phone or Password";
-
-      toast.error(errorMessage, {
-        style: {
-          background: "#dc2626",
-          color: "#fff",
-          fontWeight: "500",
-        },
-      });
     }
   };
 

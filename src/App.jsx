@@ -17,24 +17,23 @@ import StaffPage from "./assets/pages/StaffPage";
 import SubscriptionPage from "./assets/pages/SubscriptionPage";
 
 function App() {
-
   useEffect(() => {
-    if ("serviceWorker" in navigator) {
-      // Wait for the window to finish loading
-      window.addEventListener("load", () => {
-        navigator.serviceWorker
-          .register("/sw.js")
-          .then((reg) => console.log("SW Registered at:", reg.scope))
-          .catch((err) => {
-            // Log specifically if it's an InvalidStateError to ignore minor noise
+    // Only run this in production/serve mode
+    if ('serviceWorker' in navigator) {
+      // 3-second delay ensures the Dashboard or Login page is fully "Stable"
+      const timer = setTimeout(() => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(reg => console.log('✅ DukaFlow PWA Ready:', reg.scope))
+          .catch(err => {
             if (err.name !== 'InvalidStateError') {
-              console.error("SW Registration failed:", err);
+              console.error('SW Registration Error:', err);
             }
           });
-      });
+      }, 3000);
+
+      return () => clearTimeout(timer);
     }
   }, []);
-
   return (
     <>
       <Toaster position="top-center" reverseOrder={false} />
