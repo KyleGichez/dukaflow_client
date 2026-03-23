@@ -13,7 +13,7 @@ const SalesPage = () => {
     productName: "",
     quantitySold: "",
     paymentMethod: "",
-  };
+  }; 
 
   const user = JSON.parse(localStorage.getItem("user"));
 
