@@ -1,5 +1,5 @@
 import React from "react";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import axios from "axios";
 import { Icon } from "@iconify/react";
 import "../styles/DashboardPage.css";
@@ -21,15 +21,6 @@ const DashboardPage = () => {
       )
     : 0;
 
-  {
-    user && daysLeft > 0 && daysLeft <= 3 && (
-      <div className="bg-yellow-100 text-yellow-800 p-3 rounded mb-4">
-        Your free trial ends in {daysLeft} days. Upgrade now to avoid
-        interruption!
-      </div>
-    );
-  }
-
   const [sales, setSales] = useState([]);
   const [products, setProducts] = useState([]);
   const [filter, setFilter] = useState("today");
@@ -42,49 +33,64 @@ const DashboardPage = () => {
   });
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState("User");
+  const [isOnline, setIsOnline] = useState(navigator.onLine); // Track online status
 
-  // 1. Memoized Fetch Function (allows for manual refresh)
   const loadDashboard = useCallback(async () => {
     setLoading(true);
     try {
-      const [summaryRes, salesRes, prodRes] = await Promise.all([
-        api.get(`/sales/summary?range=${filter}`),
-        api.get(`/sales?range=${filter}`),
-        api.get(`/products`),
-      ]);
+      // Step A: Load everything from local Dexie DB IMMEDIATELY
+      const cachedProducts = await db.products.toArray();
+      const cachedOnlineSales = db.cachedSales ? await db.cachedSales.toArray() : [];
+      const pendingSales = await db.offlineSales.toArray();
 
-      // Update states with real data from backend
-      setSummary(summaryRes.data);
-      setSales(salesRes.data);
+      // Show cached data so the dashboard isn't empty while waiting for API
+      setProducts(cachedProducts);
+      setSales([...cachedOnlineSales, ...pendingSales]);
 
-      const formattedProducts = prodRes.data.map((p) => ({
-        id: p._id,
-        item: p.name,
-        category: p.category || "Unconfirmed",
-        qty: p.quantity,
-        units: p.units,
-        price: p.price,
-      }));
-      setProducts(formattedProducts);
+      // Step B: If online, fetch fresh data and update the cache
+      if (navigator.onLine) {
+        const [salesRes, prodRes] = await Promise.all([
+          api.get(`/sales?range=${filter}`),
+          api.get(`/products`),
+        ]);
+
+        // Format products to match your "item/qty" schema in IndexedDB
+        const formattedProducts = prodRes.data.map((p) => ({
+          _id: p._id,
+          item: p.name || p.item,
+          category: p.category || "Unconfirmed",
+          qty: p.quantity || p.qty,
+          units: p.units,
+          price: p.price,
+        }));
+
+        setProducts(formattedProducts);
+        setSales([...salesRes.data, ...pendingSales]);
+
+        // Update Dexie Caches for next offline session
+        if (db.cachedSales && db.products) {
+          await db.cachedSales.clear();
+          await db.cachedSales.bulkPut(salesRes.data);
+          await db.products.clear();
+          await db.products.bulkPut(formattedProducts);
+        }
+      }
     } catch (error) {
-      console.error("Dashboard Load Error:", error);
-      // Fallback to empty state on error to prevent UI crash
-      setSummary({
-        totalRevenue: 0,
-        totalItemsSold: 0,
-        totalTransactions: 0,
-        totalStockValue: 0,
-        paymentBreakdown: {},
-      });
+      console.error("Sync error, staying in offline mode:", error);
     } finally {
       setLoading(false);
     }
   }, [filter]);
 
+  // Monitor Online/Offline Status
   useEffect(() => {
-    if (user.trialExpired) {
-      onOpenPayment("Monthly", 1000);
-    }
+    const handleStatus = () => setIsOnline(navigator.onLine);
+    window.addEventListener("online", handleStatus);
+    window.addEventListener("offline", handleStatus);
+    return () => {
+      window.removeEventListener("online", handleStatus);
+      window.removeEventListener("offline", handleStatus);
+    };
   }, []);
 
   useEffect(() => {
@@ -101,21 +107,25 @@ const DashboardPage = () => {
       const handleSync = async () => {
         if (navigator.onLine) {
           const offlineSales = await db.offlineSales.toArray();
-          
+
           if (offlineSales.length > 0) {
             console.log("Syncing offline sales to cloud...");
             try {
               const token = localStorage.getItem("token");
-              
+
               // Push each sale to your Render API
               for (const sale of offlineSales) {
-                await axios.post("https://dukaflow-server.onrender.com/api/sales", sale, {
-                  headers: { Authorization: `Bearer ${token}` }
-                });
+                await axios.post(
+                  "https://dukaflow-server.onrender.com/api/sales",
+                  sale,
+                  {
+                    headers: { Authorization: `Bearer ${token}` },
+                  }
+                );
                 // Remove from phone once successfully uploaded
                 await db.offlineSales.delete(sale.id);
               }
-              
+
               console.log("Sync Complete!");
             } catch (err) {
               console.error("Sync failed, will retry later.");
@@ -123,17 +133,30 @@ const DashboardPage = () => {
           }
         }
       };
-  
+
       // Listen for the browser coming back online
       window.addEventListener("online", handleSync);
       // Also try to sync when the app first loads
       handleSync();
-  
+
       return () => window.removeEventListener("online", handleSync);
     }, []);
   };
 
-  // --- Derived Calculations ---
+  // Create a displaySummary that works even when navigator.onLine is false
+  const displaySummary = useMemo(() => {
+    return {
+      totalRevenue: sales.reduce((acc, curr) => acc + (curr.totalPrice || 0), 0),
+      totalTransactions: sales.length,
+      totalItemsSold: sales.reduce((acc, curr) => acc + (Number(curr.quantitySold) || 0), 0),
+      totalStockValue: products.reduce((acc, p) => acc + (Number(p.qty || 0) * Number(p.price || 0)), 0),
+      paymentBreakdown: {
+        Cash: sales.filter((s) => s.paymentMethod === "Cash").reduce((acc, curr) => acc + (curr.totalPrice || 0), 0),
+        "M-pesa": sales.filter((s) => s.paymentMethod === "M-pesa").reduce((acc, curr) => acc + (curr.totalPrice || 0), 0),
+      },
+    };
+  }, [sales, products]);
+
   const allCategories = [...new Set(products.map((p) => p.category))].length;
   const productsRemaining = products.filter((p) => p.qty > 0).length;
   const lowStockCount = products.filter((p) => p.qty > 0 && p.qty <= 5).length;
@@ -149,15 +172,20 @@ const DashboardPage = () => {
 
   const topSellingItems = Object.values(
     sales.reduce((acc, sale) => {
-      const name = sale.productId?.name || "Unknown";
-      if (!acc[name])
-        acc[name] = { name, totalSold: 0, units: sale.productId?.units || "" };
-      acc[name].totalSold += sale.quantitySold || 0;
+      // Handle both populated API data and flat offline data
+      const name = sale.productId?.name || sale.productName || "Unknown Item";
+      const units = sale.productId?.units || sale.units || "";
+
+      if (!acc[name]) {
+        acc[name] = { name, totalSold: 0, units: units };
+      }
+
+      acc[name].totalSold += Number(sale.quantitySold || 0);
       return acc;
     }, {})
   )
-    .sort((a, b) => b.totalSold - a.totalSold)
-    .slice(0, 4);
+    .sort((a, b) => b.totalSold - a.totalSold) // Sort by highest volume
+    .slice(0, 4); // Take top 4
 
   const recentSales = [...sales]
     .sort((a, b) => new Date(b.date) - new Date(a.date))
@@ -347,10 +375,23 @@ const DashboardPage = () => {
 
   return (
     <div className="dashboard-wrapper">
+      {user && daysLeft > 0 && daysLeft <= 3 && (
+        <div className="bg-yellow-100 text-yellow-800 p-3 rounded mb-4">
+          Your free trial ends in {daysLeft} days. Upgrade now to avoid
+          interruption!
+        </div>
+      )}
       <div className="dashboard-content">
-        <h1 className="text-2xl font-bold uppercase mb-[20px]">Dashboard</h1>
+        <h1 className="text-2xl font-bold uppercase mb-[20px]">
+          Dashboard{" "}
+          {isOnline ? (
+            <span className="text-green-500 text-xs text-none">● Online</span>
+          ) : (
+            <span className="text-gray-400 text-xs">● Offline</span>
+          )}
+        </h1>
         <h2 className="mb-[20px]">
-          Welcome back, <strong>{userName}</strong>
+          Welcome back, <strong className="capitalize">{userName}</strong>
         </h2>
         <div className="dashboard-content-wrapper flex justify-between gap-[20px]">
           <div className="dashboard-content-wrapper-menu">
@@ -400,7 +441,7 @@ const DashboardPage = () => {
                 </li>
                 <li className="menu-item flex items-center gap-[10px]">
                   <span>
-                  <Icon icon="fa:users" width="24" height="24" />
+                    <Icon icon="fa:users" width="24" height="24" />
                   </span>
                   <a href="/staff">Staff</a>
                 </li>
@@ -418,8 +459,8 @@ const DashboardPage = () => {
               <div className="content-stats-card">
                 <div className="content-stat-card">
                   <h3 className="font-bold uppercase">Today's Sales</h3>
-                  <p>Ksh {summary.totalRevenue.toLocaleString()}</p>
-                  <p>{summary.totalItemsSold} items sold</p>
+                  <p>Ksh {displaySummary.totalRevenue.toLocaleString()}</p>
+                  <p>{displaySummary.totalItemsSold} items sold</p>
                 </div>
               </div>
               <div className="content-stats-card">
@@ -439,7 +480,9 @@ const DashboardPage = () => {
               <div className="content-stats-card">
                 <div className="content-stat-card">
                   <h3 className="font-bold uppercase">Stock Value</h3>
-                  <p>Ksh {summary.totalStockValue.toLocaleString()}</p>
+                  <p>
+                    Ksh {displaySummary.totalStockValue.toLocaleString() || 0}
+                  </p>
                   <p>Date: {getTodaysDate()}</p>
                 </div>
               </div>
@@ -475,7 +518,7 @@ const DashboardPage = () => {
                     </span>
                     <span className="text-green-700">
                       {products
-                        .reduce((sum, p) => sum + p.qty, 0)
+                        .reduce((sum, p) => sum + (p.qty || 0), 0)
                         .toLocaleString()}
                     </span>
                   </p>
@@ -554,10 +597,13 @@ const DashboardPage = () => {
                               {new Date(sale.date).toLocaleDateString()}
                             </td>
                             <td className="py-2 px-3 capitalize">
-                              {sale.productId?.name || "Deleted Product"}
+                              {sale.productId?.name ||
+                                sale.productName ||
+                                "New Sale"}
                             </td>
                             <td className="py-2 px-3">
-                              {sale.quantitySold} {sale.productId?.units}
+                              {sale.quantitySold}{" "}
+                              {sale.productId?.units || sale.units || ""}
                             </td>
                             <td className="py-2 px-3">
                               Ksh {sale.totalPrice?.toLocaleString()}

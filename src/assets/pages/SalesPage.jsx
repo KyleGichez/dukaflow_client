@@ -13,7 +13,7 @@ const SalesPage = () => {
     productName: "",
     quantitySold: "",
     paymentMethod: "",
-  }; 
+  };
 
   const user = JSON.parse(localStorage.getItem("user"));
 
@@ -24,59 +24,89 @@ const SalesPage = () => {
   const [endDate, setEndDate] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine); // Track online status
 
+  // Monitor Online/Offline Status
   useEffect(() => {
-    if (showModal) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "auto";
-    }
-
-    // Cleanup (important)
+    const handleStatus = () => setIsOnline(navigator.onLine);
+    window.addEventListener("online", handleStatus);
+    window.addEventListener("offline", handleStatus);
     return () => {
-      document.body.style.overflow = "auto";
+      window.removeEventListener("online", handleStatus);
+      window.removeEventListener("offline", handleStatus);
     };
-  }, [showModal]);
-
-  // 1. Fetch Products and Sales on load
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    const headers = {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    };
-
-    // 1. Fetch Products
-    fetch(`${API_URL}/api/products`, { headers })
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch products");
-        return res.json();
-      })
-      .then((data) => {
-        // Ensure data is an array before setting state
-        setProducts(Array.isArray(data) ? data : []);
-      })
-      .catch((err) => {
-        console.error("Product fetch error:", err);
-        setProducts([]); // Fallback to empty array
-      });
-
-    // 2. Fetch Sales
-    fetch(`${API_URL}/api/sales`, { headers })
-      .then((res) => {
-        if (!res.ok) throw new Error("Error");
-        return res.json();
-      })
-      .then((data) => {
-        // If the backend returns an error object {message: "..."},
-        // this check prevents dbSales from becoming that object.
-        setDbSales(Array.isArray(data) ? data : []);
-      })
-      .catch((err) => {
-        console.error("Sales fetch error:", err);
-        setDbSales([]); // Fallback to empty array to prevent .filter() crash
-      });
   }, []);
+
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        // 1. Try to get data from Dexie immediately
+        const localProducts = await db.products.toArray();
+
+        // 2. If we found products locally, show them right away
+        if (localProducts.length > 0) {
+          setProducts(localProducts);
+          console.log("Loaded from Dexie:", localProducts.length);
+        }
+
+        // 3. If online, try to get fresh prices/stock from MongoDB
+        if (navigator.onLine) {
+          const token = localStorage.getItem("token");
+          const res = await fetch(`${API_URL}/api/products`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const onlineData = await res.json();
+
+          if (Array.isArray(onlineData)) {
+            setProducts(onlineData);
+            // Update Dexie so it's fresh for the next offline session
+            await db.products.clear();
+            await db.products.bulkAdd(onlineData);
+          }
+        }
+      } catch (err) {
+        console.error("Error loading products:", err);
+      }
+    };
+
+    loadProducts();
+  }, []);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        // 1. Always show what's in Dexie immediately (Fast UI)
+        const localSales = await db.sales.toArray();
+        setDbSales(localSales.reverse()); // Show newest first
+
+        // 2. If online, sync Dexie with MongoDB
+        if (navigator.onLine) {
+          const token = localStorage.getItem("token");
+          const res = await fetch(`${API_URL}/api/sales`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const onlineSales = await res.json();
+
+          if (Array.isArray(onlineSales)) {
+            // Identify sales that are ONLY local (pending sync)
+            const pendingSales = localSales.filter((s) => s.isOffline);
+
+            // Clear the local 'sales' table and refill it with
+            // Server Data + Pending Local Data
+            await db.sales.clear();
+            await db.sales.bulkAdd([...onlineSales, ...pendingSales]);
+
+            // Update UI state
+            setDbSales([...pendingSales, ...onlineSales]);
+          }
+        }
+      } catch (err) {
+        console.error("Load failed:", err);
+      }
+    };
+
+    loadData();
+  }, [isOnline]);
 
   const filteredSales = dbSales.filter((sale) => {
     if (!startDate && !endDate) return true; // Show all if no dates selected
@@ -122,10 +152,8 @@ const SalesPage = () => {
       quantitySold: Number(formData.quantitySold),
       paymentMethod: formData.paymentMethod,
       date: formData.date || new Date().toISOString(),
-      isOffline: !navigator.onLine, // Tag it so you know it was made offline
     };
-
-    // 2. TRY ONLINE FIRST
+  
     if (navigator.onLine) {
       try {
         const res = await fetch(`${API_URL}/api/sales`, {
@@ -133,47 +161,66 @@ const SalesPage = () => {
           headers,
           body: JSON.stringify(payload),
         });
-
+  
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || "Server error");
-
+  
         toast.success("Sale recorded online!");
+  
+        // --- THE MISSING STEP: Save to Dexie for Offline Access ---
+        await db.sales.add({
+          ...data,           // The full object from MongoDB (including _id)
+          isOffline: false,  // Mark as already synced
+        });
+  
+        // Update UI
+        setDbSales((prev) => [data, ...prev]);
         setFormData(initialState);
         setShowModal(false);
-        setDbSales((prev) => [data, ...prev]);
-
-        // Refresh products from server
-        const prodRes = await fetch(`${API_URL}/api/products`, { headers });
-        const prodData = await prodRes.json();
-        setProducts(Array.isArray(prodData) ? prodData : []);
+  
       } catch (err) {
         toast.error(`Online sync failed: ${err.message}. Saving locally...`);
         saveToOffline(payload);
       }
     } else {
-      // 3. IF TOTALLY OFFLINE, SAVE TO DEXIE IMMEDIATELY
       saveToOffline(payload);
     }
   };
 
   // Helper function to handle Dexie storage
   const saveToOffline = async (payload) => {
+    // Find product to get price for the UI
+    const product = products.find((p) => p._id === payload.productId);
+    
+    const enrichedPayload = {
+      ...payload,
+      _id: `offline_${Date.now()}`, // Temporary ID
+      isOffline: true,              // Crucial for your UI logic
+      unitPrice: product?.price || 0,
+      totalPrice: (product?.price || 0) * payload.quantitySold,
+    };
+  
     try {
-      await db.offlineSales.add(payload);
-      toast.info(
-        "Saved to phone (Offline). It will sync when internet returns."
-      );
-
-      // Update local UI state so the user sees the sale immediately
-      setDbSales((prev) => [payload, ...prev]);
+      // Use 'sales' here to match your loadData() function
+      await db.sales.add(enrichedPayload);
+      
+      toast.info("Saved locally. It will sync when internet returns.");
+  
+      // Update UI state immediately
+      setDbSales((prev) => [enrichedPayload, ...prev]);
       setFormData(initialState);
       setShowModal(false);
     } catch (err) {
-      toast.error("Failed to save even offline. Check storage space.");
+      console.error(err);
+      toast.error("Failed to save locally.");
     }
   };
-
+  
   const handleDelete = async (id) => {
+    if (!isOnline) {
+      return toast.error("Internet required to add or edit products.");
+    }
+
     const token = localStorage.getItem("token");
     try {
       const response = await fetch(`${API_URL}/api/sales/${id}`, {
@@ -234,7 +281,14 @@ const SalesPage = () => {
   return (
     <div className="sales-wrapper">
       <div className="sales-content">
-        <h1 className="text-2xl font-bold uppercase mb-[20px]">Sales</h1>
+        <h1 className="text-2xl font-bold uppercase mb-[20px]">
+          Sales{" "}
+          {isOnline ? (
+            <span className="text-green-500 text-xs text-none">● Online</span>
+          ) : (
+            <span className="text-gray-400 text-xs">● Offline</span>
+          )}
+        </h1>
         <div className="sales-content-wrapper flex gap-[20px]">
           <div className="sales-content-wrapper-menu">
             <div className="sales-content-menu">
@@ -509,57 +563,67 @@ const SalesPage = () => {
                 </thead>
                 <tbody>
                   {filteredSales.length > 0 ? (
-                    filteredSales.map((sale, index) => (
-                      <tr key={sale._id} className="border-b">
-                        <td className="py-2 px-3">{index + 1}</td>
-                        <td className="py-2 px-3">
-                          {new Date(sale.date).toLocaleDateString()}
-                        </td>
-                        <td className="py-2 px-3 capitalize">
-                          {sale.productId?.name || "Deleted Product"}
-                        </td>
-                        <td className="py-2 px-3">
-                          {sale.quantitySold} {sale.productId?.units}
-                        </td>
-                        <td className="py2 px-3">
-                          Ksh{" "}
-                          {(
-                            sale.unitPrice ||
-                            sale.productId?.price ||
-                            0
-                          ).toLocaleString()}
-                        </td>
-                        <td className="py-2 px-3">
-                          Ksh {(sale.totalPrice || 0).toLocaleString()}
-                        </td>
-                        <td className="py-2 px-3">{sale.paymentMethod}</td>
-                        <td className="py-2 px-2">
-                          <div className="sale-delete-btn">
+                    filteredSales.map((sale, index) => {
+                      // 1. Resolve the product details locally if the backend hasn't populated them yet
+                      const isProductPopulated =
+                        typeof sale.productId === "object" &&
+                        sale.productId !== null;
+
+                      const productInfo =
+                        typeof sale.productId === "object"
+                          ? sale.productId // If it's the populated object from MongoDB
+                          : products.find((p) => p._id === sale.productId); // If it's just a string ID (Offline)
+
+                      const itemName = productInfo?.name || "Unknown Product";
+                      const unitPrice =
+                        sale.unitPrice || productInfo?.price || 0;
+                        const totalPrice = sale.totalPrice || (unitPrice * sale.quantitySold);
+
+                      return (
+                        <tr key={sale._id || index} className="border-b">
+                          <td className="py-2 px-3">{index + 1}</td>
+                          <td className="py-2 px-3">
+                            {new Date(sale.date).toLocaleDateString()}
+                          </td>
+                          <td className="py-2 px-3 capitalize">
+                            {sale.isOffline && (
+                              <Icon
+                                icon="material-symbols:cloud-off"
+                                className="text-orange-500 inline mr-1"
+                              />
+                            )}
+                            {itemName}
+                          </td>
+                          <td className="py-2 px-3">
+                            {sale.quantitySold} {productInfo?.unit || "pcs"}
+                          </td>
+                          <td className="py-2 px-3">
+                            Ksh {unitPrice.toLocaleString()}
+                          </td>
+                          <td className="py-2 px-3">
+                            Ksh {totalPrice.toLocaleString()}
+                          </td>
+                          <td className="py-2 px-3">{sale.paymentMethod}</td>
+                          <td className="py-2 px-2 text-center">
                             <button
                               type="button"
                               className="delete-btn flex items-center gap-[5px]"
                               onClick={() => confirmDelete(sale._id)}
                             >
-                              <span>
-                                <Icon
-                                  icon="material-symbols:delete"
-                                  width="20"
-                                  height="20"
-                                />
-                              </span>
+                              <Icon icon="material-symbols:delete" width="20" />
                               Delete
                             </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
+                          </td>
+                        </tr>
+                      );
+                    })
                   ) : (
                     <tr>
                       <td
                         colSpan="8"
-                        className="text-center py-2 px-3 text-gray-500"
+                        className="text-center py-4 text-gray-500"
                       >
-                        No sales recorded yet.
+                        No sales recorded.
                       </td>
                     </tr>
                   )}

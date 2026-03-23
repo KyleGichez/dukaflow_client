@@ -58,7 +58,7 @@ const Navbar = () => {
             >
               <button
                 type="button"
-                className="navbar-signup-btn"
+                className="navbar-signup-btn capitalize"
                 onClick={() => setShowDropdown(!showDropdown)}
               >
                 Hello, {user.FName} ▼
