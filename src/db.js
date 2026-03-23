@@ -1,13 +1,26 @@
-// db.js
-import Dexie from "dexie";
+import Dexie from 'dexie';
 
-export const db = new Dexie("DukaflowDB");
-
-db.version(9).stores({
-  products: "_id, name, price, quantity, units, category", 
-  stock: "_id, date, name, price, quantity, units, category", 
-  sales: "_id, date, amount, productId, totalPrice, paymentMethod, isOffline", // Must match your component call
-  offlineSales: "++id, date, productId, productName, quantitySold, totalPrice, paymentMethod, units",
-  summary: "id, totalRevenue, totalItemsSold, totalTransactions, totalStockValue", 
-  cachedSales: "_id, date, totalPrice, paymentMethod"
+export const db = new Dexie('DukaFlowLocal');
+db.version(1).stores({
+  products: '_id, name, price, stock', // Local cache of products
+  pendingSales: '++id, items, total, createdAt' // Sales made while offline
 });
+
+const syncOfflineSales = async () => {
+    const offlineSales = await db.pendingSales.toArray();
+    
+    if (offlineSales.length > 0 && navigator.onLine) {
+      try {
+        for (const sale of offlineSales) {
+          await axios.post('https://dukaflow-server.onrender.com/api/sales', sale);
+          await db.pendingSales.delete(sale.id); // Remove from phone once uploaded
+        }
+        console.log("Cloud backup complete!");
+      } catch (err) {
+        console.error("Sync failed, will retry later.");
+      }
+    }
+  };
+  
+  // Auto-sync when the user comes back online
+  window.addEventListener('online', syncOfflineSales);

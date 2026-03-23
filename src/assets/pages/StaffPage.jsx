@@ -27,18 +27,6 @@ const StaffPage = () => {
     password: "",
     role: "cashier", // Default role
   });
-  const [isOnline, setIsOnline] = useState(navigator.onLine); // Track online status
-
-  // 1. Monitor Online/Offline Status
-  useEffect(() => {
-    const handleStatus = () => setIsOnline(navigator.onLine);
-    window.addEventListener("online", handleStatus);
-    window.addEventListener("offline", handleStatus);
-    return () => {
-      window.removeEventListener("online", handleStatus);
-      window.removeEventListener("offline", handleStatus);
-    };
-  }, []);
 
   // ✅ 1. Fetch Staff 
   const fetchStaff = async () => {
@@ -128,7 +116,7 @@ const StaffPage = () => {
     <div className="staff-wrapper">
       <div className="staff-content">
         <h1 className="text-2xl font-bold uppercase mb-[20px]">
-          Staff {isOnline ? <span className="text-green-500 text-xs text-none">● Online</span> : <span className="text-gray-400 text-xs">● Offline</span>}
+          Staff
         </h1>
         <div className="staff-content-wrapper flex gap-[20px]">
           <div className="staff-content-wrapper-menu">

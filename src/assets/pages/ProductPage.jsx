@@ -6,7 +6,6 @@ import toast from "react-hot-toast";
 import "../styles/ProductPage.css";
 import API_URL from "../../api";
 import api from "../../../src/api/axios";
-import { db } from "../../db.js";
 
 const ProductPage = () => {
   const initialFormState = {
@@ -28,56 +27,59 @@ const ProductPage = () => {
   const [editId, setEditId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const [isOnline, setIsOnline] = useState(navigator.onLine); // Track online status
-
   const location = useLocation();
 
   const categories = [...new Set(products.map((p) => p.category))];
 
   const LOW_STOCK_THRESHOLD = 10;
 
-  // 1. Monitor Online/Offline Status
-  useEffect(() => {
-    const handleStatus = () => setIsOnline(navigator.onLine);
-    window.addEventListener("online", handleStatus);
-    window.addEventListener("offline", handleStatus);
-    return () => {
-      window.removeEventListener("online", handleStatus);
-      window.removeEventListener("offline", handleStatus);
-    };
-  }, []);
+  // 1. Get query parameters from URL
+  const queryParams = new URLSearchParams(location.search);
+  const filterType = queryParams.get("filter");
+  const categoryFilter = queryParams.get("category");
 
-  // 2. Fetch Logic (IndexedDB + API)
-  useEffect(() => {
-    const loadProducts = async () => {
-      try {
-        // 1. Always load from IndexedDB first for immediate UI
-        const localProducts = await db.products.toArray();
-        if (localProducts.length > 0) {
-          setProducts(localProducts);
-        }
+  // 2. Master Filter Logic (Combines Sidebar, Search, and Dashboard Links)
+  const allFilteredProducts = useMemo(() => {
+    return products.filter((p) => {
+      // A. Search Bar Filter
+      const matchesSearch = p.name
+        ?.toLowerCase()
+        .includes(searchTerm.toLowerCase());
 
-        // 2. Only attempt network fetch if online
-        if (navigator.onLine) {
-          const res = await api.get("/products");
-          const freshProducts = res.data;
+      // B. Sidebar Category Dropdown Filter
+      const matchesCategoryDropdown =
+        selectedCategory === "All" || p.category === selectedCategory;
 
-          // Update local state
-          setProducts(freshProducts);
-
-          // 3. Sync IndexedDB with fresh data
-          await db.products.clear(); // Clear old data to avoid duplicates/stale items
-          await db.products.bulkPut(freshProducts);
-        }
-      } catch (err) {
-        console.error("Fetch Error:", err);
-        // If we are offline, we already have localProducts in state,
-        // so we don't need to do anything else here.
+      // C. Dashboard URL Filters (with safety checks for null)
+      let matchesURL = true;
+      if (filterType === "low-stock") {
+        matchesURL = p.quantity > 0 && p.quantity <= 5;
       }
-    };
+      // Added ?. check here to prevent the crash!
+      else if (categoryFilter?.toLowerCase() === "unconfirmed") {
+        matchesURL =
+          !p.category ||
+          p.category.toLowerCase() === "unconfirmed" ||
+          p.category.trim() === "";
+      }
 
-    loadProducts();
-  }, [isOnline]); 
+      // Result: Must satisfy ALL active conditions
+      return matchesSearch && matchesCategoryDropdown && matchesURL;
+    });
+  }, [products, searchTerm, selectedCategory, filterType, categoryFilter]);
+
+  // ✅Fetch products using the authenticated API instance
+  useEffect(() => {
+    api
+      .get("/products")
+      .then((res) => setProducts(res.data))
+      .catch((err) => {
+        console.error(err);
+        if (err.response?.status === 401) {
+          toast.error("Session expired. Please login again.");
+        }
+      });
+  }, []);
 
   // ✅ Prevent scroll when modal open
   useEffect(() => {
@@ -97,10 +99,6 @@ const ProductPage = () => {
   // ✅ 2. Handle Submit (POST/PUT) with Auth
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    if (!isOnline) {
-      return toast.error("Internet required to add or edit products.");
-    }
 
     const request = isEditing
       ? api.put(`/products/${editId}`, formData)
@@ -142,10 +140,6 @@ const ProductPage = () => {
 
   // ✅ Corrected
   const handleDelete = (id) => {
-    if (!isOnline) {
-      return toast.error("Internet required to add or edit products.");
-    }
-
     api
       .delete(`/products/${id}`)
       .then(() => {
@@ -192,44 +186,10 @@ const ProductPage = () => {
     );
   };
 
-  // 1. Get query parameters from URL
-  const queryParams = new URLSearchParams(location.search);
-  const filterType = queryParams.get("filter");
-  const categoryFilter = queryParams.get("category");
-
-  // 2. Master Filter Logic (Combines Sidebar, Search, and Dashboard Links)
-  const allFilteredProducts = useMemo(() => {
-    return products.filter((p) => {
-      const productName = p.name || p.item || "";
-      const productQty = p.quantity ?? p.qty ?? 0;
-  
-      const matchesSearch = productName
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
-  
-      const matchesCategoryDropdown =
-        selectedCategory === "All" || p.category === selectedCategory;
-  
-      let matchesURL = true;
-      if (filterType === "low-stock") {
-        matchesURL = productQty > 0 && productQty <= 5;
-      }
-      // ... rest of your logic
-      return matchesSearch && matchesCategoryDropdown && matchesURL;
-    });
-  }, [products, searchTerm, selectedCategory, filterType, categoryFilter]);
-
   return (
     <div className="product-wrapper">
       <div className="product-content">
-        <h1 className="text-2xl font-bold uppercase mb-[20px]">
-          Products{" "}
-          {isOnline ? (
-            <span className="text-green-500 text-xs text-none">● Online</span>
-          ) : (
-            <span className="text-gray-400 text-xs">● Offline</span>
-          )}
-        </h1>
+        <h1 className="text-2xl font-bold uppercase mb-[20px]">Products</h1>
         <div className="product-content-wrapper flex gap-[20px]">
           <div className="product-content-wrapper-menu">
             <div className="product-content-menu">
@@ -278,7 +238,7 @@ const ProductPage = () => {
                 </li>
                 <li className="menu-item flex items-center gap-[10px]">
                   <span>
-                    <Icon icon="fa:users" width="24" height="24" />
+                  <Icon icon="fa:users" width="24" height="24" />
                   </span>
                   <a href="/staff">Staff</a>
                 </li>
@@ -509,13 +469,13 @@ const ProductPage = () => {
                         <th className="py-2 px-2" scope="row">
                           {index + 1}
                         </th>
-                        <td className="py-3 px-2 capitalize">{product.name || product.item}</td>
+                        <td className="py-3 px-2 capitalize">{product.name}</td>
                         <td className="py-3 px-2 capitalize">
                           {product.category}
                         </td>
                         <td className="py-3 px-2">
-                          {(product.quantity ?? product.qty)?.toLocaleString()} {product.units}
-                          {(product.quantity ?? product.qty) < LOW_STOCK_THRESHOLD && (
+                          {product.quantity?.toLocaleString()} {product.units}
+                          {product.quantity < LOW_STOCK_THRESHOLD && (
                             <span className="text-left ml-2 text-red-600 font-semibold">
                               ⚠ low stock
                             </span>

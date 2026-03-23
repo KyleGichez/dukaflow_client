@@ -5,7 +5,6 @@ import "../styles/ReportsPage.css";
 import { Icon } from "@iconify/react";
 import * as XLSX from "xlsx";
 import API_URL from "../../api";
-import { db } from "../../../src/db.js";
 
 const ReportsPage = () => {
   function getTodaysDate() {
@@ -13,6 +12,7 @@ const ReportsPage = () => {
   }
 
   const user = JSON.parse(localStorage.getItem("user"));
+
 
   const exportToExcel = () => {
     // 1. Prepare clean data
@@ -63,85 +63,41 @@ const ReportsPage = () => {
   const [sales, setSales] = useState([]); // State for the table
   const [filter, setFilter] = useState("today"); // State for the dropdown
   const [loading, setLoading] = useState(true);
-  const [isOnline, setIsOnline] = useState(navigator.onLine); // Track online status
-
-  // Monitor Online/Offline Status
-  useEffect(() => {
-    const handleStatus = () => setIsOnline(navigator.onLine);
-    window.addEventListener("online", handleStatus);
-    window.addEventListener("offline", handleStatus);
-    return () => {
-      window.removeEventListener("online", handleStatus);
-      window.removeEventListener("offline", handleStatus);
-    };
-  }, []);
 
   useEffect(() => {
     const fetchReportData = async () => {
       setLoading(true);
       try {
-        // 1. Try to load initial data from Dexie (Offline-first)
-        const localSales = await db.sales.toArray();
-        const localSummary = await db.summary.get("current_summary");
+        // 1. Get the token from localStorage
+        const token = localStorage.getItem("token");
+        
+        // 2. Define the headers
+        const config = {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        };
 
-        if (localSales.length > 0) setSales(localSales);
-        if (localSummary) setSummary(localSummary);
+        // 3. Pass the config object as the second argument to axios.get
+        const [summaryRes, salesRes] = await Promise.all([
+          axios.get(`${API_URL}/api/sales/summary?range=${filter}`, config),
+          axios.get(`${API_URL}/api/sales?range=${filter}`, config),
+        ]);
 
-        // 2. If online, fetch fresh data from server
-        if (navigator.onLine) {
-          const token = localStorage.getItem("token");
-          const config = { headers: { Authorization: `Bearer ${token}` } };
-
-          const [summaryRes, salesRes] = await Promise.all([
-            axios.get(`${API_URL}/api/sales/summary?range=${filter}`, config),
-            axios.get(`${API_URL}/api/sales?range=${filter}`, config),
-          ]);
-
-          // 3. Update State
-          setSummary(summaryRes.data);
-          setSales(salesRes.data);
-
-          // 4. Update Dexie so it's ready for the next offline session
-          // We use put() to overwrite the old summary and clear/add for sales
-          await db.summary.put({ id: "current_summary", ...summaryRes.data });
-
-          // Only clear and sync if we are looking at "all-time" or "today"
-          // to avoid mixing filtered data in the local cache
-          if (filter === "all-time" || filter === "today") {
-            await db.sales.clear();
-            await db.sales.bulkAdd(salesRes.data);
-          }
-        }
+        setSummary(summaryRes.data);
+        setSales(salesRes.data);
       } catch (error) {
-        console.error("Offline/Fetch Error:", error);
+        console.error("Error fetching report data:", error);
+        // If it's a 401, you might want to redirect to login
+        if (error.response?.status === 401) {
+            console.error("Session expired or invalid token");
+        }
       } finally {
         setLoading(false);
       }
     };
-
     fetchReportData();
   }, [filter]);
-
-  // Add this after your fetchReportData useEffect
-  const displaySummary = !navigator.onLine
-    ? {
-        ...summary,
-        totalRevenue: sales.reduce(
-          (acc, curr) => acc + (curr.totalPrice || 0),
-          0
-        ),
-        totalTransactions: sales.length,
-        totalItemsSold: sales.reduce(
-          (acc, curr) => acc + (curr.quantitySold || 0),
-          0
-        ),
-        paymentBreakdown: {
-          "Cash": sales.filter(s => s.paymentMethod === "Cash").reduce((acc, curr) => acc + (curr.totalPrice || 0), 0),
-          "M-pesa": sales.filter(s => s.paymentMethod === "M-pesa").reduce((acc, curr) => acc + (curr.totalPrice || 0), 0),
-          "Bank-Transfer": sales.filter(s => s.paymentMethod === "Bank-Transfer").reduce((acc, curr) => acc + (curr.totalPrice || 0), 0),
-      }
-      }
-    : summary;
 
   const recentSales = sales
     .sort((a, b) => new Date(b.date) - new Date(a.date)) // Sort by newest first
@@ -330,8 +286,8 @@ const ReportsPage = () => {
   }
   return (
     <div className="reportPage-wrapper">
-      <div className="reportPage-content">
-        <h1 className="text-2xl font-bold uppercase mb-[20px]">Reports {isOnline ? <span className="text-green-500 text-xs text-none">● Online</span> : <span className="text-gray-400 text-xs">● Offline</span>}</h1>
+      <div className="reportPage-content"> 
+        <h1 className="text-2xl font-bold uppercase mb-[20px]">Reports</h1>
         <div className="reportPage-content-wrapper flex gap-[20px]">
           <div className="reportPage-content-wrapper-menu">
             <div className="reportPage-content-menu">
@@ -380,7 +336,7 @@ const ReportsPage = () => {
                 </li>
                 <li className="menu-item flex items-center gap-[10px]">
                   <span>
-                    <Icon icon="fa:users" width="24" height="24" />
+                  <Icon icon="fa:users" width="24" height="24" />
                   </span>
                   <a href="/staff">Staff</a>
                 </li>
@@ -398,19 +354,19 @@ const ReportsPage = () => {
               <div className="summary-card">
                 <h2 className="font-bold uppercase">Total Revenue</h2>
                 <p className="py-[10px]">
-                  Ksh {Number(displaySummary?.totalRevenue || 0).toLocaleString()}
+                  Ksh {Number(summary?.totalRevenue || 0).toLocaleString()}
                 </p>
               </div>
               <div className="summary-card">
                 <h2 className="font-bold uppercase">Items Sold</h2>
                 <p className="py-[10px]">
-                  {Number(displaySummary?.totalItemsSold).toLocaleString()} Items
+                  {Number(summary?.totalItemsSold).toLocaleString()} Items
                 </p>
               </div>
               <div className="summary-card">
                 <h2 className="font-bold uppercase">All Transactions</h2>
                 <p className="py-[10px]">
-                  {Number(displaySummary?.totalTransactions)} Transactions
+                  {Number(summary?.totalTransactions)} Transactions
                 </p>
               </div>
               <div className="summary-card">
@@ -418,7 +374,7 @@ const ReportsPage = () => {
                 <p className="py-[10px]">
                   Ksh{" "}
                   {Number(
-                    displaySummary?.paymentBreakdown?.["Cash"] || 0
+                    summary?.paymentBreakdown?.["Cash"] || 0
                   ).toLocaleString()}
                 </p>
               </div>
@@ -427,7 +383,7 @@ const ReportsPage = () => {
                 <p className="py-[10px]">
                   Ksh{" "}
                   {Number(
-                    displaySummary?.paymentBreakdown?.["M-pesa"] || 0
+                    summary?.paymentBreakdown?.["M-pesa"] || 0
                   ).toLocaleString()}
                 </p>
               </div>
@@ -436,7 +392,7 @@ const ReportsPage = () => {
                 <p className="py-[10px]">
                   Ksh{" "}
                   {Number(
-                    displaySummary?.paymentBreakdown?.["Bank-Transfer"] || 0
+                    summary?.paymentBreakdown?.["Bank-Transfer"] || 0
                   ).toLocaleString()}
                 </p>
               </div>
@@ -447,7 +403,7 @@ const ReportsPage = () => {
               <div className="summary-card">
                 <h2 className="font-bold uppercase">Stock Value</h2>
                 <p className="py-[10px]">
-                  Ksh {Number(displaySummary?.totalStockValue || 0).toLocaleString()}
+                  Ksh {Number(summary?.totalStockValue || 0).toLocaleString()}
                 </p>
               </div>
             </div>
@@ -514,22 +470,20 @@ const ReportsPage = () => {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="6" className="text-center px-3 py-2">
-                          No recent sales found.
-                        </td>
+                        <td colSpan="6" className="text-center px-3 py-2">No recent sales found.</td>
                       </tr>
                     )}
                   </tbody>
                 </table>
               </div>
               <div className="mt-4 text-right">
-                <a
-                  href="/sales"
-                  className="text-blue-600 hover:underline text-sm font-medium"
-                >
-                  View All Sales →
-                </a>
-              </div>
+                  <a
+                    href="/sales"
+                    className="text-blue-600 hover:underline text-sm font-medium"
+                  >
+                    View All Sales →
+                  </a>
+                </div>
             </div>
           </div>
         </div>

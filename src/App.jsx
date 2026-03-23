@@ -4,7 +4,6 @@ import Navbar from "./assets/components/NavBar/Navbar";
 import Footer from "./assets/components/Footer/Footer";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
-import toast from "react-hot-toast";
 import LoginPage from "./assets/pages/LoginPage";
 import SignupPage from "./assets/pages/SignupPage";
 import DashboardPage from "./assets/pages/DashboardPage";
@@ -16,7 +15,6 @@ import ProtectedRoute from "./assets/components/ProtectedRoutes/ProtectedRoute";
 import MobileMenu from "./assets/components/Mobilemenu/MobileMenu";
 import StaffPage from "./assets/pages/StaffPage";
 import SubscriptionPage from "./assets/pages/SubscriptionPage";
-//  import { syncOfflineSales } from "./assets/utils/syncService";
 
 function App() {
   useEffect(() => {
@@ -36,22 +34,6 @@ function App() {
       return () => clearTimeout(timer);
     }
   }, []);
-
-  // useEffect(() => {
-  //   const handleOnline = () => {
-  //     toast.success("Back online! Syncing sales...");
-  //     syncOfflineSales();
-  //   };
-  
-  //   window.addEventListener('online', handleOnline);
-    
-  //   // Also try to sync on app load if online
-  //   if (navigator.onLine) {
-  //     syncOfflineSales();
-  //   }
-  
-  //   return () => window.removeEventListener('online', handleOnline);
-  // }, []);
   return (
     <>
       <Toaster position="top-center" reverseOrder={false} />

@@ -30,17 +30,12 @@ const StockPage = () => {
   ];
 
   const [formData, setFormData] = useState(initialFormState);
-  const [stockItems, setStockItems] = useState(() => {
-    // 1. Initial State: Load from localStorage immediately for offline access
-    const savedStock = localStorage.getItem("cached_stock");
-    return savedStock ? JSON.parse(savedStock) : [];
-  });
+  const [stockItems, setStockItems] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editId, setEditId] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
-  const [isOnline, setIsOnline] = useState(navigator.onLine); // Track online status
 
   const categories = [...new Set(stockItems.map((s) => s.category))];
 
@@ -61,53 +56,37 @@ const StockPage = () => {
     });
   }, [stockItems, selectedCategory, searchTerm]);
 
-  // Monitor Online/Offline Status
+  // ✅ Fetch stock items properly
   useEffect(() => {
-    const handleStatus = () => setIsOnline(navigator.onLine);
-    window.addEventListener("online", handleStatus);
-    window.addEventListener("offline", handleStatus);
-    return () => {
-      window.removeEventListener("online", handleStatus);
-      window.removeEventListener("offline", handleStatus);
-    };
-  }, []);
-
- // ✅ Fetch stock items with Offline Support
- useEffect(() => {
-  const token = localStorage.getItem("token"); 
-
-  fetch(`${API_URL}/api/stock`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`
-    }
-  })
-    .then((res) => {
-      if (!res.ok) throw new Error("Failed to fetch stock");
-      return res.json();
-    })
-    .then((data) => {
-      if (Array.isArray(data)) {
-        // 2. Update both State and LocalStorage on success
-        setStockItems(data);
-        localStorage.setItem("cached_stock", JSON.stringify(data));
+    // Get your token from wherever you store it (localStorage is common)
+    const token = localStorage.getItem("token"); 
+  
+    fetch(`${API_URL}/api/stock`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}` // ⬅️ Add this!
       }
     })
-    .catch((err) => {
-      console.error("Fetch failed, using offline cache:", err);
-      // If fetch fails (offline), the state remains as the cached version 
-      // initialized in the useState hook above.
-      // toast.error("Offline: Showing last saved stock", { icon: "📡" });
-    });
-}, []);
-
-// Update localStorage whenever stockItems change (Add/Edit/Delete)
-useEffect(() => {
-  if (stockItems.length > 0) {
-    localStorage.setItem("cached_stock", JSON.stringify(stockItems));
-  }
-}, [stockItems]);
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error("Failed to fetch stock");
+        }
+        return res.json();
+      })
+      .then((data) => {
+        // Ensure data is an array before setting state
+        if (Array.isArray(data)) {
+          setStockItems(data);
+        } else {
+          setStockItems([]); 
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        setStockItems([]); // Reset to empty array on error to prevent .map crash
+      });
+  }, []);
 
   useEffect(() => {
     if (showModal) {
@@ -131,9 +110,6 @@ useEffect(() => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!isOnline) {
-      return toast.error("Internet required to add or edit stock.");
-  }
 
     const payload = {
       date: formData.date,
@@ -220,10 +196,6 @@ useEffect(() => {
   };
 
   const handleDelete = (id) => {
-    if (!isOnline) {
-      return toast.error("Internet required to add or edit products.");
-  }
-
     fetch(`${API_URL}/api/stock/${id}`, {
       method: "DELETE",
     })
@@ -285,7 +257,7 @@ useEffect(() => {
   return (
     <div className="stock-wrapper">
       <div className="stock-content">
-        <h1 className="text-2xl uppercase font-bold mb-[20px]">Stock {isOnline ? <span className="text-green-500 text-xs text-none">● Online</span> : <span className="text-gray-400 text-xs">● Offline</span>}</h1>
+        <h1 className="text-2xl uppercase font-bold mb-[20px]">Stock</h1>
         <div className="stock-content-wrapper flex gap-[20px]">
           <div className="stock-content-wrapper-menu">
             <div className="stock-content-menu">
