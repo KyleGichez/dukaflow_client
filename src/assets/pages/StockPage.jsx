@@ -6,7 +6,6 @@ import "../styles/StockPage.css";
 import API_URL from "../../api";
 
 const StockPage = () => {
-
   const initialFormState = {
     product: "",
     date: new Date().toISOString().split("T")[0],
@@ -20,14 +19,7 @@ const StockPage = () => {
   const user = JSON.parse(localStorage.getItem("user"));
   const role = user?.role;
 
-  const unitOptions = [
-    "pieces",
-    "kgs",
-    "bags",
-    "packets",
-    "meters",
-    "litres",
-  ];
+  const unitOptions = ["pieces", "kgs", "bags", "packets", "meters", "litres"];
 
   const [formData, setFormData] = useState(initialFormState);
   const [stockItems, setStockItems] = useState([]);
@@ -59,14 +51,14 @@ const StockPage = () => {
   // ✅ Fetch stock items properly
   useEffect(() => {
     // Get your token from wherever you store it (localStorage is common)
-    const token = localStorage.getItem("token"); 
-  
+    const token = localStorage.getItem("token");
+
     fetch(`${API_URL}/api/stock`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}` // ⬅️ Add this!
-      }
+        Authorization: `Bearer ${token}`, // ⬅️ Add this!
+      },
     })
       .then((res) => {
         if (!res.ok) {
@@ -79,7 +71,7 @@ const StockPage = () => {
         if (Array.isArray(data)) {
           setStockItems(data);
         } else {
-          setStockItems([]); 
+          setStockItems([]);
         }
       })
       .catch((err) => {
@@ -125,9 +117,14 @@ const StockPage = () => {
       ? `${API_URL}/api/stock/${editId}`
       : `${API_URL}/api/stock`;
 
+    const token = localStorage.getItem("token");
+
     fetch(url, {
       method,
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
       body: JSON.stringify(payload),
     })
       .then((res) => {
@@ -196,8 +193,15 @@ const StockPage = () => {
   };
 
   const handleDelete = (id) => {
+    
+    const token = localStorage.getItem("token");
+
     fetch(`${API_URL}/api/stock/${id}`, {
       method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`, // ⬅️ Add this!
+      },
     })
       .then((res) => res.json())
       .then(() => {
@@ -306,7 +310,7 @@ const StockPage = () => {
                 </li>
                 <li className="menu-item flex items-center gap-[10px]">
                   <span>
-                  <Icon icon="fa:users" width="24" height="24" />
+                    <Icon icon="fa:users" width="24" height="24" />
                   </span>
                   <a href="/staff">Staff</a>
                 </li>
