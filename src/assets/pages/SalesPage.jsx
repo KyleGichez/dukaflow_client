@@ -147,7 +147,12 @@ const SalesPage = () => {
         const prodData = await prodRes.json();
         setProducts(Array.isArray(prodData) ? prodData : []);
       } catch (err) {
-        toast.error(`Online sync failed: ${err.message}. Saving locally...`);
+        toast.error(`Sale not recorded: ${err.message}`,  {
+          style: {
+            background: "#dc2626",
+            color: "#fff",
+          },
+        });
         saveToOffline(payload);
       }
     } else {
@@ -157,21 +162,21 @@ const SalesPage = () => {
   };
 
   // Helper function to handle Dexie storage
-  const saveToOffline = async (payload) => {
-    try {
-      await db.offlineSales.add(payload);
-      toast.info(
-        "Saved to phone (Offline). It will sync when internet returns."
-      );
+  // const saveToOffline = async (payload) => {
+  //   try {
+  //     await db.offlineSales.add(payload);
+  //     toast.info(
+  //       "Saved to phone (Offline). It will sync when internet returns."
+  //     );
 
-      // Update local UI state so the user sees the sale immediately
-      setDbSales((prev) => [payload, ...prev]);
-      setFormData(initialState);
-      setShowModal(false);
-    } catch (err) {
-      toast.error("Failed to save even offline.");
-    }
-  };
+  //     // Update local UI state so the user sees the sale immediately
+  //     setDbSales((prev) => [payload, ...prev]);
+  //     setFormData(initialState);
+  //     setShowModal(false);
+  //   } catch (err) {
+  //     toast.error("Failed to save even offline.");
+  //   }
+  // };
 
   const handleDelete = async (id) => {
     const token = localStorage.getItem("token");
