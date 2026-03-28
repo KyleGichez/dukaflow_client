@@ -169,7 +169,7 @@ const SalesPage = () => {
       setFormData(initialState);
       setShowModal(false);
     } catch (err) {
-      toast.error("Failed to save even offline. Check storage space.");
+      toast.error("Failed to save even offline.");
     }
   };
 
