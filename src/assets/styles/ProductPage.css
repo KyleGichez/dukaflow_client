@@ -146,8 +146,8 @@
   }
 
   .modal-wrapper{
-    width: 300px;
-    height: 400px;
+    width: 100%;
+    height: auto;
     overflow-y: auto;
   }
 

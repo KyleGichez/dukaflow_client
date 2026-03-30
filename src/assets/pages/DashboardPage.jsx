@@ -82,12 +82,6 @@ const DashboardPage = () => {
   }, [filter]);
 
   useEffect(() => {
-    if (user.trialExpired) {
-      onOpenPayment("Monthly", 1000);
-    }
-  }, []);
-
-  useEffect(() => {
     const savedUser = localStorage.getItem("user");
     if (savedUser) {
       const userData = JSON.parse(savedUser);
