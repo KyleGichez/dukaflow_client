@@ -6,6 +6,7 @@ import "../styles/DashboardPage.css";
 import { db } from "../../../src/db.js";
 import api from "../../../src/api/axios";
 
+
 const DashboardPage = () => {
   function getTodaysDate() {
     return new Date().toLocaleDateString();
@@ -13,6 +14,9 @@ const DashboardPage = () => {
 
   const userString = localStorage.getItem("user");
   const user = userString ? JSON.parse(userString) : null;
+
+  // Check if user is Admin
+  const isAdmin = user?.role === "admin";
 
   // 3. Calculate days left (only if user exists)
   const daysLeft = user?.trialEndDate
@@ -95,21 +99,25 @@ const DashboardPage = () => {
       const handleSync = async () => {
         if (navigator.onLine) {
           const offlineSales = await db.offlineSales.toArray();
-          
+
           if (offlineSales.length > 0) {
             console.log("Syncing offline sales to cloud...");
             try {
               const token = localStorage.getItem("token");
-              
+
               // Push each sale to your Render API
               for (const sale of offlineSales) {
-                await axios.post("https://dukaflow-server.onrender.com/api/sales", sale, {
-                  headers: { Authorization: `Bearer ${token}` }
-                });
+                await axios.post(
+                  "https://dukaflow-server.onrender.com/api/sales",
+                  sale,
+                  {
+                    headers: { Authorization: `Bearer ${token}` },
+                  }
+                );
                 // Remove from phone once successfully uploaded
                 await db.offlineSales.delete(sale.id);
               }
-              
+
               console.log("Sync Complete!");
             } catch (err) {
               console.error("Sync failed, will retry later.");
@@ -117,12 +125,12 @@ const DashboardPage = () => {
           }
         }
       };
-  
+
       // Listen for the browser coming back online
       window.addEventListener("online", handleSync);
       // Also try to sync when the app first loads
       handleSync();
-  
+
       return () => window.removeEventListener("online", handleSync);
     }, []);
   };
@@ -164,7 +172,7 @@ const DashboardPage = () => {
           <div className="reportPage-content-wrapper-menu">
             <div className="reportPage-content-menu">
               <ul>
-                <li className="menu-item flex items-center gap-[10px]">
+                <li className="menu-item active flex items-center gap-[10px]">
                   <span>
                     <Icon
                       icon="material-symbols:dashboard"
@@ -196,7 +204,7 @@ const DashboardPage = () => {
                   </span>
                   <a href="/sales">Sales</a>
                 </li>
-                <li className="menu-item active flex items-center gap-[10px]">
+                <li className="menu-item flex items-center gap-[10px]">
                   <span>
                     <Icon
                       icon="garden:file-spreadsheet-fill-12"
@@ -206,6 +214,22 @@ const DashboardPage = () => {
                   </span>
                   <a href="/summary">Reports</a>
                 </li>
+                {isAdmin && (
+                  <>
+                    <li className="menu-item flex items-center gap-[10px]">
+                      <span>
+                        <Icon icon="fa:users" width="24" height="24" />
+                      </span>
+                      <a href="/staff">Staff</a>
+                    </li>
+                    <li className="menu-item flex items-center gap-[10px]">
+                      <span>
+                        <Icon icon="ri:heart-add-fill" width="24" height="24" />
+                      </span>
+                      <a href="/subscription">Subscription</a>
+                    </li>
+                  </>
+                )}
               </ul>
             </div>
           </div>
@@ -392,18 +416,22 @@ const DashboardPage = () => {
                   </span>
                   <a href="/summary">Reports</a>
                 </li>
-                <li className="menu-item flex items-center gap-[10px]">
-                  <span>
-                  <Icon icon="fa:users" width="24" height="24" />
-                  </span>
-                  <a href="/staff">Staff</a>
-                </li>
-                <li className="menu-item flex items-center gap-[10px]">
-                  <span>
-                    <Icon icon="si:add-fill" width="24" height="24" />
-                  </span>
-                  <a href="/subscription">Subscription</a>
-                </li>
+                {isAdmin && (
+                  <>
+                    <li className="menu-item flex items-center gap-[10px]">
+                      <span>
+                        <Icon icon="fa:users" width="24" height="24" />
+                      </span>
+                      <a href="/staff">Staff</a>
+                    </li>
+                    <li className="menu-item flex items-center gap-[10px]">
+                      <span>
+                        <Icon icon="ri:heart-add-fill" width="24" height="24" />
+                      </span>
+                      <a href="/subscription">Subscription</a>
+                    </li>
+                  </>
+                )}
               </ul>
             </div>
           </div>
@@ -509,7 +537,7 @@ const DashboardPage = () => {
                   </div>
                 </div>
               </div>
-              <div className="dashboard-product-sales">
+              <div className="dashboard-product-sales mb-[30px]">
                 <h5 className="font-bold uppercase flex items-center justify-between">
                   Sales Summary
                   <span>

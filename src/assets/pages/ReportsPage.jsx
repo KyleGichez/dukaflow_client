@@ -12,7 +12,7 @@ const ReportsPage = () => {
   }
 
   const user = JSON.parse(localStorage.getItem("user"));
-
+  const isAdmin = user?.role === "admin";
 
   const exportToExcel = () => {
     // 1. Prepare clean data
@@ -70,7 +70,7 @@ const ReportsPage = () => {
       try {
         // 1. Get the token from localStorage
         const token = localStorage.getItem("token");
-        
+
         // 2. Define the headers
         const config = {
           headers: {
@@ -90,7 +90,7 @@ const ReportsPage = () => {
         console.error("Error fetching report data:", error);
         // If it's a 401, you might want to redirect to login
         if (error.response?.status === 401) {
-            console.error("Session expired or invalid token");
+          console.error("Session expired or invalid token");
         }
       } finally {
         setLoading(false);
@@ -152,6 +152,22 @@ const ReportsPage = () => {
                   </span>
                   <a href="/summary">Reports</a>
                 </li>
+                {isAdmin && (
+                  <>
+                    <li className="menu-item flex items-center gap-[10px]">
+                      <span>
+                        <Icon icon="fa:users" width="24" height="24" />
+                      </span>
+                      <a href="/staff">Staff</a>
+                    </li>
+                    <li className="menu-item flex items-center gap-[10px]">
+                      <span>
+                        <Icon icon="ri:heart-add-fill" width="24" height="24" />
+                      </span>
+                      <a href="/subscription">Subscription</a>
+                    </li>
+                  </>
+                )}
               </ul>
             </div>
           </div>
@@ -286,7 +302,7 @@ const ReportsPage = () => {
   }
   return (
     <div className="reportPage-wrapper">
-      <div className="reportPage-content"> 
+      <div className="reportPage-content">
         <h1 className="text-2xl font-bold uppercase mb-[20px]">Reports</h1>
         <div className="reportPage-content-wrapper flex gap-[20px]">
           <div className="reportPage-content-wrapper-menu">
@@ -334,18 +350,22 @@ const ReportsPage = () => {
                   </span>
                   <a href="/summary">Reports</a>
                 </li>
-                <li className="menu-item flex items-center gap-[10px]">
-                  <span>
-                  <Icon icon="fa:users" width="24" height="24" />
-                  </span>
-                  <a href="/staff">Staff</a>
-                </li>
-                <li className="menu-item flex items-center gap-[10px]">
-                  <span>
-                    <Icon icon="si:add-fill" width="24" height="24" />
-                  </span>
-                  <a href="/subscription">Subscription</a>
-                </li>
+                {isAdmin && (
+                  <>
+                    <li className="menu-item flex items-center gap-[10px]">
+                      <span>
+                        <Icon icon="fa:users" width="24" height="24" />
+                      </span>
+                      <a href="/staff">Staff</a>
+                    </li>
+                    <li className="menu-item flex items-center gap-[10px]">
+                      <span>
+                        <Icon icon="ri:heart-add-fill" width="24" height="24" />
+                      </span>
+                      <a href="/subscription">Subscription</a>
+                    </li>
+                  </>
+                )}
               </ul>
             </div>
           </div>
@@ -470,20 +490,22 @@ const ReportsPage = () => {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="6" className="text-center px-3 py-2">No recent sales found.</td>
+                        <td colSpan="6" className="text-center px-3 py-2">
+                          No recent sales found.
+                        </td>
                       </tr>
                     )}
                   </tbody>
                 </table>
               </div>
               <div className="mt-4 text-right">
-                  <a
-                    href="/sales"
-                    className="text-blue-600 hover:underline text-sm font-medium"
-                  >
-                    View All Sales →
-                  </a>
-                </div>
+                <a
+                  href="/sales"
+                  className="text-blue-600 hover:underline text-sm font-medium"
+                >
+                  View All Sales →
+                </a>
+              </div>
             </div>
           </div>
         </div>

@@ -28,7 +28,10 @@ const StaffPage = () => {
     role: "cashier", // Default role
   });
 
-  // ✅ 1. Fetch Staff 
+  const user = JSON.parse(localStorage.getItem("user"));
+  const isAdmin = user?.role === "admin";
+
+  // ✅ 1. Fetch Staff
   const fetchStaff = async () => {
     try {
       const res = await api.get("/staff");
@@ -60,7 +63,7 @@ const StaffPage = () => {
     }
   };
 
-  // ✅ 3. Delete Staff Logic 
+  // ✅ 3. Delete Staff Logic
   const handleDeleteStaff = async (id, name) => {
     console.log(`Deleting Staff ID: ${id}`);
     try {
@@ -115,9 +118,7 @@ const StaffPage = () => {
   return (
     <div className="staff-wrapper">
       <div className="staff-content">
-        <h1 className="text-2xl font-bold uppercase mb-[20px]">
-          Staff
-        </h1>
+        <h1 className="text-2xl font-bold uppercase mb-[20px]">Staff</h1>
         <div className="staff-content-wrapper flex gap-[20px]">
           <div className="staff-content-wrapper-menu">
             <div className="staff-content-menu">
@@ -164,18 +165,23 @@ const StaffPage = () => {
                   </span>
                   <a href="/summary">Reports</a>
                 </li>
-                <li className="menu-item active flex items-center gap-[10px]">
-                  <span>
-                    <Icon icon="fa:users" width="24" height="24" />
-                  </span>
-                  <a href="/staff">Staff</a>
-                </li>
-                <li className="menu-item flex items-center gap-[10px]">
-                  <span>
-                    <Icon icon="si:add-fill" width="24" height="24" />
-                  </span>
-                  <a href="/subscription">Subscription</a>
-                </li>
+                {isAdmin && (
+                  <>
+                    <li className="menu-item active flex items-center gap-[10px]">
+                      <span>
+                        <Icon icon="fa:users" width="24" height="24" />
+                      </span>
+                      <a href="/staff">Staff</a>
+                    </li>
+                    <li className="menu-item flex items-center gap-[10px]">
+                      <span>
+                        {" "}
+                        <Icon icon="ri:heart-add-fill" width="24" height="24" />
+                      </span>
+                      <a href="/subscription">Subscription</a>
+                    </li>
+                  </>
+                )}
               </ul>
             </div>
           </div>

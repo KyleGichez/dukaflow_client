@@ -17,7 +17,7 @@ const StockPage = () => {
   };
 
   const user = JSON.parse(localStorage.getItem("user"));
-  const role = user?.role;
+  const isAdmin = user?.role === "admin";
 
   const unitOptions = ["pieces", "kgs", "bags", "packets", "meters", "litres"];
 
@@ -193,7 +193,6 @@ const StockPage = () => {
   };
 
   const handleDelete = (id) => {
-    
     const token = localStorage.getItem("token");
 
     fetch(`${API_URL}/api/stock/${id}`, {
@@ -308,18 +307,23 @@ const StockPage = () => {
                   </span>
                   <a href="/summary">Reports</a>
                 </li>
-                <li className="menu-item flex items-center gap-[10px]">
-                  <span>
-                    <Icon icon="fa:users" width="24" height="24" />
-                  </span>
-                  <a href="/staff">Staff</a>
-                </li>
-                <li className="menu-item flex items-center gap-[10px]">
-                  <span>
-                    <Icon icon="si:add-fill" width="24" height="24" />
-                  </span>
-                  <a href="/subscription">Subscription</a>
-                </li>
+                {isAdmin && (
+                  <>
+                    <li className="menu-item flex items-center gap-[10px]">
+                      <span>
+                        <Icon icon="fa:users" width="24" height="24" />
+                      </span>
+                      <a href="/staff">Staff</a>
+                    </li>
+                    <li className="menu-item flex items-center gap-[10px]">
+                      <span>
+                        {" "}
+                        <Icon icon="ri:heart-add-fill" width="24" height="24" />
+                      </span>
+                      <a href="/subscription">Subscription</a>
+                    </li>
+                  </>
+                )}
               </ul>
             </div>
           </div>
