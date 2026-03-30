@@ -368,7 +368,7 @@ const DashboardPage = () => {
       <div className="dashboard-content">
         <h1 className="text-2xl font-bold uppercase mb-[20px]">Dashboard</h1>
         <h2 className="mb-[20px]">
-          Welcome back, <strong>{userName}</strong>
+          Welcome back, <strong className="capitalize">{userName}</strong>
         </h2>
         <div className="dashboard-content-wrapper flex justify-between gap-[20px]">
           <div className="dashboard-content-wrapper-menu">
