@@ -148,7 +148,7 @@ const SalesPage = () => {
         const prodData = await prodRes.json();
         setProducts(Array.isArray(prodData) ? prodData : []);
       } catch (err) {
-        toast.error(`Sale not recorded: ${err.message}`, {
+        toast.error(`${err.message}`, {
           style: {
             background: "#dc2626",
             color: "#fff",

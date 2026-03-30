@@ -1,0 +1,26 @@
+.settings-wrapper {
+  min-height: 100vh;
+}
+
+.settings-content{
+    padding-top: 15%;
+    margin-bottom: 30px;
+}
+
+.form-input {
+  width: 100%;
+}
+
+.form-input input {
+  border: 1px solid var(--border-color);
+}
+
+@media screen and (max-width: 768px){
+    html,
+  body {
+    overflow-x: hidden;
+  }
+  .settings-content{
+    padding-top: 20%;
+  }
+}

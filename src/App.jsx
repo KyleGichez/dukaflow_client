@@ -15,6 +15,8 @@ import ProtectedRoute from "./assets/components/ProtectedRoutes/ProtectedRoute";
 import MobileMenu from "./assets/components/Mobilemenu/MobileMenu";
 import StaffPage from "./assets/pages/StaffPage";
 import SubscriptionPage from "./assets/pages/SubscriptionPage";
+import SettingsPage from "./assets/pages/SettingsPage";
+
 
 function App() {
   useEffect(() => {
@@ -34,6 +36,12 @@ function App() {
       return () => clearTimeout(timer);
     }
   }, []);
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme") || "light";
+    document.documentElement.setAttribute("data-theme", savedTheme);
+  }, []);
+
   return (
     <>
       <Toaster position="top-center" reverseOrder={false} />
@@ -55,6 +63,7 @@ function App() {
           <Route path="/summary" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
           <Route path="/staff" element={<ProtectedRoute><StaffPage /></ProtectedRoute>} />
           <Route path="/subscription" element={<ProtectedRoute><SubscriptionPage /></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute><SettingsPage/></ProtectedRoute>}/>
         </Routes>
         <Footer />
       </Router>

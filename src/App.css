@@ -12,7 +12,66 @@
     --text-secondary: #475569; /*Medium Gray*/
 }
 
-body{
-    background-color: var(--background-color);
-    font-family: 'inter', sans-serif;
+/* THEME DEFINITIONS */
+:root, [data-theme='light'] {
+  --bg-color: #F8FAFC;
+  --card-bg: #FFFFFF;
+  --text-color: #0a101e;
+  --primary-color: #2563EB; /* Indigo/Blue */
+  --border-color: #E2E8F0;
+  --success-color: #16A34A;
+}
+
+[data-theme='dark'] {
+  --bg-color: #050815;
+  --card-bg: #0F172A;
+  --text-color: #6d6b6b;
+  --primary-color: #38BDF8; /* Sky Blue */
+  --border-color: #1E293B;
+  --success-color: #22C55E;
+}
+
+[data-theme='dark'] h1, 
+[data-theme='dark'] h2, 
+[data-theme='dark'] h3,
+[data-theme='dark'] h4,
+[data-theme='dark'] h5,
+[data-theme='dark'] .navbar-logo h1 a {
+    color: #38BDF8!important; /* Force off-white in dark mode */
+}
+
+[data-theme='mint'] {
+  --bg-color: #F0FDF4; /* Pale Safaricom Green */
+  --card-bg: #FFFFFF;
+  --text-color: #064E3B;
+  --primary-color: #16A34A; /* M-Pesa Green */
+  --border-color: #DCFCE7;
+  --success-color: #15803D;
+}
+
+[data-theme='warm'] {
+  --bg-color: #FFFBEB; /* Hardware/Amber */
+  --card-bg: #FFFFFF;
+  --text-color: #451A03;
+  --primary-color: #D97706; 
+  --border-color: #FEF3C7;
+  --success-color: #059669;
+}
+
+/* BASE STYLES USING VARIABLES */
+body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  transition: all 0.3s ease;
+  font-family: 'inter', sans-serif;
+}
+
+.menu-item.active {
+  background-color: var(--primary-color) !important;
+  color: white !important;
+}
+
+button.primary {
+  background-color: var(--primary-color);
+  color: white;
 }
