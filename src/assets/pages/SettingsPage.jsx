@@ -5,12 +5,15 @@ import API_URL from "../../api";
 import "../styles/SettingsPage.css";
 
 const SettingsPage = () => {
-  const [user, setUser] = useState(JSON.parse(localStorage.getItem("user")));
-  const [formData, setFormData] = useState({
-    FName: user?.FName || "",
+
+  const initialFormState = {
+    FName: "",
+    LName: "",
     currentPassword: "",
     newPassword: "",
-  });
+  }
+  const [user, setUser] = useState(JSON.parse(localStorage.getItem("user")));
+  const [formData, setFormData] = useState(initialFormState);
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -45,6 +48,8 @@ const SettingsPage = () => {
       localStorage.setItem("user", JSON.stringify(res.data.user));
       window.dispatchEvent(new Event("userChanged")); // Refresh Navbar
       toast.success("Profile updated successfully!");
+
+      setFormData(initialFormState);
     } catch (err) {
       console.error(err);
       toast.error(err.response?.data?.message || "Profile update failed!");
@@ -90,7 +95,18 @@ const SettingsPage = () => {
               onChange={(e) =>
                 setFormData({ ...formData, FName: e.target.value })
               }
-              required
+            />
+          </div>
+          <div className="form-input">
+            <label htmlFor="LName">Last Name</label>
+            <input
+              type="text"
+              name="LName"
+              placeholder="Enter your last name"
+              value={formData.LName}
+              onChange={(e) =>
+                setFormData({ ...formData, LName: e.target.value })
+              }
             />
           </div>
           <hr className="my-4" />
@@ -109,7 +125,6 @@ const SettingsPage = () => {
                   setFormData({ ...formData, currentPassword: e.target.value })
                 }
                 placeholder="Enter current password"
-                required
                 style={{ width: "100%", paddingRight: "40px" }} // Space for the button
               />
               <button
@@ -143,7 +158,6 @@ const SettingsPage = () => {
                   setFormData({ ...formData, newPassword: e.target.value })
                 }
                 placeholder="Enter new password"
-                required
                 style={{ width: "100%", paddingRight: "40px" }} // Space for the button
               />
               <button
@@ -167,7 +181,7 @@ const SettingsPage = () => {
             type="submit"
             className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 mb-[20px]"
           >
-            Save All Changes
+            Save
           </button>
         </form>
       </div>
