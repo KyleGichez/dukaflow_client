@@ -32,16 +32,22 @@ const SettingsPage = () => {
   const handleUpdate = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem("token");
-      const res = await axios.put(`${API_URL}/api/auth/settings`, formData, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      // Update local storage so the Navbar name changes immediately
+      const token = localStorage.getItem("token"); // Get token
+      const res = await axios.put(
+        `${API_URL}/api/auth/settings`, 
+        formData, 
+        {
+          headers: { Authorization: `Bearer ${token}` } // Critical!
+        }
+      );
+      
+      // Update local storage so the Navbar changes immediately
       localStorage.setItem("user", JSON.stringify(res.data.user));
+      window.dispatchEvent(new Event("userChanged")); // Refresh Navbar
       toast.success("Profile updated successfully!");
     } catch (err) {
-      toast.error(err.response?.data?.message || "Update failed");
+      console.error(err);
+      toast.error(err.response?.data?.message || "Profile update failed!");
     }
   };
 

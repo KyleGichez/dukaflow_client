@@ -60,6 +60,25 @@
     color: #94a3b8;
 }
 
+.dropdown-menu {
+    background-color: var(--card-bg);
+    border-color: var(--border-color);
+}
+
+/* Fix for background in Dark Mode */
+[data-theme='dark'] .bg-gray-50\/50 {
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+[data-theme='dark'] .bg-gray-200 {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Ensure the progress bar background is visible */
+.bg-gray-200 {
+    background-color: #e2e8f0;
+}
+
 @media screen and (max-width:768px){
     .navbar-content{
         width: 100%;
