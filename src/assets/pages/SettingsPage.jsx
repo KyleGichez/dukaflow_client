@@ -179,7 +179,7 @@ const SettingsPage = () => {
           </div>
           <button
             type="submit"
-            className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 mb-[20px]"
+            className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 mb-[20px] cursor-pointer"
           >
             Save
           </button>
