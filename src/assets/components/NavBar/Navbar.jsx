@@ -99,7 +99,7 @@ const Navbar = () => {
                         className={`text-xs font-bold ${
                           calculateDaysLeft(
                             user.trialEndDate || user.subscription?.endDate
-                          ) <= 3
+                          ) <= 2
                             ? "text-red-500"
                             : "text-[var(--primary-color)]"
                         }`}

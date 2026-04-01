@@ -14,13 +14,14 @@ const SettingsPage = () => {
   }
   const [user, setUser] = useState(JSON.parse(localStorage.getItem("user")));
   const [formData, setFormData] = useState(initialFormState);
-  const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
+  const themeKey = `theme_${user?.id}`;
+  const [theme, setTheme] = useState(localStorage.getItem(themeKey) || user?.themePreference || "light");
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
 
   const handleThemeChange = (newTheme) => {
     setTheme(newTheme);
-    localStorage.setItem("theme", newTheme);
+    localStorage.setItem(themeKey, newTheme);
     document.documentElement.setAttribute("data-theme", newTheme);
   };
 
@@ -36,9 +37,16 @@ const SettingsPage = () => {
     e.preventDefault();
     try {
       const token = localStorage.getItem("token"); // Get token
+
+      // Combine form data with the selected theme
+      const updateData = { 
+        ...formData, 
+        themePreference: theme 
+      };
+
       const res = await axios.put(
         `${API_URL}/api/auth/settings`, 
-        formData, 
+        updateData, 
         {
           headers: { Authorization: `Bearer ${token}` } // Critical!
         }
@@ -46,6 +54,8 @@ const SettingsPage = () => {
       
       // Update local storage so the Navbar changes immediately
       localStorage.setItem("user", JSON.stringify(res.data.user));
+      localStorage.setItem(`theme_${res.data.user.id}`, res.data.user.themePreference);
+
       window.dispatchEvent(new Event("userChanged")); // Refresh Navbar
       toast.success("Profile updated successfully!");
 
