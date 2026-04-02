@@ -71,7 +71,7 @@ const SettingsPage = () => {
       <div className="settings-content">
         <h1 className="text-2xl font-bold uppercase mb-6">Settings</h1>
         {/* Theme Section */}
-        <section className="mb-10 p-4 border rounded-lg bg-white shadow-sm">
+        <section className="choose-theme mb-10 p-4 border rounded-lg bg-white shadow-sm">
           <h2 className="text-lg font-semibold mb-4">Choose Theme:</h2>
           <div className="flex flex-wrap gap-4">
             {["light", "dark", "mint", "warm"].map((t) => (
@@ -92,7 +92,7 @@ const SettingsPage = () => {
         {/* Profile Section */}
         <form
           onSubmit={handleUpdate}
-          className="space-y-4 p-4 border rounded-lg bg-white shadow-sm"
+          className="update-settings space-y-4 p-4 border rounded-lg bg-white shadow-sm"
         >
           <h2 className="text-lg font-semibold">Update Profile</h2>
           <div className="form-input">

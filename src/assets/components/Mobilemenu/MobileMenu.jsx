@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { LayoutDashboard, Package, Database, ShoppingCart, BarChart3, Users, HeartPlus } from "lucide-react";
+import '../../styles/Navbar.css';
 
 const MobileMenu = () => {
   const [user, setUser] = useState(null);
@@ -38,7 +39,7 @@ const MobileMenu = () => {
   });
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 z-50 w-full h-16 bg-white border-t border-gray-200 shadow-lg">
+    <nav className="mobile-menu md:hidden fixed bottom-0 left-0 z-50 w-full h-16 border-t border-gray-200 shadow-lg">
       {/* 3. Use 'flex' and 'w-full' to ensure items distribute evenly */}
       <div className="flex h-full w-full mx-auto">
         {visibleItems.map((item) => {

@@ -50,7 +50,7 @@ const StaffPage = () => {
     e.preventDefault();
     try {
       const response = await api.post("/staff", newStaff);
-      
+
       setShowModal(false);
       setNewStaff(initialFormState);
       fetchStaff(); // Refresh table

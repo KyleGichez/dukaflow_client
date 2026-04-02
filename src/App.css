@@ -58,6 +58,76 @@
   --success-color: #059669;
 }
 
+.content-stats-card, 
+.dashboard-product-stats-left,
+.dashboard-product-stats-right, 
+.dashboard-product-sales,
+.dashboard-content-menu ul li,
+.product-content-menu ul li,
+.stock-content-menu ul li,
+.sales-content-menu ul li,
+.reportPage-content-menu ul li,
+.staff-content-menu ul li,
+.summary-card,
+.sales-table,
+.reports-table,
+.reportPage-table,
+.product-table,
+.stock-table,
+.staff-table,
+.choose-theme,
+.update-settings,
+.modal-wrapper,
+.form-modal,
+.form-input input,
+.form-input select,
+.inventory-controls select,
+.dashboard-product-sales select,
+.reportPage-table select {
+  background-color: var(--card-bg) !important;
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.dashboard-content-menu ul li a,
+.product-content-menu ul li a,
+.stock-content-menu ul li a,
+.sales-content-menu ul li a,
+.staff-content-menu ul li a,
+.reportPage-content-menu ul li a{
+  color: var(--text-color);
+}
+
+.menu-item span{
+  color: var(--text-color);
+}
+
+/* Target the active list item */
+.menu-item.active {
+  background-color: var(--primary-color) !important;
+  color: #FFFFFF !important;
+}
+
+/* Target the icon span inside the active item */
+.menu-item.active span,
+.menu-item.active .iconify,
+.menu-item.active svg {
+  color: #FFFFFF !important;
+}
+
+/* Target the link/anchor tag inside the active item */
+.menu-item.active a {
+  color: #FFFFFF !important;
+  font-weight: 600;
+}
+
+/* Ensure no hover effects override the active white color */
+.menu-item.active:hover a,
+.menu-item.active:hover span {
+  color: #FFFFFF !important;
+}
+
 /* BASE STYLES USING VARIABLES */
 body {
   background-color: var(--bg-color);
