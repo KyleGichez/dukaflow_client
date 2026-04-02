@@ -111,7 +111,7 @@
 
 /* Target the icon span inside the active item */
 .menu-item.active span,
-.menu-item.active .iconify,
+.menu-item.active,
 .menu-item.active svg {
   color: #FFFFFF !important;
 }

@@ -1,7 +1,6 @@
-import React from "react";
-import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom"; // Added Link
-import { User, Settings, LogOut } from "lucide-react"; // Nice icons for the menu
+import React, { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { User, Settings, LogOut } from "lucide-react";
 import "../../styles/Navbar.css";
 
 const Navbar = () => {
@@ -9,20 +8,28 @@ const Navbar = () => {
   const [showDropdown, setShowDropdown] = useState(false);
   const navigate = useNavigate();
 
+  // 1. Combined User Loader & Event Listener
   useEffect(() => {
     const loadUser = () => {
       const savedUser = localStorage.getItem("user");
-      if (savedUser) {
-        setUser(JSON.parse(savedUser));
-      } else {
-        setUser(null);
-      }
+      setUser(savedUser ? JSON.parse(savedUser) : null);
     };
 
     loadUser();
     window.addEventListener("userChanged", loadUser);
     return () => window.removeEventListener("userChanged", loadUser);
   }, []);
+
+  // 2. Close Dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showDropdown && !event.target.closest(".user-dropdown-container")) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showDropdown]);
 
   const calculateDaysLeft = (expiryDate) => {
     if (!expiryDate) return 0;
@@ -36,9 +43,21 @@ const Navbar = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     setUser(null);
+    setShowDropdown(false);
     window.dispatchEvent(new Event("userChanged"));
     navigate("/login");
   };
+
+  // 3. Safe Subscription Math
+  const daysRemaining = user
+    ? calculateDaysLeft(user.trialEndDate || user.subscription?.endDate)
+    : 0;
+  // Cap percentage between 0 and 100 to prevent bar overflow
+  const progressPercentage = Math.max(
+    0,
+    Math.min((daysRemaining / 30) * 100, 100)
+  );
+  const isCritical = daysRemaining <= 3;
 
   return (
     <div className="navbar-wrapper w-full fixed top-0 z-[1000]">
@@ -50,6 +69,7 @@ const Navbar = () => {
             </Link>
           </h1>
         </div>
+
         <div className="navbar-login-signup">
           {user ? (
             <div className="user-dropdown-container relative">
@@ -58,7 +78,7 @@ const Navbar = () => {
                 className="navbar-signup-btn flex items-center gap-2"
                 onClick={() => setShowDropdown(!showDropdown)}
               >
-                <User size={18} />
+                <User size={20} />
                 <span className="capitalize">{user.FName}</span>
                 <span
                   className={`transition-transform ${
@@ -68,9 +88,10 @@ const Navbar = () => {
                   ▼
                 </span>
               </button>
+
               {showDropdown && (
-                <div className="dropdown-menu absolute right-0 mt-2 w-72 rounded-xl shadow-2xl border overflow-hidden animate-in fade-in slide-in-from-top-2">
-                  {/* 1. USER PROFILE HEADER WITH AVATAR */}
+                <div className="dropdown-menu absolute right-0 mt-2 w-72 rounded-xl shadow-2xl border overflow-hidden animate-in fade-in slide-in-from-top-2 bg-white text-left">
+                  {/* USER PROFILE HEADER */}
                   <div className="p-5 border-b bg-gray-50/50 flex items-center gap-4">
                     <div className="w-12 h-12 rounded-full bg-[var(--primary-color)] flex items-center justify-center text-white text-xl font-bold border-2 border-white shadow-sm">
                       {user.FName?.charAt(0).toUpperCase()}
@@ -87,7 +108,8 @@ const Navbar = () => {
                       </span>
                     </div>
                   </div>
-                  {/* 2. SUBSCRIPTION PROGRESS BAR */}
+
+                  {/* SUBSCRIPTION PROGRESS BAR */}
                   <div className="p-4 border-b">
                     <div className="flex justify-between items-end mb-2">
                       <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
@@ -97,53 +119,41 @@ const Navbar = () => {
                       </span>
                       <span
                         className={`text-xs font-bold ${
-                          calculateDaysLeft(
-                            user.trialEndDate || user.subscription?.endDate
-                          ) <= 2
+                          isCritical
                             ? "text-red-500"
                             : "text-[var(--primary-color)]"
                         }`}
                       >
-                        {calculateDaysLeft(
-                          user.trialEndDate || user.subscription?.endDate
-                        )}{" "}
-                        Days Left
+                        {daysRemaining} Days Left
                       </span>
                     </div>
-                    {/* Progress Bar Container */}
+
                     <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
                       <div
-                        className="h-full transition-all duration-500"
+                        className="h-full transition-all duration-700 ease-out"
                         style={{
-                          width: `${
-                            (calculateDaysLeft(
-                              user.trialEndDate || user.subscription?.endDate
-                            ) /
-                              30) *
-                            100
-                          }%`,
-                          backgroundColor:
-                            calculateDaysLeft(
-                              user.trialEndDate || user.subscription?.endDate
-                            ) <= 3
-                              ? "#EF4444"
-                              : "var(--primary-color)",
+                          width: `${progressPercentage}%`,
+                          backgroundColor: isCritical
+                            ? "#EF4444"
+                            : "var(--primary-color)",
                         }}
                       ></div>
                     </div>
 
-                    {calculateDaysLeft(
-                      user.trialEndDate || user.subscription?.endDate
-                    ) <= 3 && (
+                    {isCritical && (
                       <button
-                        onClick={() => navigate("/subscription")}
+                        onClick={() => {
+                          setShowDropdown(false);
+                          navigate("/subscription");
+                        }}
                         className="mt-3 w-full py-1.5 text-[10px] font-bold bg-red-50 text-red-600 rounded-lg border border-red-100 hover:bg-red-100 transition"
                       >
                         RENEW NOW
                       </button>
                     )}
                   </div>
-                  {/* 3. NAVIGATION LINKS */}
+
+                  {/* NAVIGATION LINKS */}
                   <div className="p-2">
                     <Link
                       to="/settings"
