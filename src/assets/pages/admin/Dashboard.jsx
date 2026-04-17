@@ -319,7 +319,7 @@ const AdminDashboard = () => {
                     </a>
                   </div>
                 </div>
-                <div className="invites-sent-table mb-[20px] px-3 py-3">
+                {/* <div className="invites-sent-table mb-[20px] px-3 py-3">
                   <h4 className="font-bold py-2 uppercase">Pending Invites</h4>
                   <table className="table-auto w-full text-left">
                     <thead>
@@ -351,7 +351,7 @@ const AdminDashboard = () => {
                       View All Invites →
                     </a>
                   </div>
-                </div>
+                </div> */}
               </div>
             </div>
           </div>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { User, Settings, LogOut } from "lucide-react";
-import axios from "axios"; // Ensure axios is imported
+import { Icon } from "@iconify/react";
 import "../../styles/Navbar.css";
 import api from "../../../api/axios";
 
@@ -102,7 +102,7 @@ const Navbar = () => {
                 className="navbar-signup-btn flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-50 hover:bg-gray-100 transition"
                 onClick={() => setShowDropdown(!showDropdown)}
               >
-                <User size={20} />
+                <span><Icon icon="mdi:account" width="24" height="24" /></span>
                 <span className="capitalize font-medium">{user.fname}</span>
                 <span
                   className={`text-[10px] transition-transform ${
@@ -218,9 +218,10 @@ const Navbar = () => {
           ) : (
             <Link
               to="/login"
-              className="navbar-signup-btn px-6 py-2 bg-blue-600 text-white rounded-lg"
+              className="navbar-signup-btn flex items-center gap-[5px] px-6 py-2 bg-blue-600 text-white rounded-lg"
             >
               Login
+              <span><Icon icon="material-symbols:login" width="24" height="24" /></span>
             </Link>
           )}
         </div>
