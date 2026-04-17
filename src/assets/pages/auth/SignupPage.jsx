@@ -3,8 +3,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
-import API_URL from "../../api";
-import "../styles/SignupPage.css";
+import API_URL from "../../../api";
+import "../../styles/SignupPage.css";
 
 const SignupPage = () => {
   const [formData, setFormData] = useState({

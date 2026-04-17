@@ -1,14 +1,14 @@
 import React from "react";
 import { useState, useEffect } from "react";
-import api from "../../../src/api/axios";
+import api from "../../../api/axios";
 import toast from "react-hot-toast";
 import { Icon } from "@iconify/react";
-import "../styles/StaffPage.css";
+import "../../styles/StaffPage.css";
 
 const StaffPage = () => {
   const initialFormState = {
-    FName: "",
-    LName: "",
+    fname: "",
+    lname: "",
     email: "",
     phone: "",
     password: "",
@@ -232,7 +232,10 @@ const StaffPage = () => {
                           <legend>Add New Staff</legend>
                           <div className="flex">
                             <div className="form-input">
-                              <label className="block text-sm font-medium mb-1">
+                              <label
+                                htmlFor="fname"
+                                className="block text-sm font-medium mb-1"
+                              >
                                 First Name
                               </label>
                               <input
@@ -240,17 +243,20 @@ const StaffPage = () => {
                                 className="w-full border p-2 rounded"
                                 placeholder="Enter first name"
                                 required
-                                value={newStaff.FName}
+                                value={newStaff.fname}
                                 onChange={(e) =>
                                   setNewStaff({
                                     ...newStaff,
-                                    FName: e.target.value,
+                                    fname: e.target.value,
                                   })
                                 }
                               />
                             </div>
                             <div className="form-input">
-                              <label className="block text-sm font-medium mb-1">
+                              <label
+                                htmlFor="lname"
+                                className="block text-sm font-medium mb-1"
+                              >
                                 Last Name
                               </label>
                               <input
@@ -258,11 +264,11 @@ const StaffPage = () => {
                                 className="w-full border p-2 rounded"
                                 placeholder="Enter last name"
                                 required
-                                value={newStaff.LName}
+                                value={newStaff.lname}
                                 onChange={(e) =>
                                   setNewStaff({
                                     ...newStaff,
-                                    LName: e.target.value,
+                                    lname: e.target.value,
                                   })
                                 }
                               />
@@ -270,7 +276,10 @@ const StaffPage = () => {
                           </div>
                           <div className="flex">
                             <div className="form-input">
-                              <label className="block text-sm font-medium mb-1">
+                              <label
+                                htmlFor="email"
+                                className="block text-sm font-medium mb-1"
+                              >
                                 Email Address
                               </label>
                               <input
@@ -288,7 +297,10 @@ const StaffPage = () => {
                               />
                             </div>
                             <div className="form-input">
-                              <label className="block text-sm font-medium mb-1">
+                              <label
+                                htmlFor="phone"
+                                className="block text-sm font-medium mb-1"
+                              >
                                 Phone Number
                               </label>
                               <input
@@ -308,7 +320,10 @@ const StaffPage = () => {
                           </div>
                           <div className="flex">
                             <div className="form-input">
-                              <label className="block text-sm font-medium mb-1">
+                              <label
+                                htmlFor="password"
+                                className="block text-sm font-medium mb-1"
+                              >
                                 Login Password
                               </label>
                               <div
@@ -350,7 +365,10 @@ const StaffPage = () => {
                               </div>
                             </div>
                             <div className="form-input mb-6">
-                              <label className="block text-sm font-medium mb-1">
+                              <label
+                                htmlFor="role"
+                                className="block text-sm font-medium mb-1"
+                              >
                                 Role
                               </label>
                               <select
@@ -401,8 +419,8 @@ const StaffPage = () => {
                     <th className="py-2 px-3">Name</th>
                     <th className="py-2 px-3">Email</th>
                     <th className="py-2 px-3">Phone</th>
-                    <th className="py-2 px-3">Password</th>
                     <th className="py-2 px-3">Role</th>
+                    <th className="py-2 px-3">Status</th>
                     <th className="py-2 px-3 text-center">Action</th>
                   </tr>
                 </thead>
@@ -415,11 +433,10 @@ const StaffPage = () => {
                       >
                         <td className="py-2 px-3">{index + 1}</td>
                         <td className="py-2 px-3 capitalize">
-                          {member.FName} {member.LName}
+                          {member.fname} {member.lname}
                         </td>
-                        <td className="py-2 px-3">{member.Email}</td>
-                        <td className="py-2 px-3">{member.Phone}</td>
-                        <td className="py-2 px-3">{member.PlainPassword}</td>
+                        <td className="py-2 px-3 ">{member.email}</td>
+                        <td className="py-2 px-3">{member.phone}</td>
                         <td className="py-2 px-3">
                           <span
                             className={`px-2 py-1 rounded capitalize role-${member.role}`}
@@ -427,11 +444,20 @@ const StaffPage = () => {
                             {member.role}
                           </span>
                         </td>
+                        <td className="py-2 px-3">
+                          <span
+                            className={`px-2 py-1 rounded text-xs ${
+                              member.isActive ? "bg-green-200" : "bg-red-200"
+                            }`}
+                          >
+                            {member.isActive ? "Active" : "Inactive"}
+                          </span>
+                        </td>
                         <td className="py-2 px-3 text-center">
                           <button
                             className="bg-red-600 px-3 py-2 text-white flex items-center rounded hover:font-bold"
                             onClick={() =>
-                              confirmDelete(member._id, member.FName)
+                              confirmDelete(member._id, member.fname)
                             }
                           >
                             <span>

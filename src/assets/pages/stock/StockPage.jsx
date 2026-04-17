@@ -2,8 +2,8 @@ import React from "react";
 import { useMemo, useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
 import toast from "react-hot-toast";
-import "../styles/StockPage.css";
-import API_URL from "../../api";
+import "../../styles/StockPage.css";
+import API_URL from "../../../api";
 
 const StockPage = () => {
   const initialFormState = {

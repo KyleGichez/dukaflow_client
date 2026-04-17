@@ -2,9 +2,9 @@ import React from "react";
 import { useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
 import toast from "react-hot-toast";
-import "../styles/SalesPage.css";
-import API_URL from "../../api";
-import { db } from "../../../src/db.js";
+import "../../styles/SalesPage.css";
+import API_URL from "../../../api";
+import { db } from "../../../db.js";
 
 const SalesPage = () => {
   const initialState = {

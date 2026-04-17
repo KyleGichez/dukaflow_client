@@ -1,7 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Package, Database, ShoppingCart, BarChart3, Users, HeartPlus } from "lucide-react";
-import '../../styles/Navbar.css';
+import {
+  LayoutDashboard,
+  Package,
+  Database,
+  ShoppingCart,
+  BarChart3,
+  Users,
+  HeartPlus,
+  Building2, 
+  Send
+} from "lucide-react";
+import "../../styles/Navbar.css";
 
 const MobileMenu = () => {
   const [user, setUser] = useState(null);
@@ -18,20 +28,48 @@ const MobileMenu = () => {
 
   if (!user) return null;
 
+
   // 1. Define all items with an optional 'adminOnly' flag
-  const navItems = [
+  const mainNavItems = [
     { name: "Dash", path: "/dashboard", icon: <LayoutDashboard size={20} /> },
     { name: "Products", path: "/products", icon: <Package size={20} /> },
     { name: "Stock", path: "/stock", icon: <Database size={20} /> },
     { name: "Sales", path: "/sales", icon: <ShoppingCart size={20} /> },
     { name: "Reports", path: "/summary", icon: <BarChart3 size={20} /> },
-    { name: "Staff", path: "/staff", icon: <Users size={20} />, adminOnly: true },
-    { name: "Subscribe", path: "/subscription", icon: <HeartPlus size={20} />, adminOnly: true },
+    {
+      name: "Staff",
+      path: "/staff",
+      icon: <Users size={20} />,
+      adminOnly: true,
+    },
+    {
+      name: "Subscribe",
+      path: "/subscription",
+      icon: <HeartPlus size={20} />,
+      adminOnly: true,
+    },
   ];
 
+  // ADMIN MENU (completely separate)
+  const adminNavItems = [
+    {
+      name: "Dash",
+      path: "/admin/dashboard",
+      icon: <LayoutDashboard size={20} />,
+    },
+    { name: "Users", path: "/admin/users", icon: <Users size={20} /> },
+    { name: "Businesses", path: "/admin/businesses", icon: <Building2 size={20} /> },
+    { name: "Subs", path: "/admin/subscription", icon: <HeartPlus size={20} /> },
+    { name: "Invites", path: "/admin/invites", icon: <Send size={20} /> },
+  ];
+
+  const isAdminSection = location.pathname.startsWith("/admin");
+  const navItems = isAdminSection ? adminNavItems : mainNavItems;
+
   // 2. Filter items based on the user's role
-  // Ensure your DB role is "admin" (lowercase) to match your schema
-  const visibleItems = navItems.filter(item => {
+  const visibleItems = navItems.filter((item) => {
+    if (isAdminSection) return true;
+
     if (item.adminOnly) {
       return user?.role === "admin";
     }

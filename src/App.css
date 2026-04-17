@@ -62,19 +62,27 @@
 .dashboard-product-stats-left,
 .dashboard-product-stats-right, 
 .dashboard-product-sales,
+.admin-dashboard-content-menu ul li,
+.users-content-menu ul li,
 .dashboard-content-menu ul li,
 .product-content-menu ul li,
 .stock-content-menu ul li,
 .sales-content-menu ul li,
 .reportPage-content-menu ul li,
 .staff-content-menu ul li,
+.invites-content-menu ul li,
+.subscription-content-menu ul li,
 .summary-card,
+.users-stat-card,
+.new-users-table,
+.invites-sent-table,
 .sales-table,
 .reports-table,
 .reportPage-table,
 .product-table,
 .stock-table,
 .staff-table,
+.subscription-table,
 .choose-theme,
 .update-settings,
 .modal-wrapper,
@@ -90,11 +98,15 @@
   transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
+.admin-dashboard-content-menu ul li a,
+.users-content-menu ul li a,
 .dashboard-content-menu ul li a,
 .product-content-menu ul li a,
 .stock-content-menu ul li a,
 .sales-content-menu ul li a,
 .staff-content-menu ul li a,
+.invites-content-menu ul li a,
+.subscription-content-menu ul li a,
 .reportPage-content-menu ul li a{
   color: var(--text-color);
 }

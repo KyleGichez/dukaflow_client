@@ -1,0 +1,128 @@
+.admin-dashboard-wrapper{
+    width: 100%;
+    min-height: 150vh;
+}
+
+.admin-dashboard-content{
+    width: 70%;
+    margin: 0 auto;
+    padding-top: 120px;
+}
+
+.admin-dashboard-content-menu ul{
+    border:1px solid var(--border-color);
+    border-radius: 5px;
+    background-color: #ffff;
+    cursor: pointer;
+}
+
+.admin-dashboard-content-menu ul li{
+    padding:15px 20px;
+    border-bottom: 1px solid var(--border-color);
+    font-weight: bold;
+    text-transform: uppercase;
+    color: var(--text-primary);
+}
+
+.admin-dashboard-content-menu ul li:hover{
+    background-color: #d3d3d3;
+}
+
+.users-stat-card{
+    width: 200px;
+    height: 100px;
+    padding: 10px 15px;
+    background-color: #ffff;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+}
+
+.users-stat-card h2{
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 5px;
+}
+
+.new-users-table{
+    background-color: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+}
+
+.invites-sent-table{
+    background-color: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+}
+
+  /* Skeleton Animation */
+.skeleton {
+    background: #eee;
+    background: linear-gradient(110deg, #ececec 8%, #f5f5f5 18%, #ececec 33%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s linear infinite;
+  }
+  
+  @keyframes shimmer {
+    to {
+      background-position-x: -200%;
+    }
+  }
+  
+  .users-stat-card {
+    min-height: 100px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+@media screen and (max-width: 768px) {
+    html, body {
+        overflow-x: hidden;
+    }
+
+    .admin-dashboard-wrapper {
+        padding: 0 20px;
+    }
+
+    .admin-dashboard-content {
+        width: 100%;
+        margin: 0;
+    }
+
+    /* Hide the sidebar on mobile */
+    .admin-dashboard-content-wrapper-menu {
+        display: none;
+    }
+
+    /* Change flex to column so content stacks */
+    .admin-dashboard-content-wrapper {
+        flex-direction: column;
+    }
+
+    .admin-dashboard-content-top .grid{
+        display: flex;
+        flex-direction: column;
+    }
+
+    .users-stat-card{
+        width: 100%;
+    }
+
+    .new-users-table table{
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .invites-sent-table table{
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .admin-dashboard-content-top{
+        padding: 0;
+    }
+
+    .admin-dashboard-recent-activity {
+        padding: 0;
+    }
+}

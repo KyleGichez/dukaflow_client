@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
-import API_URL from "../../api";
-import "../styles/SettingsPage.css";
+import API_URL from "../../../api";
+import "../../styles/SettingsPage.css";
 
 const SettingsPage = () => {
 
   const initialFormState = {
-    FName: "",
-    LName: "",
+    fname: "",
+    lname: "",
     currentPassword: "",
     newPassword: "",
   }
@@ -96,26 +96,26 @@ const SettingsPage = () => {
         >
           <h2 className="text-lg font-semibold">Update Profile</h2>
           <div className="form-input">
-            <label htmlFor="name">First Name</label>
+            <label htmlFor="fname">First Name</label>
             <input
               type="text"
-              name="name"
+              name="fname"
               placeholder="Enter your first name"
-              value={formData.FName}
+              value={formData.fname}
               onChange={(e) =>
-                setFormData({ ...formData, FName: e.target.value })
+                setFormData({ ...formData, fname: e.target.value })
               }
             />
           </div>
           <div className="form-input">
-            <label htmlFor="LName">Last Name</label>
+            <label htmlFor="lname">Last Name</label>
             <input
               type="text"
-              name="LName"
+              name="lname"
               placeholder="Enter your last name"
-              value={formData.LName}
+              value={formData.lname}
               onChange={(e) =>
-                setFormData({ ...formData, LName: e.target.value })
+                setFormData({ ...formData, lname: e.target.value })
               }
             />
           </div>

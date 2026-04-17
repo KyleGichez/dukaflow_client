@@ -3,9 +3,9 @@ import { useMemo, useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import toast from "react-hot-toast";
-import "../styles/ProductPage.css";
-import API_URL from "../../api";
-import api from "../../../src/api/axios";
+import "../../styles/ProductPage.css";
+import API_URL from "../../../api";
+import api from "../../../api/axios";
 
 const ProductPage = () => {
   const initialFormState = {

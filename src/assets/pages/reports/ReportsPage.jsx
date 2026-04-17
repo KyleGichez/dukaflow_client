@@ -1,10 +1,10 @@
 import React from "react";
 import { useState, useEffect } from "react";
 import axios from "axios";
-import "../styles/ReportsPage.css";
+import "../../styles/ReportsPage.css";
 import { Icon } from "@iconify/react";
 import * as XLSX from "xlsx";
-import API_URL from "../../api";
+import API_URL from "../../../api";
 
 const ReportsPage = () => {
   function getTodaysDate() {
@@ -105,194 +105,77 @@ const ReportsPage = () => {
 
   if (loading) {
     return (
-      <div className="w-[100%]">
-        <div className="w-[70%] mx-auto flex gap-[20px]">
-          <div className="reportPage-content-wrapper-menu">
-            <div className="reportPage-content-menu">
-              <ul>
-                <li className="menu-item flex items-center gap-[10px]">
-                  <span>
-                    <Icon
-                      icon="material-symbols:dashboard"
-                      width="24"
-                      height="24"
-                    />
-                  </span>
-                  <a href="/dashboard">Dashboard</a>
-                </li>
-                <li className="menu-item flex items-center gap-[10px]">
-                  <span>
-                    <Icon icon="dashicons:products" width="20" height="20" />
-                  </span>
-                  <a href="/products">Products</a>
-                </li>
-                <li className="menu-item flex items-center gap-[10px]">
-                  <span>
-                    <Icon
-                      icon="lsicon:management-stockout-filled"
-                      width="24"
-                      height="24"
-                    />
-                  </span>
-                  <a href="/stock">Stock</a>
-                </li>
-                <li className="menu-item flex items-center gap-[10px]">
-                  <span>
-                    <Icon icon="carbon:sales-ops" width="24" height="24" />
-                  </span>
-                  <a href="/sales">Sales</a>
-                </li>
-                <li className="menu-item active flex items-center gap-[10px]">
-                  <span>
-                    <Icon
-                      icon="garden:file-spreadsheet-fill-12"
-                      width="24"
-                      height="24"
-                    />
-                  </span>
-                  <a href="/summary">Reports</a>
-                </li>
-                {isAdmin && (
-                  <>
-                    <li className="menu-item flex items-center gap-[10px]">
-                      <span>
-                        <Icon icon="fa:users" width="24" height="24" />
-                      </span>
-                      <a href="/staff">Staff</a>
+      <div className="reportPage-wrapper">
+        <div className="reportPage-content">
+          <h1 className="text-2xl font-bold uppercase mb-[20px]">Reports</h1>
+          <div className="reportPage-content-wrapper flex gap-[20px]">
+            {/* Sidebar Skeleton */}
+            <div className="reportPage-content-wrapper-menu">
+              <div className="reportPage-content-menu">
+                <ul className="space-y-4">
+                  {[...Array(7)].map((_, i) => (
+                    <li key={i} className="flex items-center gap-[10px] p-2">
+                      <div className="skeleton h-6 w-6 rounded"></div>
+                      <div className="skeleton h-4 w-24 rounded"></div>
                     </li>
-                    <li className="menu-item flex items-center gap-[10px]">
-                      <span>
-                        <Icon icon="ri:heart-add-fill" width="24" height="24" />
-                      </span>
-                      <a href="/subscription">Subscription</a>
-                    </li>
-                  </>
-                )}
-              </ul>
+                  ))}
+                </ul>
+              </div>
             </div>
-          </div>
-          <div className="reportPage-content-info">
-            <div className="grid grid-cols-4 gap-6 mb-[20px]">
-              {loading ? (
-                // Show 8 skeleton cards if loading
-                Array(8)
-                  .fill(0)
-                  .map((_, i) => (
-                    <div
-                      key={i}
-                      className="summary-card skeleton skeleton-card"
-                    ></div>
-                  ))
-              ) : (
-                // Show actual data when ready
-                <>
-                  <div className="summary-card">
-                    <h2 className="font-bold uppercase">Total Revenue</h2>
-                    <p className="py-[10px]">
-                      Ksh {summary.totalRevenue.toLocaleString()}
-                    </p>
+
+            <div className="reportPage-content-info flex-1">
+              {/* 8 Summary Cards Grid */}
+              <div className="grid grid-cols-4 gap-6 mb-[20px]">
+                {[...Array(8)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="summary-card p-4 bg-white rounded shadow-sm"
+                  >
+                    <div className="skeleton h-3 w-3/4 mb-4 rounded"></div>
+                    <div className="skeleton h-6 w-1/2 rounded"></div>
                   </div>
-                  <div className="summary-card">
-                    <h2 className="font-bold uppercase">Items Sold</h2>
-                    <p className="py-[10px]">
-                      Ksh {summary.totalItemsSold.toLocaleString()}
-                    </p>
+                ))}
+              </div>
+
+              {/* Reports Table Skeleton */}
+              <div className="reportPage-table mb-[30px] p-4 bg-white rounded shadow-sm">
+                <h3 className="flex justify-between items-center mb-[20px]">
+                  <div className="skeleton h-5 w-40 rounded"></div>
+                  <div className="flex gap-[10px]">
+                    <div className="skeleton h-9 w-24 rounded"></div>{" "}
+                    {/* Select mock */}
+                    <div className="skeleton h-9 w-36 rounded"></div>{" "}
+                    {/* Export btn mock */}
                   </div>
-                  <div className="summary-card">
-                    <h2 className="font-bold uppercase">All Transactions</h2>
-                    <p className="py-[10px]">
-                      Ksh {summary.totalTransactions.toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="summary-card">
-                    <h2 className="font-bold uppercase">Cash Sales</h2>
-                    <p className="py-[10px]">
-                      Ksh{" "}
-                      {Number(
-                        summary?.paymentBreakdown?.["Cash"] || 0
-                      ).toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="summary-card">
-                    <h2 className="font-bold uppercase">M-pesa Sales</h2>
-                    <p className="py-[10px]">
-                      Ksh{" "}
-                      {Number(
-                        summary?.paymentBreakdown?.["M-pesa"] || 0
-                      ).toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="summary-card">
-                    <h2 className="font-bold uppercase">Bank-Transfer</h2>
-                    <p className="py-[10px]">
-                      Ksh{" "}
-                      {Number(
-                        summary?.paymentBreakdown?.["Bank-Transfer"] || 0
-                      ).toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="summary-card">
-                    <h2 className="font-bold uppercase">Stock Value</h2>
-                    <p className="py-[10px]">
-                      Ksh{" "}
-                      {Number(summary?.totalStockValue || 0).toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="summary-card">
-                    <h2 className="font-bold uppercase">Date Today</h2>
-                    <p className="py-[10px]">{getTodaysDate()}</p>
-                  </div>
-                </>
-              )}
-            </div>
-            <div className="reportPage-table">
-              <h3 className="font-bold uppercase mb-[20px]">Sales Summary</h3>
-              <div className="reports-table">
-                <table className="table-auto w-full text-left">
-                  <thead>
-                    <tr>
-                      <th className="py-2 px-3">#</th>
-                      <th className="py-2 px-3">Date</th>
-                      <th className="py-2 px-3">Item Sold</th>
-                      <th className="py-2 px-3">Quantity Sold</th>
-                      <th className="py-2 px-3">Total Price(Ksh)</th>
-                      <th className="py-2 px-3">Payment Method</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {loading
-                      ? // Show 5 skeleton rows if loading
-                        Array(5)
-                          .fill(0)
-                          .map((_, i) => (
-                            <tr key={i}>
-                              <td colSpan="6" className="py-2">
-                                <div className="skeleton skeleton-row"></div>
-                              </td>
-                            </tr>
-                          ))
-                      : sales.map((sale, index) => (
-                          <tr key={sale._id}>
-                            <th className="py-2 px-3" scope="row">
-                              {index + 1}
-                            </th>
-                            <td className="py-3 px-3">
-                              {new Date(sale.date).toLocaleDateString()}
-                            </td>
-                            <td className="py-3 px-3 capitalize">
-                              {sale.productId?.name || "N/A"}
-                            </td>
-                            <td className="py-3 px-3">
-                              {sale.quantitySold} {sale.productId?.units}
-                            </td>
-                            <td className="py-3 px-3">
-                              Ksh {sale.totalPrice?.toLocaleString()}
-                            </td>
-                            <td className="py-3 px-3">{sale.paymentMethod}</td>
-                          </tr>
+                </h3>
+
+                <div className="reports-table">
+                  <table className="table-auto w-full text-left">
+                    <thead>
+                      <tr>
+                        {[...Array(6)].map((_, i) => (
+                          <th key={i} className="py-2 px-3">
+                            <div className="skeleton h-4 w-16 rounded"></div>
+                          </th>
                         ))}
-                  </tbody>
-                </table>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[...Array(8)].map((_, i) => (
+                        <tr key={i} className="border-b">
+                          {[...Array(6)].map((_, j) => (
+                            <td key={j} className="py-4 px-3">
+                              <div className="skeleton h-3 w-full rounded"></div>
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="mt-4 flex justify-end">
+                  <div className="skeleton h-4 w-32 rounded"></div>
+                </div>
               </div>
             </div>
           </div>
@@ -300,6 +183,7 @@ const ReportsPage = () => {
       </div>
     );
   }
+
   return (
     <div className="reportPage-wrapper">
       <div className="reportPage-content">

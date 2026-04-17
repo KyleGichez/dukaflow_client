@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import axios from "axios";
-import api from "../../../src/api/axios";
+import api from "../../../api/axios";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-import API_URL from "../../api";
-import "../styles/LoginPage.css";
+import API_URL from "../../../api";
+import "../../styles/LoginPage.css";
 
 const LoginPage = () => {
-  const [credentials, setCredentials] = useState({ Phone: "", Password: "" });
+  const [credentials, setCredentials] = useState({ phone: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
@@ -32,10 +32,18 @@ const LoginPage = () => {
       localStorage.setItem("user", JSON.stringify(user));
   
       window.dispatchEvent(new Event("userChanged"));
-  
-      navigate("/dashboard");
+
+      if (user.role === "superadmin") {
+        navigate("/admin/dashboard");
+        toast.success(`Welcome back admin, ${user.fname}!`);
+      } else {
+        toast.success(`Welcome back, ${user.fname}!`);
+        navigate("/dashboard");
+      }
   
     } catch (err) {
+      const message = err.response?.data?.message || "Login failed";
+      toast.error(message);
       console.error("Login Error:", err);
     }
   };
@@ -48,26 +56,26 @@ const LoginPage = () => {
           <fieldset>
             <div className="flex flex-col gap-[10px]">
               <div className="form-input">
-                <label htmlFor="Phone">Phone</label>
+                <label htmlFor="phone">Phone</label>
                 <input
                   type="tel"
-                  name="Phone"
-                  value={credentials.Phone}
+                  name="phone"
+                  value={credentials.phone}
                   onChange={handleChange}
                   placeholder="Enter your phone number"
                   required
                 />
               </div>
               <div className="form-input">
-                <label htmlFor="Password">Password</label>
+                <label htmlFor="password">Password</label>
                 <div
                   className="password-input-wrapper"
                   style={{ position: "relative" }}
                 >
                   <input
                     type={showPassword ? "text" : "password"}
-                    name="Password"
-                    value={credentials.Password}
+                    name="password"
+                    value={credentials.password}
                     onChange={handleChange}
                     placeholder="Enter your password"
                     required
@@ -100,9 +108,9 @@ const LoginPage = () => {
         </form>
         <div className="account-signup flex justify-between items-center my-2">
           <span>
-            <input type="checkbox"></input> Remember me ?
+            <input type="checkbox"></input> Remember me?
           </span>
-          <a href="/signup">Don't have an account yet ? Signup</a>
+          {/* <a href="/login">Forgot password? </a> */}
         </div>
       </div>
     </div>

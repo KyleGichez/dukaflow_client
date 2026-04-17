@@ -1,0 +1,75 @@
+.users-wrapper{
+    width: 100%;
+    min-height: 150vh;
+}
+
+.users-content{
+    width: 70%;
+    margin: 0 auto;
+    padding-top: 120px;
+}
+
+.users-content-menu ul{
+    border:1px solid var(--border-color);
+    border-radius: 5px;
+    background-color: #ffff;
+    cursor: pointer;
+}
+
+.users-content-menu ul li{
+    padding:15px 20px;
+    border-bottom: 1px solid var(--border-color);
+    font-weight: bold;
+    text-transform: uppercase;
+    color: var(--text-primary);
+}
+
+.users-content-menu ul li:hover{
+    background-color: #d3d3d3;
+}
+
+
+@media screen and (max-width: 768px) {
+    html, body {
+        overflow-x: hidden;
+    }
+
+    .users-wrapper {
+        padding: 0 20px;
+    }
+
+    .users-content {
+        width: 100%;
+        margin: 0;
+    }
+
+    /* Hide the sidebar on mobile */
+    .users-content-wrapper-menu {
+        display: none;
+    }
+
+    /* Change flex to column so content stacks */
+    .users-content-wrapper {
+        flex-direction: column;
+    }
+
+    .new-users-table table{
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .action-btn{
+        display: flex;
+        flex-direction: row;
+    }
+
+    .filter-business,
+    .filter-role{
+        display: none;
+    }
+
+    .search-business{
+        width: 200px;
+        padding: 10px 15px;
+    }
+}
