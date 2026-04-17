@@ -81,13 +81,20 @@ const Business = () => {
 
   // ✅ Search and Filter Logic
   const filteredBusinesses = businesses.filter((biz) => {
+    // 1. Access the nested business name
+    const bName = biz.businessId?.businessName || "";
+    
+    // 2. Access the owner's email and phone (since they are in ownerId now)
+    const bEmail = biz.businessId?.ownerId?.email || "";
+    const bPhone = biz.businessId?.ownerId?.phone || "";
+  
     const matchesSearch =
-      biz.businessName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      biz.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      String(biz.phone || "").includes(searchTerm);
-
+      bName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      bEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      String(bPhone).includes(searchTerm);
+  
     const matchesTown = selectedTown ? biz.city === selectedTown : true;
-
+  
     return matchesSearch && matchesTown;
   });
 
@@ -213,44 +220,53 @@ const Business = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredBusinesses.map((biz, index) => (
-                      <tr key={biz._id} className="border-b hover:bg-gray-50">
-                        <td className="py-3 px-3">{index + 1}</td>
-                        <td className="py-3 px-3">
-                          {biz.businessId?.businessName || "No Business Linked"}
-                        </td>
-                        <td className="py-2 px-2">
-                          {biz.fname} {biz.lname}
-                        </td>
-                        <td className="py-3 px-3">
-                          <div className="">{biz.phone}</div>
-                          <div className="text-sm">{biz.email}</div>
-                        </td>
-                        <td className="py-3 px-3">{biz.city}</td>
-                        <td className="py-3 px-3">
-                          {
-                            users.filter(
-                              (u) =>
-                                u.businessId?._id?.toString() ===
-                                  biz.businessId?._id?.toString() ||
-                                u.businessId === biz.businessId?._id
-                            ).length
-                          }
-                        </td>
-                        <td className="py-3 px-3">
-                          <span
-                            className={`px-2 py-1 rounded text-xs ${
-                              biz.isActive ? "bg-green-200" : "bg-red-200"
-                            }`}
-                          >
-                            {biz.isActive ? "Active" : "Inactive"}
-                          </span>
-                        </td>
-                        <td className="py-3 px-2">
-                          {new Date(biz.createdAt).toLocaleDateString()}
+                    {filteredBusinesses.length === 0 ? (
+                      <tr>
+                        <td colSpan="8" className="text-center py-4">
+                          No businesses found.
                         </td>
                       </tr>
-                    ))}
+                    ) : (
+                      filteredBusinesses.map((biz, index) => (
+                        <tr key={biz._id} className="border-b hover:bg-gray-50">
+                          <td className="py-3 px-3">{index + 1}</td>
+                          <td className="py-3 px-3 font-medium">
+                            {biz.businessId?.businessName ||
+                              "No Business Linked"}
+                          </td>
+                          <td className="py-2 px-2">
+                            {biz.fname} {biz.lname}
+                          </td>
+                          <td className="py-3 px-3">
+                            <div className="">{biz.phone}</div>
+                            <div className="text-sm">{biz.email}</div>
+                          </td>
+                          <td className="py-3 px-3">{biz.city}</td>
+                          <td className="py-3 px-3">
+                            {
+                              users.filter(
+                                (u) =>
+                                  u.businessId?._id?.toString() ===
+                                    biz.businessId?._id?.toString() ||
+                                  u.businessId === biz.businessId?._id
+                              ).length
+                            }
+                          </td>
+                          <td className="py-3 px-3">
+                            <span
+                              className={`px-2 py-1 rounded text-xs ${
+                                biz.isActive ? "bg-green-200" : "bg-red-200"
+                              }`}
+                            >
+                              {biz.isActive ? "Active" : "Inactive"}
+                            </span>
+                          </td>
+                          <td className="py-3 px-2">
+                            {new Date(biz.createdAt).toLocaleDateString()}
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>

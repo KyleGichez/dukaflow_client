@@ -284,7 +284,7 @@ const AdminDashboard = () => {
                           </td>
                         </tr>
                       ) : (
-                        users.map((u, index) => (
+                        users.slice(0, 5).map((u, index) => (
                           <tr key={u._id} className="border-b hover:bg-gray-50">
                             <td className="py-2 px-3"> {index + 1}</td>
                             <td className="py-2 px-3 capitalize">
