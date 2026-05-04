@@ -17,7 +17,6 @@ const Users = () => {
     city: "",
     subscription: "",
     status: "",
-    role: "",
   };
 
   const userString = localStorage.getItem("user");
@@ -468,25 +467,23 @@ const Users = () => {
                                   value={formData.businessName || ""}
                                   onChange={(e) => {
                                     const selectedName = e.target.value;
-                                    // Find the business object if it exists in your list
                                     const business = businesses.find(
                                       (b) => b.businessName === selectedName
                                     );
 
                                     setFormData({
                                       ...formData,
-                                      businessId: business ? business._id : "", // ID for backend
-                                      businessName: selectedName, // Display name
+                                      businessId: business ? business._id : "",
+                                      businessName: selectedName,
                                       city: business
                                         ? business.city
-                                        : formData.city, // Auto-fill city if found
+                                        : formData.city,
                                     });
                                   }}
                                   required
                                 />
 
                                 <datalist id="business-options">
-                                  {/* Assuming you have a 'businesses' array from your API */}
                                   {businessList.map((b, index) => (
                                     <option
                                       key={b._id || index}
@@ -499,8 +496,6 @@ const Users = () => {
                                     </option>
                                   ))}
                                 </datalist>
-
-                                {/* Optional: Helpful hint for selected business */}
                                 {formData.businessId && (
                                   <span
                                     className="text-xs font-bold mt-1"
@@ -510,48 +505,6 @@ const Users = () => {
                                   </span>
                                 )}
                               </div>
-                              <div className="form-input mb-6">
-                                <label
-                                  htmlFor="role"
-                                  className="block text-sm font-medium mb-1"
-                                >
-                                  Role
-                                </label>
-                                <select
-                                  name="role"
-                                  className="w-full border py-3 px-3 rounded"
-                                  value={formData.role}
-                                  onChange={(e) => {
-                                    setFormData({...formData, role: e.target.value});
-                                    setIsStaff(e.target.value !== 'admin');
-                                  }}
-                                  required
-                                >
-                                  <option value="" disabled>
-                                    -- Select Role --
-                                  </option>
-                                  <option value="admin">
-                                    Admin (Business Owner)
-                                  </option>
-                                  <option value="cashier">
-                                    Cashier (Sales Only)
-                                  </option>
-                                  <option value="manager">
-                                    Manager (Inventory + Sales)
-                                  </option>
-                                </select>
-                                {/* {!isStaff && (
-                                  <>
-                                    <input
-                                      name="businessName"
-                                      placeholder="Business Name"
-                                    />
-                                    <input name="city" placeholder="City" />
-                                  </>
-                                )} */}
-                              </div>
-                            </div>
-                            <div className="flex">
                               <div className="form-input">
                                 <label htmlFor="city">Town / City</label>
                                 <select
@@ -571,6 +524,8 @@ const Users = () => {
                                   ))}
                                 </select>
                               </div>
+                            </div>
+                            <div className="flex">
                               <div className="form-input">
                                 <label htmlFor="password">Password</label>
                                 <div
@@ -658,7 +613,7 @@ const Users = () => {
                           </td>
                           {/* <td className="py-2 px-3">{user.email}</td> */}
                           <td className="py-2 px-3">{user.phone}</td>
-                          <td className="py-2 px-3">
+                          <td className="py-2 px-3 capitalize">
                             {user.businessId?.businessName ||
                               "No Business Linked"}
                           </td>
@@ -672,7 +627,6 @@ const Users = () => {
                               {user.isActive ? "Active" : "Inactive"}
                             </span>
                           </td>
-
                           <td className="py-3 px-2">
                             <div className="action-btn flex gap-[5px]">
                               <button

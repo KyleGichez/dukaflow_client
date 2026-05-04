@@ -166,7 +166,7 @@ const Subscription = () => {
                           </td>
                           <td className="py-3 px-3">
                             <div>{sub.businessId?.ownerId?.phone || "N/A"}</div>
-                            <div className="text-xs text-gray-500">
+                            <div className="text-xs text-gray-500 ">
                               {sub.businessId?.ownerId?.email}
                             </div>
                           </td>

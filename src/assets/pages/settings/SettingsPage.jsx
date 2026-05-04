@@ -45,7 +45,7 @@ const SettingsPage = () => {
       };
 
       const res = await axios.put(
-        `${API_URL}/api/auth/settings`, 
+        `${API_URL}/api/settings`, 
         updateData, 
         {
           headers: { Authorization: `Bearer ${token}` } // Critical!
