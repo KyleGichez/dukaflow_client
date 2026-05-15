@@ -76,7 +76,7 @@ const ReceiptPrinter = ({ sale, businessData, onClose }) => {
             
             return (
               <tr key={index}>
-                <td className="py-1 truncate max-w-[40mm]">
+                <td className="py-1 truncate max-w-[40mm] capitalize">
                   {item.productId?.name || item.name}
                 </td>
                 <td className="text-center py-1">{item.quantity}</td>
