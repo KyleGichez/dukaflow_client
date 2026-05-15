@@ -1,5 +1,5 @@
 import React from 'react';
-import "../../styles/Receiptprinter.css";
+import "../../styles/ReceiptPrinter.css";
 
 const ReceiptPrinter = ({ sale, businessData, onClose }) => {
   if (!sale) return null;
