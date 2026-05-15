@@ -101,7 +101,7 @@ const AdminDashboard = () => {
             <div className="admin-dashboard-content-top mb-[20px]">
               {/* Stats Grid Skeleton */}
               <div className="grid grid-cols-4 gap-6 mb-[20px] mr-2">
-                {[...Array(10)].map((_, i) => (
+                {[...Array(11)].map((_, i) => (
                   <div key={i} className="users-stat-card bg-white p-4 rounded-lg shadow-sm">
                     <div className="skeleton h-3 w-3/4 mb-3 rounded"></div>
                     <div className="skeleton h-8 w-1/2 rounded"></div>

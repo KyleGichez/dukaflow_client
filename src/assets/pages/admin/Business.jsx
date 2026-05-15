@@ -230,7 +230,7 @@ const Business = () => {
                       filteredBusinesses.map((biz, index) => (
                         <tr key={biz._id} className="border-b hover:bg-gray-50">
                           <td className="py-3 px-3">{index + 1}</td>
-                          <td className="py-3 px-3 font-medium">
+                          <td className="py-3 px-3 font-medium capitalize">
                             {biz.businessId?.businessName ||
                               "No Business Linked"}
                           </td>

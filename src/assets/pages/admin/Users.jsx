@@ -8,6 +8,7 @@ import api from "../../../api/axios";
 const Users = () => {
   const initialFormState = {
     businessName: "",
+    businessId: "",
     fname: "",
     lname: "",
     email: "",
@@ -25,35 +26,32 @@ const Users = () => {
   const [formData, setFormData] = useState(initialFormState);
   const [showPassword, setShowPassword] = useState(false);
   const [users, setUsers] = useState([]);
-  const [isStaff, setIsStaff] = useState(false);
-  const [userRoles, setUserRoles] = useState([]);
-  const [showModal, setShowModal] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editId, setEditId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedBusiness, setSelectedBusiness] = useState("");
   const [selectedRole, setSelectedRole] = useState("");
+  const [editId, setEditId] = useState(null);
   const [editBusinessId, setEditBusinessId] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
-  // ✅ Correctly get unique business names using optional chaining
+  // Unique flat business name strings for the filtering dropdowns
   const businesses = [
     ...new Set(users.map((u) => u.businessId?.businessName).filter(Boolean)),
   ];
 
-  // ✅ Extract unique business OBJECTS from the users list
+  // Map of business object entries containing accurate IDs and data
   const businessMap = users.reduce((acc, u) => {
     if (u.businessId && u.businessId.businessName) {
       acc[u.businessId._id] = {
         _id: u.businessId._id,
         businessName: u.businessId.businessName,
-        city: u.city || "",
+        city: u.city || u.businessId.city || "",
       };
     }
     return acc;
   }, {});
 
   const businessList = Object.values(businessMap);
-
   const roles = [...new Set(users.map((u) => u.role).filter(Boolean))];
 
   const filteredUsers = users.filter((user) => {
@@ -62,9 +60,8 @@ const Users = () => {
         .toLowerCase()
         .includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      String(user.phone || "").includes(searchTerm); // ✅ Safely convert to string
+      String(user.phone || "").includes(searchTerm);
 
-    // ✅ Use optional chaining here to prevent the crash
     const matchesBusiness = selectedBusiness
       ? user.businessId?.businessName === selectedBusiness
       : true;
@@ -101,7 +98,6 @@ const Users = () => {
     "Narok",
   ].sort();
 
-  // ✅ Prevent scroll when modal open
   useEffect(() => {
     document.body.style.overflow = showModal ? "hidden" : "auto";
     return () => {
@@ -119,7 +115,6 @@ const Users = () => {
         toast.error("Failed to fetch users");
       }
     };
-
     fetchUsers();
   }, []);
 
@@ -139,25 +134,28 @@ const Users = () => {
 
     try {
       let res;
+      const dataToSubmit = { ...formData };
+
+      // Clean up businessId logic before hitting API endpoints
+      if (!dataToSubmit.businessId || dataToSubmit.businessId.trim() === "") {
+        delete dataToSubmit.businessId; // Prevents BSON empty string validation errors
+      }
 
       if (isEditing) {
-        const dataToSubmit = { ...formData };
-
-        // Remove password if it's empty so the backend doesn't change it
         if (!dataToSubmit.password || dataToSubmit.password.trim() === "") {
           delete dataToSubmit.password;
         }
 
         res = await api.put(`admin/users/${editId}`, dataToSubmit);
 
-        // Update local state
         setUsers(
           users.map((u) =>
             u._id === editId
               ? {
+                  ...u,
                   ...res.data,
                   businessId: {
-                    ...u.businessId,
+                    _id: dataToSubmit.businessId || u.businessId?._id,
                     businessName: formData.businessName,
                   },
                 }
@@ -166,12 +164,14 @@ const Users = () => {
         );
         toast.success("User & Business updated!");
       } else {
-        // Logic for creating a NEW business/user
-        res = await api.post("admin/business", formData);
+        res = await api.post("admin/business", dataToSubmit);
 
         const newUser = {
           ...res.data,
-          businessId: { businessName: formData.businessName },
+          businessId: {
+            _id: res.data.businessId || "",
+            businessName: formData.businessName,
+          },
           isActive: true,
         };
 
@@ -197,9 +197,10 @@ const Users = () => {
       phone: user.phone,
       password: "",
       businessName: user.businessId?.businessName || user.businessName || "",
+      businessId: user.businessId?._id || "",
       role: user.role,
-      status: user.status,
-      city: user.city || "",
+      status: user.status || "",
+      city: user.city || user.businessId?.city || "",
     });
 
     setEditId(user._id);
@@ -211,9 +212,8 @@ const Users = () => {
   const handleDelete = async (id) => {
     try {
       await api.delete(`/admin/users/${id}`);
-
       setUsers(users.filter((u) => u._id !== id));
-      toast.success("User and all associated business data deleted!");
+      toast.success("User and data successfully removed.");
     } catch (err) {
       toast.error("Failed to delete user and data");
     }
@@ -226,7 +226,6 @@ const Users = () => {
           <span className="font-semibold text-gray-800">
             Are you sure you want to delete this user?
           </span>
-
           <div className="flex justify-end gap-2">
             <button
               className="px-3 py-1 bg-gray-300 rounded"
@@ -234,7 +233,6 @@ const Users = () => {
             >
               Cancel
             </button>
-
             <button
               className="px-3 py-1 bg-red-600 text-white rounded"
               onClick={() => {
@@ -247,9 +245,7 @@ const Users = () => {
           </div>
         </div>
       ),
-      {
-        duration: 6000,
-      }
+      { duration: 6000 }
     );
   };
 
