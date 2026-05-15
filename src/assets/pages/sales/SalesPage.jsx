@@ -57,7 +57,6 @@ const SalesPage = () => {
       return res.json();
     })
     .then((data) => {
-      console.log("MY BUSINESS DATA:", data);
       setBusinessData(data);
     })
     .catch((err) => console.error("Business info fetch error:", err));
