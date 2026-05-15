@@ -1,9 +1,11 @@
 import React from "react";
 import { useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
+import PrintIcon from "@iconify-react/material-symbols/print";
 import toast from "react-hot-toast";
 import "../../styles/SalesPage.css";
 import API_URL from "../../../api";
+import ReceiptPrinter from "../../components/Receipt/ReceiptPrinter";
 import { db } from "../../../db.js";
 
 const SalesPage = () => {
@@ -25,6 +27,8 @@ const SalesPage = () => {
   const [endDate, setEndDate] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [businessData, setBusinessData] = useState(null);
+  const [selectedSaleForPrint, setSelectedSaleForPrint] = useState(null);
 
   useEffect(() => {
     if (showModal) {
@@ -33,7 +37,6 @@ const SalesPage = () => {
       document.body.style.overflow = "auto";
     }
 
-    // Cleanup (important)
     return () => {
       document.body.style.overflow = "auto";
     };
@@ -41,55 +44,71 @@ const SalesPage = () => {
 
   // 1. Fetch Products and Sales on load
   useEffect(() => {
+
     const token = localStorage.getItem("token");
     const headers = {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     };
 
-    // 1. Fetch Products
+    fetch(`${API_URL}/api/admin/business`, { headers })
+    .then((res) => {
+      if (!res.ok) throw new Error("Could not fetch business details");
+      return res.json();
+    })
+    .then((data) => {
+      console.log("MY BUSINESS DATA:", data);
+      setBusinessData(data);
+    })
+    .catch((err) => console.error("Business info fetch error:", err));
+
+    // Fetch Products
     fetch(`${API_URL}/api/products`, { headers })
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch products");
         return res.json();
       })
       .then((data) => {
-        // Ensure data is an array before setting state
         setProducts(Array.isArray(data) ? data : []);
       })
       .catch((err) => {
         console.error("Product fetch error:", err);
-        setProducts([]); // Fallback to empty array
+        setProducts([]);
       });
 
-    // 2. Fetch Sales
+    // Fetch Sales
     fetch(`${API_URL}/api/sales`, { headers })
       .then((res) => {
         if (!res.ok) throw new Error("Error");
         return res.json();
       })
       .then((data) => {
-        // If the backend returns an error object {message: "..."},
-        // this check prevents dbSales from becoming that object.
         setDbSales(Array.isArray(data) ? data : []);
       })
       .catch((err) => {
         console.error("Sales fetch error:", err);
-        setDbSales([]); // Fallback to empty array to prevent .filter() crash
+        setDbSales([]);
       });
   }, []);
 
+  // Enhanced Filter to include search bar queries and Date selections
   const filteredSales = dbSales.filter((sale) => {
-    if (!startDate && !endDate) return true; // Show all if no dates selected
+    const productName = sale.productId?.name || "Deleted Product";
+    const matchesSearch = productName
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+
+    if (!startDate && !endDate) return matchesSearch;
 
     const saleDate = new Date(sale.date).setHours(0, 0, 0, 0);
     const start = startDate ? new Date(startDate).setHours(0, 0, 0, 0) : null;
     const end = endDate ? new Date(endDate).setHours(0, 0, 0, 0) : null;
 
-    if (start && end) return saleDate >= start && saleDate <= end;
-    if (start) return saleDate >= start;
-    if (end) return saleDate <= end;
-    return true;
+    if (start && end)
+      return matchesSearch && saleDate >= start && saleDate <= end;
+    if (start) return matchesSearch && saleDate >= start;
+    if (end) return matchesSearch && saleDate <= end;
+    return matchesSearch;
   });
 
   const handleChange = (e) => {
@@ -99,6 +118,39 @@ const SalesPage = () => {
     });
   };
 
+  // Offline Fallback function utilizing Dexie instance
+  const saveToOffline = async (payload) => {
+    try {
+      if (!db || !db.sales) {
+        throw new Error("IndexedDB table configurations missing.");
+      }
+
+      // Enforce unique temporary schema parameters for presentation mapping
+      const offlineSale = {
+        ...payload,
+        _id: `offline-${Date.now()}`,
+        productId: products.find((p) => p._id === payload.productId) || {
+          name: formData.productName,
+        },
+        unitPrice:
+          products.find((p) => p._id === payload.productId)?.price || 0,
+        totalPrice:
+          (products.find((p) => p._id === payload.productId)?.price || 0) *
+          payload.quantitySold,
+        createdAt: new Date().toISOString(),
+      };
+
+      await db.sales.add(offlineSale);
+      toast.success("Saved offline locally! Will sync when reconnected.");
+      setDbSales((prev) => [offlineSale, ...prev]);
+      setFormData(initialState);
+      setShowModal(false);
+    } catch (err) {
+      console.error("Dexie offline write failed:", err);
+      toast.error("Failed to cache sale records on local device storage.");
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -106,7 +158,6 @@ const SalesPage = () => {
     const expiry = localStorage.getItem("expiry");
     const now = new Date();
 
-    // 1. OFFLINE SUBSCRIPTION CHECK
     if (expiry && new Date(expiry) < now) {
       return toast.error(
         "Subscription expired. Please connect to internet to renew."
@@ -123,10 +174,9 @@ const SalesPage = () => {
       quantitySold: Number(formData.quantitySold),
       paymentMethod: formData.paymentMethod,
       date: formData.date || new Date().toISOString(),
-      isOffline: !navigator.onLine, // Tag it so you know it was made offline
+      isOffline: !navigator.onLine,
     };
 
-    // 2. TRY ONLINE FIRST
     if (navigator.onLine) {
       try {
         const res = await fetch(`${API_URL}/api/sales`, {
@@ -143,7 +193,6 @@ const SalesPage = () => {
         setShowModal(false);
         setDbSales((prev) => [data, ...prev]);
 
-        // Refresh products from server
         const prodRes = await fetch(`${API_URL}/api/products`, { headers });
         const prodData = await prodRes.json();
         setProducts(Array.isArray(prodData) ? prodData : []);
@@ -157,29 +206,22 @@ const SalesPage = () => {
         saveToOffline(payload);
       }
     } else {
-      // 3. IF TOTALLY OFFLINE, SAVE TO DEXIE IMMEDIATELY
       saveToOffline(payload);
     }
   };
 
-  // Helper function to handle Dexie storage
-  // const saveToOffline = async (payload) => {
-  //   try {
-  //     await db.offlineSales.add(payload);
-  //     toast.info(
-  //       "Saved to phone (Offline). It will sync when internet returns."
-  //     );
-
-  //     // Update local UI state so the user sees the sale immediately
-  //     setDbSales((prev) => [payload, ...prev]);
-  //     setFormData(initialState);
-  //     setShowModal(false);
-  //   } catch (err) {
-  //     toast.error("Failed to save even offline.");
-  //   }
-  // };
-
   const handleDelete = async (id) => {
+    // Check if item is an unsynced offline asset
+    if (typeof id === "string" && id.startsWith("offline-")) {
+      try {
+        await db.sales.delete(id);
+        setDbSales(dbSales.filter((sale) => sale._id !== id));
+        return toast.success("Local offline record removed");
+      } catch (err) {
+        return toast.error("Could not delete local item.");
+      }
+    }
+
     const token = localStorage.getItem("token");
     try {
       const response = await fetch(`${API_URL}/api/sales/${id}`, {
@@ -191,7 +233,6 @@ const SalesPage = () => {
         setDbSales(dbSales.filter((sale) => sale._id !== id));
         toast.success("Deleted successfully");
 
-        // Refresh products WITH TOKEN
         fetch(`${API_URL}/api/products`, {
           headers: { Authorization: `Bearer ${token}` },
         })
@@ -297,7 +338,6 @@ const SalesPage = () => {
                     </li>
                     <li className="menu-item flex items-center gap-[10px]">
                       <span>
-                        {" "}
                         <Icon icon="ri:heart-add-fill" width="24" height="24" />
                       </span>
                       <a href="/subscription">Subscription</a>
@@ -311,7 +351,18 @@ const SalesPage = () => {
             <div className="sales-table mb-[20px]">
               <div className="sales-btn-wrapper mb-[10px]">
                 <div className="flex flex-wrap items-end gap-4 mb-3">
-                  <p className="font-bold mb-3">Search:</p>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-bold text-gray-600">
+                      Search Item:
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Search items..."
+                      className="border p-2 rounded text-sm min-w-[180px]"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                  </div>
                   <div className="flex flex-col gap-1">
                     <label className="text-xs font-bold text-gray-600">
                       From Date:
@@ -334,12 +385,13 @@ const SalesPage = () => {
                       onChange={(e) => setEndDate(e.target.value)}
                     />
                   </div>
-                  {(startDate || endDate) && (
+                  {(startDate || endDate || searchTerm) && (
                     <button
                       className="flex items-center gap-1 text-sm text-red-600 font-semibold hover:text-red-800 hover:underline transition-colors pb-2"
                       onClick={() => {
                         setStartDate("");
                         setEndDate("");
+                        setSearchTerm("");
                       }}
                     >
                       <Icon icon="system-uicons:reset" width="18" height="18" />
@@ -350,9 +402,7 @@ const SalesPage = () => {
                 <button
                   type="button"
                   className="add-sales-btn flex items-center gap-[5px]"
-                  onClick={() => {
-                    setShowModal(true);
-                  }}
+                  onClick={() => setShowModal(true)}
                 >
                   <span>
                     <Icon icon="si:add-fill" width="20" height="20" />
@@ -360,25 +410,24 @@ const SalesPage = () => {
                   Add
                 </button>
               </div>
+
               {showModal && (
                 <div
                   className="fixed bg-black/80 min-h-screen z-10 w-screen flex justify-center items-center top-0 left-0"
-                  onClick={() => {
-                    setShowModal(false);
-                  }}
+                  onClick={() => setShowModal(false)}
                 >
                   <div
-                    className="modal-wrapper bg-white px-[25px] py-[20px] max-w-[650px]"
+                    className="modal-wrapper bg-white px-[25px] py-[20px] max-w-[650px] w-full mx-4 rounded"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <div className="modal-content">
-                      <h1 className="text-xl font-bold uppercase mb-[20px] flex justify-between">
+                      <h1 className="text-xl font-bold uppercase mb-[20px] flex justify-between items-center">
                         Add Sale
-                        <span className="cursor-pointer">
+                        <span
+                          className="cursor-pointer"
+                          onClick={() => setShowModal(false)}
+                        >
                           <Icon
-                            onClick={() => {
-                              setShowModal(false);
-                            }}
                             icon="material-symbols:cancel"
                             width="30"
                             height="30"
@@ -390,45 +439,50 @@ const SalesPage = () => {
                         method="POST"
                         className="mb-[20px] form-modal"
                       >
-                        <legend>Add New Sale</legend>
-                        <div className="flex gap-[5px]">
-                          <div className="form-input">
-                            <label htmlFor="date">Date</label>
+                        <div className="flex flex-col md:flex-row gap-[15px] mb-4">
+                          <div className="form-input flex-1">
+                            <label
+                              className="block mb-1 font-semibold"
+                              htmlFor="date"
+                            >
+                              Date
+                            </label>
                             <input
                               type="date"
                               name="date"
+                              className="border p-2 rounded w-full"
                               value={formData.date}
                               onChange={handleChange}
-                              placeholder="Enter stock date"
                               required
                             />
                           </div>
-                          <div className="form-input">
-                            <label htmlFor="productName">Product Name</label>
+                          <div className="form-input flex-1">
+                            <label
+                              className="block mb-1 font-semibold"
+                              htmlFor="productName"
+                            >
+                              Product Name
+                            </label>
                             <input
                               type="text"
                               name="productName"
                               list="product-options"
                               placeholder="Type or select product"
-                              className="capitalize px-3 py-3 rounded border w-full"
-                              // We use a local value to handle the text input
+                              className="capitalize px-3 py-2 rounded border w-full"
                               onChange={(e) => {
                                 const selectedName = e.target.value;
-                                // Find the product object that matches this name
                                 const product = products.find(
                                   (p) => p.name === selectedName
                                 );
-
                                 setFormData({
                                   ...formData,
-                                  productId: product ? product._id : "", // Set the ID for the backend
-                                  productName: selectedName, // Keep the name for the input field
+                                  productId: product ? product._id : "",
+                                  productName: selectedName,
                                 });
                               }}
                               value={formData.productName || ""}
                               required
                             />
-
                             <datalist id="product-options">
                               {products.map((product) => (
                                 <option key={product._id} value={product.name}>
@@ -437,10 +491,8 @@ const SalesPage = () => {
                                 </option>
                               ))}
                             </datalist>
-
-                            {/* Helpful hint below the input */}
                             {formData.productId && (
-                              <span className="text-xs text-green-600 font-bold mt-1">
+                              <span className="text-xs text-green-600 font-bold mt-1 block">
                                 Current Stock:{" "}
                                 {
                                   products.find(
@@ -451,20 +503,29 @@ const SalesPage = () => {
                             )}
                           </div>
                         </div>
-                        <div className="flex gap-[5px]">
-                          <div className="form-input">
-                            <label htmlFor="quantitySold">Quantity Sold</label>
+                        <div className="flex flex-col md:flex-row gap-[15px] mb-6">
+                          <div className="form-input flex-1">
+                            <label
+                              className="block mb-1 font-semibold"
+                              htmlFor="quantitySold"
+                            >
+                              Quantity Sold
+                            </label>
                             <input
                               type="number"
                               name="quantitySold"
+                              className="border p-2 rounded w-full"
                               value={formData.quantitySold}
                               onChange={handleChange}
                               placeholder="Enter quantity sold"
                               required
                             />
                           </div>
-                          <div className="form-input">
-                            <label htmlFor="paymentMethod">
+                          <div className="form-input flex-1">
+                            <label
+                              className="block mb-1 font-semibold"
+                              htmlFor="paymentMethod"
+                            >
                               Payment Method
                             </label>
                             <select
@@ -472,7 +533,7 @@ const SalesPage = () => {
                               value={formData.paymentMethod}
                               onChange={handleChange}
                               required
-                              className="px-3 py-3 rounded"
+                              className="px-3 py-2 rounded border w-full"
                             >
                               <option value="">Select payment method</option>
                               <option value="Cash">Cash</option>
@@ -485,17 +546,15 @@ const SalesPage = () => {
                         </div>
                         <div className="modal-buttons-wrapper flex gap-[20px] justify-end">
                           <button
-                            className="modal-add-btn py-2 px-3 w-[75px] cursor-pointer"
+                            className="modal-add-btn py-2 px-4 bg-blue-600 text-white rounded cursor-pointer"
                             type="submit"
                           >
                             Add
                           </button>
                           <button
-                            className="modal-close-btn py-2 px-3 w-[75px] cursor-pointer"
+                            className="modal-close-btn py-2 px-4 bg-gray-200 rounded cursor-pointer"
                             type="button"
-                            onClick={() => {
-                              setShowModal(false);
-                            }}
+                            onClick={() => setShowModal(false)}
                           >
                             Close
                           </button>
@@ -505,9 +564,10 @@ const SalesPage = () => {
                   </div>
                 </div>
               )}
-              <table className="table-auto w-full text-left">
+
+              <table className="table-auto w-full text-left border-collapse">
                 <thead>
-                  <tr>
+                  <tr className="bg-gray-100 border-b">
                     <th className="py-2 px-3">#</th>
                     <th className="py-2 px-3">Date</th>
                     <th className="py-2 px-3">Item Sold</th>
@@ -521,8 +581,18 @@ const SalesPage = () => {
                 <tbody>
                   {filteredSales.length > 0 ? (
                     filteredSales.map((sale, index) => (
-                      <tr key={sale._id} className="border-b">
-                        <td className="py-2 px-3">{index + 1}</td>
+                      <tr key={sale._id} className="border-b hover:bg-gray-50">
+                        <td className="py-2 px-3">
+                          {index + 1}
+                          {sale._id?.toString().startsWith("offline-") && (
+                            <span
+                              className="ml-1 text-[10px] bg-amber-500 text-white px-1 rounded"
+                              title="Unsynced local transaction"
+                            >
+                              Offline
+                            </span>
+                          )}
+                        </td>
                         <td className="py-2 px-3">
                           {new Date(sale.date).toLocaleDateString()}
                         </td>
@@ -530,9 +600,10 @@ const SalesPage = () => {
                           {sale.productId?.name || "Deleted Product"}
                         </td>
                         <td className="py-2 px-3">
-                          {sale.quantitySold} {sale.productId?.units}
+                          {sale.quantitySold}{" "}
+                          {sale.productId?.units || sale.productId?.unit || ""}
                         </td>
-                        <td className="py2 px-3">
+                        <td className="py-2 px-3">
                           Ksh{" "}
                           {(
                             sale.unitPrice ||
@@ -544,21 +615,27 @@ const SalesPage = () => {
                           Ksh {(sale.totalPrice || 0).toLocaleString()}
                         </td>
                         <td className="py-2 px-3">{sale.paymentMethod}</td>
-                        <td className="py-2 px-2">
-                          <div className="sale-delete-btn">
+                        <td className="py-2 px-2 text-center">
+                          <div className="sale-delete-btn flex justify-center gap-2">
                             <button
                               type="button"
-                              className="delete-btn flex items-center gap-[5px]"
-                              onClick={() => confirmDelete(sale._id)}
+                              className="edit-btn p-1 text-blue-600 hover:text-blue-800"
+                              onClick={() => setSelectedSaleForPrint(sale)}
+                              title="Print Receipt"
                             >
-                              <span>
-                                <Icon
-                                  icon="material-symbols:delete"
-                                  width="20"
-                                  height="20"
-                                />
-                              </span>
-                              Delete
+                              <PrintIcon width="20" height="20" />
+                            </button>
+                            <button
+                              type="button"
+                              className="delete-btn p-1 text-red-600 hover:text-red-800"
+                              onClick={() => confirmDelete(sale._id)}
+                              title="Delete Entry"
+                            >
+                              <Icon
+                                icon="material-symbols:delete"
+                                width="20"
+                                height="20"
+                              />
                             </button>
                           </div>
                         </td>
@@ -568,7 +645,7 @@ const SalesPage = () => {
                     <tr>
                       <td
                         colSpan="8"
-                        className="text-center py-2 px-3 text-gray-500"
+                        className="text-center py-4 text-gray-500"
                       >
                         No sales recorded yet.
                       </td>
@@ -580,6 +657,28 @@ const SalesPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Visible Overlay Modal for Receipt Preview */}
+      {selectedSaleForPrint && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4">
+          <div className="bg-white p-6 rounded-lg shadow-xl relative max-w-sm w-full max-h-[90vh] overflow-y-auto">
+            {/* Close Button */}
+            <button
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl font-bold"
+              onClick={() => setSelectedSaleForPrint(null)}
+            >
+              ✕
+            </button>
+
+            {/* The Actual Receipt Component */}
+            <ReceiptPrinter
+              sale={selectedSaleForPrint}
+              businessData={businessData}
+              onClose={() => setSelectedSaleForPrint(null)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

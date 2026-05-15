@@ -55,6 +55,48 @@ const Subscription = () => {
       subscriptions.map((sub) => sub.businessId?.ownerId?.city).filter(Boolean)
     ),
   ];
+
+  const handleActivateLifetime = async (businessId) => {
+    try {
+      setLoading(true);
+
+      const token = localStorage.getItem("token");
+
+      // Axios config options must go in the 3rd argument for PUT requests.
+      // The 2nd argument is the request body (empty object {} since we pass ID in URL)
+      const res = await api.put(
+        `admin/lifetimeaccess/${businessId}`,
+        {}, // Request Body
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      // Axios safely places response data inside res.data
+      if (res.data.success) {
+        toast.success("Lifetime ownership activated");
+
+        // ✅ Quick check: Ensure you have fetchSubscriptions or a tracking refresh state here
+        // since 'fetchBusinesses()' isn't declared in your code snippet
+        if (typeof fetchSubscriptions === "function") {
+          fetchSubscriptions();
+        } else {
+          // Fallback UI reload if function isn't reachable globally
+          window.location.reload();
+        }
+      }
+    } catch (error) {
+      // Gracefully catch Axios error structures or fallback to native string messages
+      const errorMsg =
+        error.response?.data?.message || error.message || "An error occurred";
+      toast.error(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="subscription-wrapper">
       <div className="subscription-content">
@@ -147,13 +189,14 @@ const Subscription = () => {
                       <th className="py-2 px-3">Subscription</th>
                       <th className="py-2 px-3">Status</th>
                       <th className="py-2 px-3">Expiry</th>
+                      <th className="py-2 px-3 text-center">Action</th>
                     </tr>
                   </thead>
                   <tbody>
                     {loading ? (
                       <tr>
-                        <td colSpan="7" className="text-center py-4">
-                          Loading...
+                        <td colSpan="8" className="text-center py-4">
+                          No subscriptions added yet.
                         </td>
                       </tr>
                     ) : filteredSubscriptions.length > 0 ? (
@@ -174,7 +217,7 @@ const Subscription = () => {
                             {sub.businessId?.ownerId?.city || "N/A"}
                           </td>
                           <td className="py-3 px-3 capitalize">
-                              {sub.plan || "No subscription added."}
+                            {sub.plan || "No subscription added."}
                           </td>
                           <td className="py-3 px-3 capitalize">{sub.status}</td>
                           <td className="py-3 px-3">
@@ -183,6 +226,23 @@ const Subscription = () => {
                               : sub.trialEndDate
                               ? new Date(sub.trialEndDate).toLocaleDateString()
                               : "No Date Set"}
+                          </td>
+                          <td className="px-3 py-3">
+                            <button
+                              className="bg-[var(--primary-color)] px-3 py-2 border-[var(--border-color)] rounded transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                              disabled={
+                                sub.plan === "lifetime" ||
+                                sub.businessId?.subscriptionPlan === "lifetime"
+                              }
+                              onClick={() =>
+                                handleActivateLifetime(sub.businessId?._id)
+                              }
+                            >
+                              {sub.plan === "lifetime" ||
+                              sub.businessId?.subscriptionPlan === "lifetime"
+                                ? "Lifetime Active"
+                                : "Activate Lifetime"}
+                            </button>
                           </td>
                         </tr>
                       ))

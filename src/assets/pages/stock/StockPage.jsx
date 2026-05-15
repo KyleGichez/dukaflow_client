@@ -622,7 +622,6 @@ const StockPage = () => {
                                   height="20"
                                 />
                               </span>
-                              Edit
                             </button>
                             <button
                               type="button"
@@ -636,7 +635,6 @@ const StockPage = () => {
                                   height="20"
                                 />
                               </span>
-                              Delete
                             </button>
                           </div>
                         </td>

@@ -1,0 +1,29 @@
+/* Add this to your style sheets, e.g., ReceiptPrint.css */
+@media print {
+    /* Hide absolutely everything else on the screen */
+    body * {
+      visibility: hidden;
+    }
+    
+    /* Only show the specific receipt container and its children */
+    #receipt-print-area, #receipt-print-area * {
+      visibility: visible;
+    }
+    
+    /* Position the receipt at the top-left of the page */
+    #receipt-print-area {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 80mm; /* Standard thermal paper width */
+      font-family: 'Courier New', Courier, monospace; /* Clean look for receipt printers */
+      font-size: 12px;
+      line-height: 1.2;
+      color: #000;
+    }
+  
+    /* Remove default browser headers/footers (date, URL) */
+    @page {
+      margin: 0;
+    }
+  }

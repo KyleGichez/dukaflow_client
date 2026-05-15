@@ -639,7 +639,6 @@ const Users = () => {
                                   width="20"
                                   height="20"
                                 />
-                                Edit
                               </button>
 
                               <button
@@ -652,7 +651,6 @@ const Users = () => {
                                   width="20"
                                   height="20"
                                 />
-                                Delete
                               </button>
                             </div>
                           </td>

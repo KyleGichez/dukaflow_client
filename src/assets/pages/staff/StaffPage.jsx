@@ -467,7 +467,6 @@ const StaffPage = () => {
                                 height="20"
                               />
                             </span>
-                            Delete
                           </button>
                         </td>
                       </tr>

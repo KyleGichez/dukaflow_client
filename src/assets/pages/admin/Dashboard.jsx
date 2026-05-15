@@ -255,6 +255,12 @@ const AdminDashboard = () => {
                   </p>
                 </div>
                 <div className="users-stat-card">
+                  <h2 className="font-bold uppercase">Lifetime Subs</h2>
+                  <p className="py-[10px]">
+                    {stats?.subscriptions?.lifetime || 0} Subscriptions
+                  </p>
+                </div>
+                <div className="users-stat-card">
                   <h2 className="font-bold uppercase">Date Today</h2>
                   <p className="py-[10px]">{getTodaysDate()}</p>
                 </div>

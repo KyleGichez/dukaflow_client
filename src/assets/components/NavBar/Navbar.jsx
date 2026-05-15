@@ -102,7 +102,9 @@ const Navbar = () => {
                 className="navbar-signup-btn flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-50 hover:bg-gray-100 transition"
                 onClick={() => setShowDropdown(!showDropdown)}
               >
-                <span><Icon icon="mdi:account" width="24" height="24" /></span>
+                <span>
+                  <Icon icon="mdi:account" width="24" height="24" />
+                </span>
                 <span className="capitalize font-medium">{user.fname}</span>
                 <span
                   className={`text-[10px] transition-transform ${
@@ -134,7 +136,7 @@ const Navbar = () => {
                       >
                         {business?.businessName ||
                           user?.businessName ||
-                          "Loading Business..."}
+                          "No Business Linked"}
                       </p>
                       <span
                         className="inline-block mt-1 px-2 py-0.5 rounded bg-blue-100 text-blue-700 text-[10px] font-bold uppercase mb-2"
@@ -150,49 +152,55 @@ const Navbar = () => {
                   </div>
 
                   {/* SUBSCRIPTION SECTION */}
-                  {user?.role !== "superadmin" && business && (
-                    <div className="p-4 border-b">
-                      <div className="flex justify-between items-end mb-2">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                          {isTrial ? "Trial Period" : "Active Plan"}
-                        </span>
-                        <span
-                          className="text-xs font-bold"
-                          style={{
-                            color: isCritical
-                              ? "#EF4444"
-                              : "var(--primary-color)",
-                          }}
-                        >
-                          {daysRemaining} Days Left
-                        </span>
-                      </div>
+                  {user?.role !== "superadmin" &&
+                    business &&
+                    business.subscriptionPlan !== "lifetime" &&
+                    (isTrial ||
+                      ["monthly", "yearly"].includes(
+                        business.subscriptionPlan
+                      )) && (
+                      <div className="p-4 border-b">
+                        <div className="flex justify-between items-end mb-2">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                            {isTrial ? "Trial Period" : "Active Plan"}
+                          </span>
+                          <span
+                            className="text-xs font-bold"
+                            style={{
+                              color: isCritical
+                                ? "#EF4444"
+                                : "var(--primary-color)",
+                            }}
+                          >
+                            {daysRemaining} Days Left
+                          </span>
+                        </div>
 
-                      <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
-                        <div
-                          className="h-full transition-all duration-700 ease-out"
-                          style={{
-                            width: `${progressPercentage}%`,
-                            backgroundColor: isCritical
-                              ? "#EF4444"
-                              : "var(--primary-color)",
-                          }}
-                        ></div>
-                      </div>
+                        <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                          <div
+                            className="h-full transition-all duration-700 ease-out"
+                            style={{
+                              width: `${progressPercentage}%`,
+                              backgroundColor: isCritical
+                                ? "#EF4444"
+                                : "var(--primary-color)",
+                            }}
+                          ></div>
+                        </div>
 
-                      {isCritical && (
-                        <button
-                          onClick={() => {
-                            setShowDropdown(false);
-                            navigate("/subscription");
-                          }}
-                          className="mt-3 w-full py-2 text-[10px] font-bold bg-red-50 text-red-600 rounded-lg border border-red-100 hover:bg-red-100 transition"
-                        >
-                          RENEW SUBSCRIPTION
-                        </button>
-                      )}
-                    </div>
-                  )}
+                        {isCritical && (
+                          <button
+                            onClick={() => {
+                              setShowDropdown(false);
+                              navigate("/subscription");
+                            }}
+                            className="mt-3 w-full py-2 text-[10px] font-bold bg-red-50 text-red-600 rounded-lg border border-red-100 hover:bg-red-100 transition"
+                          >
+                            RENEW SUBSCRIPTION
+                          </button>
+                        )}
+                      </div>
+                    )}
 
                   {/* NAV LINKS */}
                   <div className="p-2">
@@ -221,7 +229,9 @@ const Navbar = () => {
               className="navbar-signup-btn flex items-center gap-[5px] px-6 py-2 bg-blue-600 text-white rounded-lg"
             >
               Login
-              <span><Icon icon="material-symbols:login" width="24" height="24" /></span>
+              <span>
+                <Icon icon="material-symbols:login" width="24" height="24" />
+              </span>
             </Link>
           )}
         </div>

@@ -504,7 +504,6 @@ const ProductPage = () => {
                                   height="20"
                                 />
                               </span>
-                              Edit
                             </button>
                             <button
                               type="button"
@@ -518,7 +517,6 @@ const ProductPage = () => {
                                   height="20"
                                 />
                               </span>
-                              Delete
                             </button>
                           </div>
                         </td>
