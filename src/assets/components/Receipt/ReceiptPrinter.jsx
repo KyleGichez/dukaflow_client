@@ -7,15 +7,16 @@ const ReceiptPrinter = ({ sale, businessData, onClose }) => {
   // 1. Get the current logged-in user's phone number as a fallback
   const loggedInUser = JSON.parse(localStorage.getItem("user"));
   const userPhone = loggedInUser?.phone || loggedInUser?.telephone;
+  const servedBy =
+    `${loggedInUser?.fname || ""}`.trim() ||
+    loggedInUser?.name ||
+    "Staff";
 
-  // 2. Extract Business Name and City based on actual console log structure
   const businessName = businessData?.businessName || "Frozen Bites Hotel";
   const city = businessData?.city || "Nakuru";
 
-  // 3. Fallback path chain for phone number
   const phone = businessData?.phone || userPhone || "No Phone Contact";
 
-  // 📈 FIXED: Look for sale.items (from the checkout basket) or sale.products (from the DB)
   const incomingItems = sale.items || sale.products;
 
   const receiptItems =
@@ -50,10 +51,9 @@ const ReceiptPrinter = ({ sale, businessData, onClose }) => {
   const receiptId = sale._id
     ? sale._id.toString().slice(-6).toUpperCase()
     : "TEMP";
-  // Data normalization for timestamps
+
   const saleTimestamp = sale.createdAt || sale.date || new Date().toISOString();
 
-  // Explicit formatting configuration to force date and time to show up cleanly
   const dateString = new Date(saleTimestamp).toLocaleString("en-KE", {
     year: "numeric",
     month: "numeric",
@@ -62,6 +62,7 @@ const ReceiptPrinter = ({ sale, businessData, onClose }) => {
     minute: "2-digit",
     hour12: true, // Set to false if you prefer 24-hour military format (e.g. 14:30)
   });
+
   return (
     <div
       id="receipt-print-area"
@@ -95,7 +96,6 @@ const ReceiptPrinter = ({ sale, businessData, onClose }) => {
         </thead>
         <tbody>
           {receiptItems.map((item, index) => {
-            // If total isn't explicitly calculated, compute it dynamically
             const itemTotal = item.total || item.quantity * item.price;
 
             return (
@@ -115,13 +115,13 @@ const ReceiptPrinter = ({ sale, businessData, onClose }) => {
 
       {/* Totals */}
       <div className="text-[11px] font-bold text-right space-y-1">
-        <div>Total: KSh {totalAmount.toFixed(2)}</div>
-        <div className="text-[10px] font-normal">Payment: {paymentMethod}</div>
+        <div className="mb-[10px]">Total: KSh {totalAmount.toFixed(2)}</div>
+        <div className="font-semibold text-[10px]">Payment Method: {paymentMethod}</div>
+        <div className="font-semibold text-[10px]">You were served by: {servedBy}</div>
       </div>
 
       <div className="text-center mt-4 text-[9px]">
-        <p>Thank you for shopping with us!</p>
-        <p>Powered by DukaFlow</p>
+        <p className="font-semibold">Thank you customer for shopping with us!</p>
       </div>
 
       {/* Action panel UI */}
