@@ -105,7 +105,6 @@ const SalesPage = () => {
       });
   }, []);
 
-  // Enhanced Filter to include search bar queries and Date selections
   const filteredSales = dbSales
     .slice()
     .sort(
@@ -136,6 +135,7 @@ const SalesPage = () => {
 
       return matchesSearch;
     });
+
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -143,7 +143,6 @@ const SalesPage = () => {
     });
   };
 
-  // Define saveToOffline local behavior fallback
   const saveToOffline = async (payload) => {
     try {
       const offlineId = `offline-${Date.now()}`;
@@ -190,7 +189,9 @@ const SalesPage = () => {
     e.preventDefault();
 
     if (cart.length === 0) {
-      return toast.error("Your basket cannot be empty before finishing a receipt transaction.");
+      return toast.error(
+        "Your basket cannot be empty before finishing a receipt transaction."
+      );
     }
 
     if (!formData.paymentMethod) {
@@ -208,17 +209,17 @@ const SalesPage = () => {
       paymentMethod: formData.paymentMethod,
       items: cart.map((item) => ({
         productId: item.productId,
-        productName: item.productName, 
+        productName: item.productName,
         quantitySold: item.quantitySold,
         unitPrice: item.unitPrice,
         totalPrice: item.totalPrice,
       })),
-      total: grandTotal
+      total: grandTotal,
     };
 
     // ⚡ 3. POP THE RECEIPT IMMEDIATELY (Zero Waiting Time)
     setSelectedSaleForPrint(immediateReceiptData);
-    
+
     // Clear UI inputs right away so the shop owner sees immediate feedback
     setCart([]);
     setFormData(initialState);
@@ -230,7 +231,9 @@ const SalesPage = () => {
     const now = new Date();
 
     if (expiry && new Date(expiry) < now) {
-      return toast.error("Subscription expired. Please connect to internet to renew.");
+      return toast.error(
+        "Subscription expired. Please connect to internet to renew."
+      );
     }
 
     const payload = {
@@ -259,8 +262,10 @@ const SalesPage = () => {
 
         // Swap out the temporary receipt ID with the official MongoDB _id silently
         if (data._id) {
-          setSelectedSaleForPrint(prev => 
-            prev && prev.date === currentTimestamp ? { ...prev, _id: data._id } : prev
+          setSelectedSaleForPrint((prev) =>
+            prev && prev.date === currentTimestamp
+              ? { ...prev, _id: data._id }
+              : prev
           );
         }
 
@@ -269,25 +274,24 @@ const SalesPage = () => {
           _id: data._id ? `${data._id}-${idx}` : `sale-${Date.now()}-${idx}`,
           receiptId: data._id || null,
           date: currentTimestamp,
-          createdAt: currentTimestamp, 
+          createdAt: currentTimestamp,
           paymentMethod: payload.paymentMethod,
           soldBy: { fname: user?.fname || "Me" },
           productId: { _id: item.productId, name: item.productName },
           quantitySold: item.quantitySold,
           totalPrice: item.totalPrice,
-          rawSaleDoc: data, 
+          rawSaleDoc: data,
         }));
 
         setDbSales((prev) => [...addedSalesRows, ...prev]);
 
         // Silently refresh products in background to balance stock counts
         fetch(`${API_URL}/api/products`, { headers })
-          .then(r => r.json())
-          .then(prodData => {
+          .then((r) => r.json())
+          .then((prodData) => {
             if (Array.isArray(prodData)) setProducts(prodData);
           })
-          .catch(e => console.error("Silent stock sync error:", e));
-
+          .catch((e) => console.error("Silent stock sync error:", e));
       } catch (err) {
         console.error("Background sync failed:", err);
         toast.error("Sale kept locally. Cloud synchronization error.");
@@ -303,7 +307,6 @@ const SalesPage = () => {
     setCurrentPage(1);
   }, [filteredSales.length]);
 
-  // Handle adding current single item row into the temporary sale checkout cart
   const handleAddToBag = (e) => {
     if (e) e.preventDefault();
 
@@ -850,9 +853,12 @@ const SalesPage = () => {
                               {sale.soldBy?.fname ?? "cashier"}
                             </td>
                             <td className="py-2 px-3">
-                              <p> {new Date(
-                                sale.createdAt || sale.date
-                              ).toLocaleDateString()}</p>
+                              <p>
+                                {" "}
+                                {new Date(
+                                  sale.createdAt || sale.date
+                                ).toLocaleDateString()}
+                              </p>
                               {new Date(
                                 sale.createdAt || sale.date
                               ).toLocaleTimeString([], {

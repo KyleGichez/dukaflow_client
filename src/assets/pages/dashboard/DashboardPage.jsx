@@ -145,7 +145,7 @@ const DashboardPage = () => {
   // --- Derived Calculations ---
   const allCategories = [...new Set(products.map((p) => p.category))].length;
   const productsRemaining = products.filter((p) => p.qty > 0).length;
-  const lowStockCount = products.filter((p) => p.qty > 0 && p.qty <= 5).length;
+  const lowStockCount = products.filter((p) => p.qty > 0 && p.qty <= 20).length;
 
   const uniqueCategories = [...new Set(products.map((p) => p.category))];
   const emptyCategories = uniqueCategories.filter((cat) =>
@@ -170,7 +170,7 @@ const DashboardPage = () => {
 
   const recentSales = [...sales]
     .sort((a, b) => new Date(b.date) - new Date(a.date))
-    .slice(0, 20);
+    .slice(0, 10);
 
   if (loading) {
     return (

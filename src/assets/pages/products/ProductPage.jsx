@@ -32,7 +32,7 @@ const ProductPage = () => {
 
   const categories = [...new Set(products.map((p) => p.category))];
 
-  const LOW_STOCK_THRESHOLD = 10;
+  const LOW_STOCK_THRESHOLD = 20;
 
   // 1. Get query parameters from URL
   const queryParams = new URLSearchParams(location.search);
@@ -54,7 +54,7 @@ const ProductPage = () => {
       // C. Dashboard URL Filters (with safety checks for null)
       let matchesURL = true;
       if (filterType === "low-stock") {
-        matchesURL = p.quantity > 0 && p.quantity <= 5;
+        matchesURL = p.quantity > 0 && p.quantity <= 20;
       }
       // Added ?. check here to prevent the crash!
       else if (categoryFilter?.toLowerCase() === "unconfirmed") {

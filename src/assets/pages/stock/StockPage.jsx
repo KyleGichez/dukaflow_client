@@ -31,7 +31,7 @@ const StockPage = () => {
 
   const categories = [...new Set(stockItems.map((s) => s.category))];
 
-  const LOW_STOCK_THRESHOLD = 10;
+  const LOW_STOCK_THRESHOLD = 20;
 
   const filteredItems = useMemo(() => {
     return stockItems.filter((item) => {
@@ -385,9 +385,9 @@ const StockPage = () => {
                   type="button"
                   className="add-stock-btn flex items-center gap-[5px]"
                   onClick={() => {
-                    setIsEditing(false); // Reset editing mode
-                    setEditId(null); // Clear edit ID
-                    setFormData(initialFormState); // Clear the form
+                    setIsEditing(false);
+                    setEditId(null);
+                    setFormData(initialFormState);
                     setShowModal(true);
                   }}
                 >
@@ -558,11 +558,11 @@ const StockPage = () => {
                 <thead>
                   <tr>
                     <th className="py-2 px-3">#</th>
-                    <th className="py-2 px-3">Date</th>
                     <th className="py-2 px-3">Category</th>
                     <th className="py-2 px-3">Item</th>
                     <th className="py-2 px-3">Total Quantity</th>
-                    <th className="py-2 px-3">Unit Price</th>
+                    <th className="py-2 px-3">Unit Price(Ksh)</th>
+                    <th className="py-2 px-3">Date Added</th>
                     <th className="py-2 px-3 text-center">Action</th>
                   </tr>
                 </thead>
@@ -580,13 +580,7 @@ const StockPage = () => {
                         <th className="py-2 px-2" scope="row">
                           {index + 1}
                         </th>
-                        <td className="py-2 px-2">
-                          {stockItem.date
-                            ? new Date(stockItem.date)
-                                .toISOString()
-                                .split("T")[0]
-                            : "N/A"}
-                        </td>
+
                         <td className="py-2 px-2 capitalize">
                           {stockItem.category}
                         </td>
@@ -607,6 +601,17 @@ const StockPage = () => {
                         </td>
                         <td className="py-2 px-2">
                           Ksh {stockItem.price?.toLocaleString()}
+                        </td>
+                        <td className="py-2 px-2">
+                          {stockItem.date
+                            ? new Date(stockItem.date).toLocaleDateString()
+                            : "N/A"}
+                          <p>
+                            {new Date(stockItem.date).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </p>
                         </td>
                         <td className="py-2 px-2">
                           <div className="flex gap-[5px]">
