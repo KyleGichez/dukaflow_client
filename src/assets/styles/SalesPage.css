@@ -110,5 +110,9 @@
     .modal-add-btn{
       margin-right: 30px;
     }
+
+    .cart-modal{
+      height: 700px;
+    }
   
   }

@@ -203,7 +203,7 @@ const Subscription = () => {
                       filteredSubscriptions.map((sub, index) => (
                         <tr key={sub._id} className="border-b hover:bg-gray-50">
                           <td className="py-3 px-3">{index + 1}</td>
-                          <td className="py-3 px-3 font-medium">
+                          <td className="py-3 px-3 font-medium capitalize">
                             {sub.businessId?.businessName ||
                               "No Business Linked"}
                           </td>

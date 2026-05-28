@@ -166,11 +166,11 @@ const DashboardPage = () => {
     }, {})
   )
     .sort((a, b) => b.totalSold - a.totalSold)
-    .slice(0, 4);
+    .slice(0, 10);
 
   const recentSales = [...sales]
     .sort((a, b) => new Date(b.date) - new Date(a.date))
-    .slice(0, 5);
+    .slice(0, 20);
 
   if (loading) {
     return (
@@ -348,13 +348,30 @@ const DashboardPage = () => {
             </div>
           </div>
           <div className="dashboard-content-wrapper-info">
-            <div className="dashboard-content-stats-cards flex gap-[20px] mb-[30px]">
+            <div className="dashboard-content-stats-cards flex flex-wrap gap-[20px] mb-[30px]">
+              <div className="content-stats-card flex-1">
+                <div className="content-stat-card">
+                  <h3 className="font-bold uppercase">Total Revenue</h3>
+                  <p className="">KES {summary.totalRevenue.toLocaleString()}</p>
+                </div>
+              </div>
               <div className="content-stats-card">
                 <div className="content-stat-card">
-                  <h3 className="font-bold uppercase">Today's Sales</h3>
-                  <p>Ksh {summary.totalRevenue.toLocaleString()}</p>
-                  <p>{summary.totalItemsSold} items sold</p>
+                  <h3 className="font-bold uppercase">Profit / 7 days</h3>
+                  <p className="">KES 790,696</p>
                 </div>
+              </div>
+              <div className="content-stats-card">
+                <div className="content-stat-card">
+                  <h3 className="font-bold uppercase">Avg Daily Profit</h3>
+                  <p className="">KES 320,670</p>
+                </div>
+              </div>
+              <div className="content-stats-card">
+                <div className="content-stat-card">
+                  <h3 className="font-bold uppercase">Total Expenses</h3>
+                  <p className=""> KES 405,270</p>
+                  </div>
               </div>
               <div className="content-stats-card">
                 <div className="content-stat-card">
@@ -373,8 +390,8 @@ const DashboardPage = () => {
               <div className="content-stats-card">
                 <div className="content-stat-card">
                   <h3 className="font-bold uppercase">Stock Value</h3>
-                  <p>Ksh {summary.totalStockValue.toLocaleString()}</p>
-                  <p>Date: {getTodaysDate()}</p>
+                  <p>KES {summary.totalStockValue.toLocaleString()}</p>
+                  <p>{summary.totalItemsSold || 0} Items Sold</p>
                 </div>
               </div>
             </div>

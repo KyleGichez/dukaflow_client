@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'https://dukaflow-server.onrender.com/api', // Use your actual backend URL
+  baseURL: 'https://dukaflow-server.onrender.com/api',
   credentials: true,
 });
 
