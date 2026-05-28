@@ -156,17 +156,24 @@ const DashboardPage = () => {
     (p) => !p.category || p.category.toLowerCase() === "unconfirmed"
   ).length;
 
-  const topSellingItems = Object.values(
+  const topSellingCategories = Object.values(
     sales.reduce((acc, sale) => {
-      const name = sale.productId?.name || "Unknown";
-      if (!acc[name])
-        acc[name] = { name, totalSold: 0, units: sale.productId?.units || "" };
-      acc[name].totalSold += sale.quantitySold || 0;
+      const category = sale.productId?.category || "Uncategorized";
+
+      if (!acc[category]) {
+        acc[category] = {
+          category,
+          totalSold: 0,
+        };
+      }
+
+      acc[category].totalSold += sale.quantitySold || 0;
+
       return acc;
     }, {})
   )
     .sort((a, b) => b.totalSold - a.totalSold)
-    .slice(0, 10);
+    .slice(0, 4);
 
   const recentSales = [...sales]
     .sort((a, b) => new Date(b.date) - new Date(a.date))
@@ -352,7 +359,9 @@ const DashboardPage = () => {
               <div className="content-stats-card flex-1">
                 <div className="content-stat-card">
                   <h3 className="font-bold uppercase">Total Revenue</h3>
-                  <p className="">KES {summary.totalRevenue.toLocaleString()}</p>
+                  <p className="">
+                    KES {summary.totalRevenue.toLocaleString()}
+                  </p>
                 </div>
               </div>
               <div className="content-stats-card">
@@ -371,7 +380,7 @@ const DashboardPage = () => {
                 <div className="content-stat-card">
                   <h3 className="font-bold uppercase">Total Expenses</h3>
                   <p className=""> KES 405,270</p>
-                  </div>
+                </div>
               </div>
               <div className="content-stats-card">
                 <div className="content-stat-card">
@@ -448,12 +457,13 @@ const DashboardPage = () => {
                   <h4 className="font-bold uppercase">Top Selling Items</h4>
                   <div className="dashboard-product-stat">
                     <ul>
-                      {topSellingItems.length > 0 ? (
-                        topSellingItems.map((item, index) => (
+                      {topSellingCategories.length > 0 ? (
+                        topSellingCategories.map((item, index) => (
                           <li key={index} className="flex justify-between my-2">
-                            <span className="capitalize">{item.name}</span>
+                            <span className="capitalize">{item.category}</span>
+
                             <span className="font-normal">
-                              {item.totalSold.toLocaleString()} {item.units}
+                              {item.totalSold.toLocaleString()} items sold
                             </span>
                           </li>
                         ))

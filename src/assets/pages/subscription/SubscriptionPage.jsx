@@ -9,7 +9,7 @@ const Subscription = ({ onClose }) => {
   const [loading, setLoading] = useState(false);
 
   // Define pricing logic
-  const price = selectedPlan === "monthly" ? 1500 : 18000;
+  const price = selectedPlan === "monthly" ? 2500 : 27000;
 
   const handlePayment = async () => {
     setLoading(true);
@@ -76,7 +76,7 @@ const Subscription = ({ onClose }) => {
               >
                 <span className="text-sm font-bold">Monthly</span>
                 <span className="text-lg font-mono font-black text-gray-800">
-                  1,500
+                  2,500
                 </span>
               </button>
               <button
@@ -88,11 +88,11 @@ const Subscription = ({ onClose }) => {
                 }`}
               >
                 <span className="absolute -top-2 bg-red-500 text-white text-[9px] px-2 py-0.5 rounded-full uppercase font-bold">
-                  Best Value
+                  10% Discount
                 </span>
                 <span className="text-sm font-bold">Yearly</span>
                 <span className="text-lg font-mono font-black text-gray-800">
-                  18,000
+                  27,000
                 </span>
               </button>
             </div>
