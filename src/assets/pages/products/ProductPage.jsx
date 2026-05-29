@@ -2,6 +2,7 @@ import React from "react";
 import { useMemo, useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { Icon } from "@iconify/react";
+import CoinsIcon from "@iconify-react/lucide/coins";
 import toast from "react-hot-toast";
 import "../../styles/ProductPage.css";
 import API_URL from "../../../api";
@@ -18,6 +19,7 @@ const ProductPage = () => {
 
   const user = JSON.parse(localStorage.getItem("user"));
   const isAdmin = user?.role === "admin";
+  const isManager = user?.role === "manager";
 
   const unitOptions = ["pieces", "kgs", "bags", "packets", "meters", "litres"];
 
@@ -28,6 +30,7 @@ const ProductPage = () => {
   const [editId, setEditId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [currentPage, setCurrentPage] = useState(1);
   const location = useLocation();
 
   const categories = [...new Set(products.map((p) => p.category))];
@@ -68,6 +71,22 @@ const ProductPage = () => {
       return matchesSearch && matchesCategoryDropdown && matchesURL;
     });
   }, [products, searchTerm, selectedCategory, filterType, categoryFilter]);
+
+  const ITEMS_PER_PAGE = 10;
+
+  // Pagination Calculations
+  const totalPages = Math.ceil(allFilteredProducts.length / ITEMS_PER_PAGE);
+
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+
+  const paginatedProducts = allFilteredProducts.slice(startIndex, endIndex);
+
+  // Reset page when filters/search change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedCategory, filterType, categoryFilter]);
 
   // ✅Fetch products using the authenticated API instance
   useEffect(() => {
@@ -229,6 +248,12 @@ const ProductPage = () => {
                 </li>
                 <li className="menu-item flex items-center gap-[10px]">
                   <span>
+                    <CoinsIcon height="24" width="24" />
+                  </span>
+                  <a href="/credit">Credit</a>
+                </li>
+                <li className="menu-item flex items-center gap-[10px]">
+                  <span>
                     <Icon
                       icon="garden:file-spreadsheet-fill-12"
                       width="24"
@@ -237,7 +262,7 @@ const ProductPage = () => {
                   </span>
                   <a href="/summary">Reports</a>
                 </li>
-                {isAdmin && (
+                {isAdmin &&(
                   <>
                     <li className="menu-item flex items-center gap-[10px]">
                       <span>
@@ -462,8 +487,8 @@ const ProductPage = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {allFilteredProducts.length > 0 ? (
-                    allFilteredProducts.map((product, index) => (
+                  {paginatedProducts.length > 0 ? (
+                    paginatedProducts.map((product, index) => (
                       <tr
                         key={product._id}
                         className={
@@ -473,7 +498,7 @@ const ProductPage = () => {
                         }
                       >
                         <th className="py-2 px-2" scope="row">
-                          {index + 1}
+                          {startIndex + index + 1}
                         </th>
                         <td className="py-3 px-2 capitalize">{product.name}</td>
                         <td className="py-3 px-2 capitalize">
@@ -556,6 +581,59 @@ const ProductPage = () => {
                   )}
                 </tbody>
               </table>
+              {/* Pagination */}
+              {allFilteredProducts.length > ITEMS_PER_PAGE && (
+                <div className="flex justify-between items-center mt-5 flex-wrap gap-3">
+                  <p className="text-sm text-gray-600">
+                    Showing {startIndex + 1} -
+                    {Math.min(endIndex, allFilteredProducts.length)} of{" "}
+                    {allFilteredProducts.length} items
+                  </p>
+
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      onClick={() => setCurrentPage((prev) => prev - 1)}
+                      disabled={currentPage === 1}
+                      className={`px-4 py-2 rounded-md border transition ${
+                        currentPage === 1
+                          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                          : "bg-white hover:bg-gray-100"
+                      }`}
+                    >
+                      Previous
+                    </button>
+
+                    {[...Array(totalPages)].map((_, index) => {
+                      const page = index + 1;
+
+                      return (
+                        <button
+                          key={page}
+                          onClick={() => setCurrentPage(page)}
+                          className={`w-10 h-10 rounded-md transition ${
+                            currentPage === page
+                              ? "bg-blue-600 text-white"
+                              : "bg-white border hover:bg-gray-100"
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      );
+                    })}
+                    <button
+                      onClick={() => setCurrentPage((prev) => prev + 1)}
+                      disabled={currentPage === totalPages}
+                      className={`px-4 py-2 rounded-md border transition ${
+                        currentPage === totalPages
+                          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                          : "bg-white hover:bg-gray-100"
+                      }`}
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

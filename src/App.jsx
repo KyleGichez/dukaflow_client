@@ -16,6 +16,7 @@ import ProductPage from "./assets/pages/products/ProductPage";
 import StockPage from "./assets/pages/stock/StockPage";
 import SalesPage from "./assets/pages/sales/SalesPage";
 import ReportsPage from "./assets/pages/reports/ReportsPage";
+import CreditSalesPage from "./assets/pages/credit/CreditSalesPage";
 import StaffPage from "./assets/pages/staff/StaffPage";
 import SettingsPage from "./assets/pages/settings/SettingsPage";
 import SubscriptionPage from "./assets/pages/subscription/SubscriptionPage";
@@ -166,6 +167,14 @@ function App() {
           element={
             <ProtectedRoute>
               <ReportsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/credit"
+          element={
+            <ProtectedRoute>
+              <CreditSalesPage />
             </ProtectedRoute>
           }
         />

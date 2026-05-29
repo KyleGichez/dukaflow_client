@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import api from "../../../api/axios";
 import toast from "react-hot-toast";
 import { Icon } from "@iconify/react";
+import CoinsIcon from '@iconify-react/lucide/coins';
 import "../../styles/StaffPage.css";
 
 const StaffPage = () => {
@@ -154,6 +155,12 @@ const StaffPage = () => {
                   </span>
                   <a href="/sales">Sales</a>
                 </li>
+                <li className="menu-item flex items-center gap-[10px]">
+                    <span>
+                    <CoinsIcon height="24" width="24"/>
+                    </span>
+                    <a href="/credit">Credit</a>
+                  </li>
                 <li className="menu-item flex items-center gap-[10px]">
                   <span>
                     <Icon

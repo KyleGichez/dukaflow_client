@@ -1,6 +1,7 @@
 import React from "react";
 import { useMemo, useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
+import CoinsIcon from '@iconify-react/lucide/coins';
 import toast from "react-hot-toast";
 import "../../styles/StockPage.css";
 import API_URL from "../../../api";
@@ -8,7 +9,6 @@ import API_URL from "../../../api";
 const StockPage = () => {
   const initialFormState = {
     product: "",
-    date: new Date().toISOString().split("T")[0],
     category: "",
     name: "",
     quantityAdded: "",
@@ -28,6 +28,7 @@ const StockPage = () => {
   const [editId, setEditId] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
 
   const categories = [...new Set(stockItems.map((s) => s.category))];
 
@@ -47,6 +48,21 @@ const StockPage = () => {
       return matchesCategory && matchesSearch;
     });
   }, [stockItems, selectedCategory, searchTerm]);
+
+  const ITEMS_PER_PAGE = 10;
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE);
+
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+
+  const paginatedItems = filteredItems.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters/search change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedCategory]);
 
   // ✅ Fetch stock items properly
   useEffect(() => {
@@ -104,7 +120,6 @@ const StockPage = () => {
     e.preventDefault();
 
     const payload = {
-      date: formData.date,
       category: formData.category,
       name: formData.name,
       quantityAdded: Number(formData.quantityAdded),
@@ -298,6 +313,12 @@ const StockPage = () => {
                   <a href="/sales">Sales</a>
                 </li>
                 <li className="menu-item flex items-center gap-[10px]">
+                    <span>
+                    <CoinsIcon height="24" width="24"/>
+                    </span>
+                    <a href="/credit">Credit</a>
+                  </li>
+                <li className="menu-item flex items-center gap-[10px]">
                   <span>
                     <Icon
                       icon="garden:file-spreadsheet-fill-12"
@@ -432,17 +453,6 @@ const StockPage = () => {
                         </legend>
                         <div className="flex">
                           <div className="form-input">
-                            <label htmlFor="date">Date</label>
-                            <input
-                              type="date"
-                              name="date"
-                              value={formData.date}
-                              onChange={handleChange}
-                              placeholder="Enter stock date"
-                              required
-                            />
-                          </div>
-                          <div className="form-input">
                             <label htmlFor="category">Stock Category</label>
                             <input
                               type="text"
@@ -459,8 +469,6 @@ const StockPage = () => {
                               ))}
                             </datalist>
                           </div>
-                        </div>
-                        <div className="flex">
                           <div className="form-input">
                             <label htmlFor="name">Product Name</label>
                             <input
@@ -488,6 +496,8 @@ const StockPage = () => {
                               )}
                             </datalist>
                           </div>
+                        </div>
+                        <div className="flex">
                           <div className="form-input">
                             <label htmlFor="quantityAdded">
                               Total Quantity
@@ -498,6 +508,17 @@ const StockPage = () => {
                               value={formData.quantityAdded}
                               onChange={handleChange}
                               placeholder="Enter Total Quantity"
+                              required
+                            />
+                          </div>
+                          <div className="form-input">
+                            <label htmlFor="price">Unit Price</label>
+                            <input
+                              type="number"
+                              name="price"
+                              placeholder="Enter unit price(Ksh)"
+                              value={formData.price}
+                              onChange={handleChange}
                               required
                             />
                           </div>
@@ -519,17 +540,6 @@ const StockPage = () => {
                                 </option>
                               ))}
                             </select>
-                          </div>
-                          <div className="form-input">
-                            <label htmlFor="price">Unit Price</label>
-                            <input
-                              type="number"
-                              name="price"
-                              placeholder="Enter unit price(Ksh)"
-                              value={formData.price}
-                              onChange={handleChange}
-                              required
-                            />
                           </div>
                         </div>
                         <div className="modal-buttons-wrapper flex gap-[20px] justify-end">
@@ -567,8 +577,8 @@ const StockPage = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredItems.length > 0 ? (
-                    filteredItems.map((stockItem, index) => (
+                  {paginatedItems.length > 0 ? (
+                    paginatedItems.map((stockItem, index) => (
                       <tr
                         key={stockItem._id}
                         className={
@@ -578,7 +588,7 @@ const StockPage = () => {
                         }
                       >
                         <th className="py-2 px-2" scope="row">
-                          {index + 1}
+                          {startIndex + index + 1}
                         </th>
 
                         <td className="py-2 px-2 capitalize">
@@ -604,14 +614,24 @@ const StockPage = () => {
                         </td>
                         <td className="py-2 px-2">
                           {stockItem.date
-                            ? new Date(stockItem.date).toLocaleDateString()
+                            ? (() => {
+                                const d = new Date(stockItem.date);
+
+                                if (isNaN(d.getTime())) return "Invalid date";
+
+                                return (
+                                  <>
+                                    <p>{d.toLocaleDateString("en-GB")}</p>
+                                    <p>
+                                      {d.toLocaleTimeString([], {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      })}
+                                    </p>
+                                  </>
+                                );
+                              })()
                             : "N/A"}
-                          <p>
-                            {new Date(stockItem.date).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </p>
                         </td>
                         <td className="py-2 px-2">
                           <div className="flex gap-[5px]">
@@ -680,6 +700,60 @@ const StockPage = () => {
                   )}
                 </tbody>
               </table>
+              {/* Pagination */}
+              {filteredItems.length > ITEMS_PER_PAGE && (
+                <div className="flex justify-between items-center mt-5 flex-wrap gap-3">
+                  <p className="text-sm text-gray-600">
+                    Showing {startIndex + 1} -
+                    {Math.min(endIndex, filteredItems.length)} of{" "}
+                    {filteredItems.length} items
+                  </p>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setCurrentPage((prev) => prev - 1)}
+                      disabled={currentPage === 1}
+                      className={`px-4 py-2 rounded-md border transition ${
+                        currentPage === 1
+                          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                          : "bg-white hover:bg-gray-100"
+                      }`}
+                    >
+                      Previous
+                    </button>
+
+                    {/* Page Numbers */}
+                    {[...Array(totalPages)].map((_, index) => {
+                      const page = index + 1;
+
+                      return (
+                        <button
+                          key={page}
+                          onClick={() => setCurrentPage(page)}
+                          className={`w-10 h-10 rounded-md transition ${
+                            currentPage === page
+                              ? "bg-blue-600 text-white"
+                              : "bg-white border hover:bg-gray-100"
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      );
+                    })}
+                    <button
+                      onClick={() => setCurrentPage((prev) => prev + 1)}
+                      disabled={currentPage === totalPages}
+                      className={`px-4 py-2 rounded-md border transition ${
+                        currentPage === totalPages
+                          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                          : "bg-white hover:bg-gray-100"
+                      }`}
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

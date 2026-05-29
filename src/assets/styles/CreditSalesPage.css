@@ -1,0 +1,74 @@
+.credit-wrapper{
+    width: 100%;
+    min-height: 150vh;
+}
+
+.credit-content{
+    width: 70%;
+    margin: 0 auto;
+    padding-top: 120px;
+}
+
+.credit-content-menu ul{
+    border:1px solid var(--border-color);
+    border-radius: 5px;
+    background-color: #ffff;
+    cursor: pointer;
+}
+
+.credit-content-menu ul li{
+    padding:15px 20px;
+    border-bottom: 1px solid var(--border-color);
+    font-weight: bold;
+    text-transform: uppercase;
+    color: var(--text-primary);
+}
+
+.credit-content-menu ul li:hover{
+    background-color: #d3d3d3;
+}
+
+
+@media screen and (max-width: 768px) {
+    html,
+    body {
+      overflow-x: hidden;
+    }
+  
+    .credit-content {
+      width: 100%;
+      padding: 0 20px;
+      padding-top: 30%;
+    }
+  
+    .credit-content-wrapper-menu {
+      display: none;
+    }
+
+    .credit-content-wrapper h3{
+        font-size: small;
+    }
+
+    .credit-content-wrapper span{
+       text-align: center; 
+       padding: 5px 10px;
+       border: 1px solid var(--border-color);
+       border-radius: 5%;
+    }
+  
+    .table-auto {
+      width: 100%;
+      font-size: 14px;
+      display: block;
+      white-space: nowrap; /* Allows horizontal scrolling without squishing text */
+    }
+  
+    .sales-table{
+      width: 100%;
+      overflow-x: auto;
+    }
+  
+    .modal-wrapper{
+      width: 100%;
+    }
+}

@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import "../../styles/ReportsPage.css";
 import { Icon } from "@iconify/react";
+import CoinsIcon from '@iconify-react/lucide/coins';
 import * as XLSX from "xlsx";
 import API_URL from "../../../api";
 
@@ -60,8 +61,8 @@ const ReportsPage = () => {
     totalStockValue: 0,
     paymentBreakdown: {},
   });
-  const [sales, setSales] = useState([]); // State for the table
-  const [filter, setFilter] = useState("today"); // State for the dropdown
+  const [sales, setSales] = useState([]);
+  const [filter, setFilter] = useState("today"); 
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -100,8 +101,8 @@ const ReportsPage = () => {
   }, [filter]);
 
   const recentSales = sales
-    .sort((a, b) => new Date(b.date) - new Date(a.date)) // Sort by newest first
-    .slice(0, 10); // Take only the first 10 items
+    .sort((a, b) => new Date(b.date) - new Date(a.date)) 
+    .slice(0, 10); 
 
   if (loading) {
     return (
@@ -224,6 +225,12 @@ const ReportsPage = () => {
                   </span>
                   <a href="/sales">Sales</a>
                 </li>
+                <li className="menu-item flex items-center gap-[10px]">
+                    <span>
+                    <CoinsIcon height="24" width="24"/>
+                    </span>
+                    <a href="/credit">Credit</a>
+                  </li>
                 <li className="menu-item active flex items-center gap-[10px]">
                   <span>
                     <Icon

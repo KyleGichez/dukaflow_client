@@ -67,6 +67,26 @@
     background-color: #ffff;
 }
 
+.status-badge {
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: white;
+}
+
+.status-badge.paid {
+  background: #16a34a;
+}
+
+.status-badge.pending {
+  background: #dc2626;
+}
+
+.status-badge.partial {
+  background: #f59e0b;
+}
+
 @media screen and (max-width: 768px) {
     html,
     body {

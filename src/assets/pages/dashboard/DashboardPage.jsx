@@ -2,6 +2,7 @@ import React from "react";
 import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { Icon } from "@iconify/react";
+import CoinsIcon from '@iconify-react/lucide/coins';
 import "../../styles/DashboardPage.css";
 import { db } from "../../../db.js";
 import api from "../../../api/axios";
@@ -325,6 +326,12 @@ const DashboardPage = () => {
                   </span>
                   <a href="/sales">Sales</a>
                 </li>
+                <li className="menu-item flex items-center gap-[10px]">
+                    <span>
+                    <CoinsIcon height="24" width="24"/>
+                    </span>
+                    <a href="/credit">Credit</a>
+                  </li>
                 <li className="menu-item flex items-center gap-[10px]">
                   <span>
                     <Icon

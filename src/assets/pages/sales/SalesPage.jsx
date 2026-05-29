@@ -1,7 +1,7 @@
 import React from "react";
 import { useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
-import PrintIcon from "@iconify-react/material-symbols/print";
+import CoinsIcon from "@iconify-react/lucide/coins";
 import toast from "react-hot-toast";
 import "../../styles/SalesPage.css";
 import API_URL from "../../../api";
@@ -15,6 +15,10 @@ const SalesPage = () => {
     productName: "",
     quantitySold: "",
     paymentMethod: "",
+    customerName: "",
+    customerPhone: "",
+    amountPaid: "",
+    nextPaymentDate: "",
   };
 
   const user = JSON.parse(localStorage.getItem("user"));
@@ -90,6 +94,7 @@ const SalesPage = () => {
               date: sale.date,
               createdAt: sale.createdAt,
               paymentMethod: sale.paymentMethod,
+              paymentStatus: sale.paymentStatus,
               soldBy: sale.soldBy || null,
               productId: sale.productId,
               quantitySold: sale.quantitySold,
@@ -188,25 +193,40 @@ const SalesPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (cart.length === 0) {
+    if (cart.length === 0) return toast.error("Your basket cannot be empty.");
+    if (!formData.paymentMethod)
+      return toast.error("Please select a payment method.");
+
+    if (
+      formData.paymentMethod === "Credit" &&
+      (!formData.customerName || !formData.customerPhone)
+    ) {
       return toast.error(
-        "Your basket cannot be empty before finishing a receipt transaction."
+        "Please provide both a customer name and phone number for credit transactions."
       );
     }
 
-    if (!formData.paymentMethod) {
-      return toast.error("Please select a payment method.");
-    }
-
-    // 1. Generate the exact timestamp instantly
     const currentTimestamp = new Date().toISOString();
     const grandTotal = getCartGrandTotal();
+    const balanceDue =
+      formData.paymentMethod === "Credit"
+        ? grandTotal - formData.amountPaid
+        : 0;
 
-    // 2. Prepare receipt data locally right now
+    // Build receipt layout state model instantly
     const immediateReceiptData = {
-      _id: `TEMP-${Date.now().toString().slice(-4)}`, // Temporary ID replaced when DB responds
+      _id: `TEMP-${Date.now().toString().slice(-4)}`,
       date: currentTimestamp,
       paymentMethod: formData.paymentMethod,
+      customerDetails:
+        formData.paymentMethod === "Credit"
+          ? {
+              name: formData.customerName,
+              phone: formData.customerPhone,
+              paid: formData.amountPaid,
+              balance: balanceDue,
+            }
+          : null,
       items: cart.map((item) => ({
         productId: item.productId,
         productName: item.productName,
@@ -217,35 +237,31 @@ const SalesPage = () => {
       total: grandTotal,
     };
 
-    // ⚡ 3. POP THE RECEIPT IMMEDIATELY (Zero Waiting Time)
+    // Pop modal instantly
     setSelectedSaleForPrint(immediateReceiptData);
 
-    // Clear UI inputs right away so the shop owner sees immediate feedback
+    // Clear cart inputs
     setCart([]);
     setFormData(initialState);
     setShowModal(false);
 
-    // 4. Handle Backend sync silently in the background
-    const token = localStorage.getItem("token");
-    const expiry = localStorage.getItem("expiry");
-    const now = new Date();
-
-    if (expiry && new Date(expiry) < now) {
-      return toast.error(
-        "Subscription expired. Please connect to internet to renew."
-      );
-    }
-
+    // Build backend parameters payload
     const payload = {
       items: immediateReceiptData.items,
       paymentMethod: immediateReceiptData.paymentMethod,
       date: currentTimestamp,
       totalAmount: grandTotal,
+      // Pass downstream properties seamlessly
+      customerName: formData.customerName,
+      customerPhone: formData.customerPhone,
+      amountPaid: formData.amountPaid,
+      balance: balanceDue,
+      nextPaymentDate: formData.nextPaymentDate,
     };
 
     if (navigator.onLine) {
-      // Fire and forget/process in background
       try {
+        const token = localStorage.getItem("token");
         const headers = {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
@@ -260,7 +276,7 @@ const SalesPage = () => {
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || "Server error");
 
-        // Swap out the temporary receipt ID with the official MongoDB _id silently
+        // Swap temporary wrapper ID
         if (data._id) {
           setSelectedSaleForPrint((prev) =>
             prev && prev.date === currentTimestamp
@@ -269,35 +285,12 @@ const SalesPage = () => {
           );
         }
 
-        // Build table row format for your local state array
-        const addedSalesRows = payload.items.map((item, idx) => ({
-          _id: data._id ? `${data._id}-${idx}` : `sale-${Date.now()}-${idx}`,
-          receiptId: data._id || null,
-          date: currentTimestamp,
-          createdAt: currentTimestamp,
-          paymentMethod: payload.paymentMethod,
-          soldBy: { fname: user?.fname || "Me" },
-          productId: { _id: item.productId, name: item.productName },
-          quantitySold: item.quantitySold,
-          totalPrice: item.totalPrice,
-          rawSaleDoc: data,
-        }));
-
-        setDbSales((prev) => [...addedSalesRows, ...prev]);
-
-        // Silently refresh products in background to balance stock counts
-        fetch(`${API_URL}/api/products`, { headers })
-          .then((r) => r.json())
-          .then((prodData) => {
-            if (Array.isArray(prodData)) setProducts(prodData);
-          })
-          .catch((e) => console.error("Silent stock sync error:", e));
+        // Trigger safe state array reload
+        window.location.reload(); // Simple refresh or call your fetchSales() / fetchCredits() triggers here
       } catch (err) {
-        console.error("Background sync failed:", err);
-        toast.error("Sale kept locally. Cloud synchronization error.");
+        console.error("Cloud processing error:", err);
       }
     } else {
-      // Offline fallback processing
       await saveToOffline(payload);
     }
   };
@@ -480,6 +473,12 @@ const SalesPage = () => {
                     <Icon icon="carbon:sales-ops" width="24" height="24" />
                   </span>
                   <a href="/sales">Sales</a>
+                </li>
+                <li className="menu-item flex items-center gap-[10px]">
+                  <span>
+                    <CoinsIcon height="24" width="24" />
+                  </span>
+                  <a href="/credit">Credit</a>
                 </li>
                 <li className="menu-item flex items-center gap-[10px]">
                   <span>
@@ -738,12 +737,12 @@ const SalesPage = () => {
                             required
                           />
                         </div>
-                        <div>
-                          <label className="block text-xs font-semibold text-gray-600 mb-1">
+                        {/* Payment Method Selector */}
+                        <div className="mb-4">
+                          <label className="block text-sm font-medium mb-1">
                             Payment Method
                           </label>
                           <select
-                            className="border p-2 rounded w-full text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                             value={formData.paymentMethod}
                             onChange={(e) =>
                               setFormData({
@@ -751,15 +750,62 @@ const SalesPage = () => {
                                 paymentMethod: e.target.value,
                               })
                             }
-                            required
+                            className="w-full border rounded p-2"
                           >
-                            <option value="">-- Select Payment --</option>
-                            <option value="Credit">Credit</option>
+                            <option value="">--- Select Payment ---</option>
                             <option value="Cash">Cash</option>
                             <option value="M-pesa">M-pesa</option>
-                            <option value="Bank-Transfer">Bank Transfer</option>
+                            <option value="Bank Transfer">Bank Transfer</option>
+                            <option value="Credit">Credit (Deni)</option>
                           </select>
                         </div>
+
+                        {/* Conditional Credit Fields */}
+                        {formData.paymentMethod === "Credit" && (
+                          <div className="space-y-3 p-3 bg-amber-50 rounded-md border border-amber-200 mb-4 animate-fadeIn">
+                            <h4 className="text-xs font-bold text-amber-800 uppercase tracking-wider">
+                              Credit Customer Details
+                            </h4>
+
+                            <div>
+                              <label className="block text-[11px] font-semibold text-gray-700">
+                                Customer Name *
+                              </label>
+                              <input
+                                type="text"
+                                required
+                                value={formData.customerName}
+                                onChange={(e) =>
+                                  setFormData({
+                                    ...formData,
+                                    customerName: e.target.value,
+                                  })
+                                }
+                                className="w-full border rounded p-1.5 text-sm bg-white"
+                                placeholder="e.g., John Doe"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-[11px] font-semibold text-gray-700">
+                                Customer Phone *
+                              </label>
+                              <input
+                                type="tel"
+                                required
+                                value={formData.customerPhone}
+                                onChange={(e) =>
+                                  setFormData({
+                                    ...formData,
+                                    customerPhone: e.target.value,
+                                  })
+                                }
+                                className="w-full border rounded p-1.5 text-sm bg-white"
+                                placeholder="e.g., 0712345678"
+                              />
+                            </div>
+                          </div>
+                        )}
                         <div className="bg-blue-50 p-2.5 rounded-lg border border-blue-200 text-right flex flex-col justify-center">
                           <span className="block text-[10px] font-bold text-blue-600 uppercase tracking-wider">
                             Grand Total Bill
@@ -808,6 +854,7 @@ const SalesPage = () => {
                     <th className="py-2 px-3">Payment</th>
                     <th className="py-2 px-3">Sold By</th>
                     <th className="py-2 px-3">Sold At</th>
+                    <th className="py-2 px-3">Status</th>
                     <th className="py-2 px-3 text-center">Action</th>
                   </tr>
                 </thead>
@@ -866,36 +913,15 @@ const SalesPage = () => {
                                 minute: "2-digit",
                               })}
                             </td>
+                            <td className="px-3 py-2">
+                              <span
+                                className={`status-badge ${sale.paymentStatus?.toLowerCase()}`}
+                              >
+                                {sale.paymentStatus}
+                              </span>
+                            </td>
                             <td className="py-2 px-2 text-center">
                               <div className="sale-delete-btn flex justify-center gap-2">
-                                {/* Print action feature hook */}
-                                {/* <button
-                                  type="button"
-                                  className="p-2 bg-blue-600 text-white rounded hover:text-blue-800"
-                                  onClick={() => {
-                                    const receiptData = sale.rawSaleDoc || {
-                                      _id: sale.receiptId || sale._id,
-                                      date: sale.date,
-                                      paymentMethod: sale.paymentMethod,
-                                      items: [
-                                        {
-                                          productId: sale.productId?._id,
-                                          productName: sale.productId?.name,
-                                          quantitySold: sale.quantitySold,
-                                          totalPrice: sale.totalPrice,
-                                        },
-                                      ],
-                                    };
-                                    setSelectedSaleForPrint(receiptData);
-                                  }}
-                                  title="Print Receipt"
-                                >
-                                  <Icon
-                                    icon="material-symbols:print"
-                                    width="20"
-                                    height="20"
-                                  />
-                                </button> */}
                                 <button
                                   type="button"
                                   className="delete-btn p-1 text-red-600 hover:text-red-800"
