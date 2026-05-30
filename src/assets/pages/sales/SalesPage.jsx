@@ -95,6 +95,7 @@ const SalesPage = () => {
               createdAt: sale.createdAt,
               paymentMethod: sale.paymentMethod,
               paymentStatus: sale.paymentStatus,
+              balance: Number(sale.balance || 0),
               soldBy: sale.soldBy || null,
               productId: sale.productId,
               quantitySold: sale.quantitySold,
@@ -284,9 +285,10 @@ const SalesPage = () => {
               : prev
           );
         }
-
-        // Trigger safe state array reload
-        window.location.reload(); // Simple refresh or call your fetchSales() / fetchCredits() triggers here
+        // Give the browser 2.5 seconds to show the receipt/print dialog before reload
+        setTimeout(() => {
+          window.location.reload();
+        }, 2500);
       } catch (err) {
         console.error("Cloud processing error:", err);
       }
@@ -480,18 +482,18 @@ const SalesPage = () => {
                   </span>
                   <a href="/credit">Credit</a>
                 </li>
-                <li className="menu-item flex items-center gap-[10px]">
-                  <span>
-                    <Icon
-                      icon="garden:file-spreadsheet-fill-12"
-                      width="24"
-                      height="24"
-                    />
-                  </span>
-                  <a href="/summary">Reports</a>
-                </li>
                 {isAdmin && (
                   <>
+                    <li className="menu-item flex items-center gap-[10px]">
+                      <span>
+                        <Icon
+                          icon="garden:file-spreadsheet-fill-12"
+                          width="24"
+                          height="24"
+                        />
+                      </span>
+                      <a href="/summary">Reports</a>
+                    </li>
                     <li className="menu-item flex items-center gap-[10px]">
                       <span>
                         <Icon icon="fa:users" width="24" height="24" />
@@ -852,9 +854,10 @@ const SalesPage = () => {
                     <th className="py-2 px-3">Quantity</th>
                     <th className="py-2 px-3">Total(Ksh)</th>
                     <th className="py-2 px-3">Payment</th>
-                    <th className="py-2 px-3">Sold By</th>
                     <th className="py-2 px-3">Sold At</th>
+                    <th className="py-2 px-3">Sold By</th>
                     <th className="py-2 px-3">Status</th>
+                    <th className="py-2 px-3">Balance</th>
                     <th className="py-2 px-3 text-center">Action</th>
                   </tr>
                 </thead>
@@ -886,7 +889,7 @@ const SalesPage = () => {
                                 </span>
                               )}
                             </td>
-                            <td className="py-2 px-3 capitalize">
+                            <td className="py-2 px-3 uppercase text-xs text-gray-700 font-semibold">
                               {sale.productId?.name || "Deleted Product"}
                             </td>
                             <td className="py-2 px-3">
@@ -897,28 +900,52 @@ const SalesPage = () => {
                             </td>
                             <td className="py-2 px-3">{sale.paymentMethod}</td>
                             <td className="py-2 px-3">
-                              {sale.soldBy?.fname ?? "cashier"}
-                            </td>
-                            <td className="py-2 px-3">
                               <p>
                                 {" "}
                                 {new Date(
                                   sale.createdAt || sale.date
                                 ).toLocaleDateString()}
                               </p>
-                              {new Date(
-                                sale.createdAt || sale.date
-                              ).toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
+                              <p className="font-semibold text-xs text-gray-500">
+                                {new Date(
+                                  sale.createdAt || sale.date
+                                ).toLocaleTimeString([], {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </p>
                             </td>
-                            <td className="px-3 py-2">
+                            <td className="py-2 px-3">
+                              {sale.soldBy?.fname ?? "cashier"}
+                              <p className="text-xs font-semibold text-gray-500 uppercase">
+                                {sale.soldBy?.role}
+                              </p>
+                            </td>
+                            <td className="p-3">
                               <span
-                                className={`status-badge ${sale.paymentStatus?.toLowerCase()}`}
+                                className={`inline-block px-3 py-1 text-xs font-semibold rounded ${
+                                  sale.paymentStatus === "Paid"
+                                    ? "bg-green-600 text-white"
+                                    : sale.paymentStatus === "Partial"
+                                    ? "bg-amber-600 text-white"
+                                    : "bg-red-600 text-white"
+                                }`}
                               >
-                                {sale.paymentStatus}
+                                {sale.paymentStatus || "Paid"}
                               </span>
+                            </td>
+                            <td className="py-2 px-3 font-mono">
+                              {sale.paymentMethod === "Credit" &&
+                              sale.balance > 0 ? (
+                                <span className="text-red-800 font-bold">
+                                  Ksh {sale.balance.toLocaleString()}
+                                </span>
+                              ) : (
+                                <span className="text-gray-400">
+                                  {" "}
+                                  No Balance
+                                </span>
+                              )}
                             </td>
                             <td className="py-2 px-2 text-center">
                               <div className="sale-delete-btn flex justify-center gap-2">
@@ -942,7 +969,7 @@ const SalesPage = () => {
                   ) : (
                     <tr>
                       <td
-                        colSpan="9"
+                        colSpan="10"
                         className="text-center py-4 text-gray-500"
                       >
                         No sales recorded yet.

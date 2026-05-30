@@ -43,27 +43,29 @@ const CreditSalesTable = () => {
     (sale) => sale.paymentMethod === "Credit" || sale.totalAmount > 0
   );
 
-  // Group transactions and sort payment history to find the absolute latest payment date
   const groupCreditsByCustomerAndDate = (data) => {
     const groups = {};
 
     data.forEach((sale) => {
       const dateStr = new Date(sale.createdAt).toLocaleDateString("en-KE");
+
       const customerKey = sale.customerName
         ? sale.customerName.trim().toLowerCase()
         : "walking-client";
 
       const groupKey = `${customerKey}-${dateStr}`;
+
       const itemName = sale.productId?.name || "Unknown Item";
       const initialMethod = sale.paymentMethod || "Credit";
+
+      const saleTotal = Number(sale.totalAmount || 0);
 
       if (!groups[groupKey]) {
         groups[groupKey] = {
           ...sale,
           itemsList: [itemName],
-          quantitySold: sale.quantitySold || 1,
-          totalAmount: sale.totalAmount || 0,
-          amountPaid: sale.amountPaid || 0,
+          quantitySold: Number(sale.quantitySold || 1),
+          totalAmount: saleTotal,
           paymentHistory: Array.isArray(sale.paymentHistory)
             ? [...sale.paymentHistory]
             : [],
@@ -74,9 +76,9 @@ const CreditSalesTable = () => {
         if (!groups[groupKey].itemsList.includes(itemName)) {
           groups[groupKey].itemsList.push(itemName);
         }
-        groups[groupKey].quantitySold += sale.quantitySold || 1;
-        groups[groupKey].totalAmount += sale.totalAmount || 0;
-        groups[groupKey].amountPaid += sale.amountPaid || 0;
+
+        groups[groupKey].quantitySold += Number(sale.quantitySold || 1);
+        groups[groupKey].totalAmount += saleTotal;
         groups[groupKey].allIds.push(sale._id);
 
         if (!groups[groupKey].methodsList.includes(initialMethod)) {
@@ -93,13 +95,36 @@ const CreditSalesTable = () => {
     });
 
     Object.values(groups).forEach((group) => {
-      group.paymentHistory.forEach((payment) => {
+      // 1. Clean and filter any broken or empty entries in payment history
+      const validPayments = group.paymentHistory.filter(
+        (p) => p !== null && p !== undefined
+      );
+
+      // 2. Calculate what was actually paid purely based on explicit payment records
+      let totalPaidFromHistory = 0;
+      validPayments.forEach((payment) => {
+        const amt =
+          typeof payment === "object"
+            ? Number(payment.amount || 0)
+            : Number(payment || 0);
+        totalPaidFromHistory += amt;
+
         if (payment?.method && !group.methodsList.includes(payment.method)) {
           group.methodsList.push(payment.method);
         }
       });
 
-      // FIX: Explicitly sort history by timestamp so the index engine grabs the true latest payment
+      // 3. Force alignment: If no real ledger payments exist, paid must be 0
+      group.aggregatedPaid =
+        validPayments.length > 0 ? Math.max(0, totalPaidFromHistory) : 0;
+
+      // 4. Balance calculation: Total Invoice Amount minus the clean history totals
+      group.remainingBalance = Math.max(
+        0,
+        group.totalAmount - group.aggregatedPaid
+      );
+
+      // Sort payment dates
       group.paymentHistory.sort((a, b) => {
         const dateA = new Date(a?.date || a);
         const dateB = new Date(b?.date || b);
@@ -144,8 +169,10 @@ const CreditSalesTable = () => {
       (t) => (
         <div className="flex flex-col gap-3">
           <span className="font-semibold text-gray-800">
-            Are you sure you want to delete the cleared ledger records for 
-            <span className="mx-1">{credit.customerName || "this client"}?</span>
+            Are you sure you want to delete the cleared ledger records for
+            <span className="mx-1">
+              {credit.customerName || "this client"}?
+            </span>
           </span>
 
           <div className="flex justify-end gap-2">
@@ -168,28 +195,26 @@ const CreditSalesTable = () => {
           </div>
         </div>
       ),
-      {
-        duration: 6000,
-      }
+      { duration: 6000 }
     );
   };
 
-const combinedCreditRows = groupCreditsByCustomerAndDate(creditRows);
+  const combinedCreditRows = groupCreditsByCustomerAndDate(creditRows);
 
-const activeCreditRows = combinedCreditRows.filter(
-  (credit) => credit.status === "PENDING" || credit.status === "PARTIAL"
-);
+  const activeCreditRows = combinedCreditRows.filter(
+    (credit) => Math.max(0, Number(credit.remainingBalance || 0)) > 0
+  );
 
-const paginatedCredits = activeCreditRows.slice(
-  (creditPage - 1) * rowsPerPage,
-  creditPage * rowsPerPage
-);
+  const paginatedCredits = activeCreditRows.slice(
+    (creditPage - 1) * rowsPerPage,
+    creditPage * rowsPerPage
+  );
 
-const activeDebtsCount = activeCreditRows.length;
+  const activeDebtsCount = activeCreditRows.length;
 
   const handleOpenPaymentModal = (credit) => {
     setSelectedCredit(credit);
-    const currentBalance = (credit.totalAmount || 0) - (credit.amountPaid || 0);
+    const currentBalance = Math.max(0, Number(credit.remainingBalance || 0));
     setPaymentAmount(currentBalance);
   };
 
@@ -198,8 +223,10 @@ const activeDebtsCount = activeCreditRows.length;
     setIsSubmitting(true);
 
     let remainingPayment = Number(paymentAmount);
-    const totalAllowedBalance =
-      (selectedCredit.totalAmount || 0) - (selectedCredit.amountPaid || 0);
+    const totalAllowedBalance = Math.max(
+      0,
+      Number(selectedCredit.remainingBalance || 0)
+    );
 
     if (remainingPayment > totalAllowedBalance) {
       toast.error(
@@ -215,7 +242,14 @@ const activeDebtsCount = activeCreditRows.length;
       const rawClientDebts = creditsData.filter(
         (credit) =>
           selectedCredit.allIds.includes(credit._id) &&
-          (credit.totalAmount || 0) - (credit.amountPaid || 0) > 0
+          Number(credit.totalAmount || 0) -
+            (Array.isArray(credit.paymentHistory)
+              ? credit.paymentHistory.reduce(
+                  (acc, curr) => acc + (curr.amount || 0),
+                  0
+                )
+              : 0) >
+            0
       );
 
       rawClientDebts.sort(
@@ -225,8 +259,16 @@ const activeDebtsCount = activeCreditRows.length;
       for (const debt of rawClientDebts) {
         if (remainingPayment <= 0) break;
 
-        const debtBalance = (debt.totalAmount || 0) - (debt.amountPaid || 0);
+        const currentDebtPaid = Array.isArray(debt.paymentHistory)
+          ? debt.paymentHistory.reduce(
+              (acc, curr) => acc + (curr.amount || 0),
+              0
+            )
+          : 0;
+        const debtBalance = Number(debt.totalAmount || 0) - currentDebtPaid;
         const paymentForThisRecord = Math.min(remainingPayment, debtBalance);
+
+        if (paymentForThisRecord <= 0) continue;
 
         const response = await fetch(`${API_URL}/api/credits/${debt._id}/pay`, {
           method: "PATCH",
@@ -251,9 +293,7 @@ const activeDebtsCount = activeCreditRows.length;
         remainingPayment -= paymentForThisRecord;
       }
 
-      toast.success(
-        "Payment successfully applied across customer ledger balances!"
-      );
+      toast.success("Payment updated successfully!");
       await fetchCredits();
       setSelectedCredit(null);
     } catch (error) {
@@ -316,18 +356,18 @@ const activeDebtsCount = activeCreditRows.length;
                     </span>
                     <a href="/credit">Credit</a>
                   </li>
-                  <li className="menu-item flex items-center gap-[10px]">
-                    <span>
-                      <Icon
-                        icon="garden:file-spreadsheet-fill-12"
-                        width="24"
-                        height="24"
-                      />
-                    </span>
-                    <a href="/summary">Reports</a>
-                  </li>
                   {isAdmin && (
                     <>
+                      <li className="menu-item flex items-center gap-[10px]">
+                        <span>
+                          <Icon
+                            icon="garden:file-spreadsheet-fill-12"
+                            width="24"
+                            height="24"
+                          />
+                        </span>
+                        <a href="/summary">Reports</a>
+                      </li>
                       <li className="menu-item flex items-center gap-[10px]">
                         <span>
                           <Icon icon="fa:users" width="24" height="24" />
@@ -384,9 +424,12 @@ const activeDebtsCount = activeCreditRows.length;
                     <tbody className="divide-y divide-gray-200">
                       {paginatedCredits.length > 0 ? (
                         paginatedCredits.map((credit) => {
-                          const balance =
-                            (credit.totalAmount || 0) -
-                            (credit.amountPaid || 0);
+                          const total = Number(credit.totalAmount || 0);
+                          const balance = Math.max(
+                            0,
+                            Number(credit.remainingBalance || 0)
+                          );
+                          const amountPaid = Number(credit.aggregatedPaid || 0);
 
                           return (
                             <tr
@@ -415,10 +458,10 @@ const activeDebtsCount = activeCreditRows.length;
                                 {credit.quantitySold} pcs
                               </td>
                               <td className="py-3 px-4 text-right font-semibold">
-                                {(credit.totalAmount || 0).toLocaleString()}
+                                {total.toLocaleString()}
                               </td>
                               <td className="py-3 px-4 text-right font-semibold text-emerald-600">
-                                {(credit.amountPaid || 0).toLocaleString()}
+                                {amountPaid.toLocaleString()}
                               </td>
                               <td className="py-3 px-4 text-right font-bold text-red-600">
                                 {balance > 0
@@ -456,12 +499,10 @@ const activeDebtsCount = activeCreditRows.length;
                                 </div>
                               </td>
 
-                              {/* LAST PAID TIMESTAMP CELL */}
                               <td className="py-3 px-4 text-gray-500">
                                 {Array.isArray(credit.paymentHistory) &&
                                 credit.paymentHistory.length > 0 ? (
                                   (() => {
-                                    // Because history is now sorted ascending, the last array item is the absolute latest payment timestamp
                                     const lastPaymentObj =
                                       credit.paymentHistory[
                                         credit.paymentHistory.length - 1
@@ -474,7 +515,6 @@ const activeDebtsCount = activeCreditRows.length;
                                       !isNaN(Date.parse(paymentDate))
                                     ) {
                                       const parsedDate = new Date(paymentDate);
-
                                       return (
                                         <div className="flex flex-col justify-center leading-tight">
                                           <span className="font-semibold text-gray-800">
@@ -510,34 +550,34 @@ const activeDebtsCount = activeCreditRows.length;
 
                               <td className="py-3 px-4">
                                 <div className="flex justify-center items-center gap-[5px]">
-                                {balance > 0 ? (
-                                  <button
-                                    onClick={() =>
-                                      handleOpenPaymentModal(credit)
-                                    }
-                                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1 px-2.5 rounded text-[11px] shadow transition-colors"
-                                  >
-                                    Pay Partial
-                                  </button>
-                                ) : (
-                                  <>
-                                    <span className="text-emerald-700 font-bold text-[11px] bg-emerald-100 px-2 py-0.5 rounded">
-                                      Cleared
-                                    </span>
+                                  {balance > 0 ? (
                                     <button
-                                      onClick={() => confirmDelete(credit)}
-                                      className="bg-rose-600 hover:bg-rose-700 text-white font-bold py-1 px-2.5 rounded text-[11px] shadow transition-colors flex items-center gap-1"
-                                      title="Delete Cleared Debt Record"
+                                      onClick={() =>
+                                        handleOpenPaymentModal(credit)
+                                      }
+                                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1 px-2.5 rounded text-[11px] shadow transition-colors"
                                     >
-                                      <Icon
-                                        icon="lucide:trash-2"
-                                        width="12"
-                                        height="12"
-                                      />
-                                      Delete
+                                      Pay Partial
                                     </button>
-                                  </>
-                                )}
+                                  ) : (
+                                    <>
+                                      <span className="text-emerald-700 font-bold text-[11px] bg-emerald-100 px-2 py-0.5 rounded">
+                                        Cleared
+                                      </span>
+                                      <button
+                                        onClick={() => confirmDelete(credit)}
+                                        className="bg-rose-600 hover:bg-rose-700 text-white font-bold py-1 px-2.5 rounded text-[11px] shadow transition-colors flex items-center gap-1"
+                                        title="Delete Cleared Debt Record"
+                                      >
+                                        <Icon
+                                          icon="lucide:trash-2"
+                                          width="12"
+                                          height="12"
+                                        />
+                                        Delete
+                                      </button>
+                                    </>
+                                  )}
                                 </div>
                               </td>
                             </tr>

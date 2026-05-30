@@ -1,7 +1,7 @@
 import React from "react";
 import { useMemo, useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
-import CoinsIcon from '@iconify-react/lucide/coins';
+import CoinsIcon from "@iconify-react/lucide/coins";
 import toast from "react-hot-toast";
 import "../../styles/StockPage.css";
 import API_URL from "../../../api";
@@ -313,23 +313,23 @@ const StockPage = () => {
                   <a href="/sales">Sales</a>
                 </li>
                 <li className="menu-item flex items-center gap-[10px]">
-                    <span>
-                    <CoinsIcon height="24" width="24"/>
-                    </span>
-                    <a href="/credit">Credit</a>
-                  </li>
-                <li className="menu-item flex items-center gap-[10px]">
                   <span>
-                    <Icon
-                      icon="garden:file-spreadsheet-fill-12"
-                      width="24"
-                      height="24"
-                    />
+                    <CoinsIcon height="24" width="24" />
                   </span>
-                  <a href="/summary">Reports</a>
+                  <a href="/credit">Credit</a>
                 </li>
                 {isAdmin && (
                   <>
+                    <li className="menu-item flex items-center gap-[10px]">
+                      <span>
+                        <Icon
+                          icon="garden:file-spreadsheet-fill-12"
+                          width="24"
+                          height="24"
+                        />
+                      </span>
+                      <a href="/summary">Reports</a>
+                    </li>
                     <li className="menu-item flex items-center gap-[10px]">
                       <span>
                         <Icon icon="fa:users" width="24" height="24" />
@@ -591,7 +591,7 @@ const StockPage = () => {
                           {startIndex + index + 1}
                         </th>
 
-                        <td className="py-2 px-2 capitalize">
+                        <td className="py-2 px-2 font-semibold uppercase text-sm text-gray-700">
                           {stockItem.category}
                         </td>
                         <td className="py-2 px-2 capitalize">
@@ -622,7 +622,7 @@ const StockPage = () => {
                                 return (
                                   <>
                                     <p>{d.toLocaleDateString("en-GB")}</p>
-                                    <p>
+                                    <p className="font-semibold text-xs text-gray-500">
                                       {d.toLocaleTimeString([], {
                                         hour: "2-digit",
                                         minute: "2-digit",

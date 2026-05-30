@@ -252,18 +252,18 @@ const ProductPage = () => {
                   </span>
                   <a href="/credit">Credit</a>
                 </li>
-                <li className="menu-item flex items-center gap-[10px]">
-                  <span>
-                    <Icon
-                      icon="garden:file-spreadsheet-fill-12"
-                      width="24"
-                      height="24"
-                    />
-                  </span>
-                  <a href="/summary">Reports</a>
-                </li>
-                {isAdmin &&(
+                {isAdmin && (
                   <>
+                    <li className="menu-item flex items-center gap-[10px]">
+                      <span>
+                        <Icon
+                          icon="garden:file-spreadsheet-fill-12"
+                          width="24"
+                          height="24"
+                        />
+                      </span>
+                      <a href="/summary">Reports</a>
+                    </li>
                     <li className="menu-item flex items-center gap-[10px]">
                       <span>
                         <Icon icon="fa:users" width="24" height="24" />
@@ -500,7 +500,9 @@ const ProductPage = () => {
                         <th className="py-2 px-2" scope="row">
                           {startIndex + index + 1}
                         </th>
-                        <td className="py-3 px-2 capitalize">{product.name}</td>
+                        <td className="py-3 px-2 Capitalize font-semibold text-sm text-gray-700">
+                          {product.name}
+                        </td>
                         <td className="py-3 px-2 capitalize">
                           {product.category}
                         </td>

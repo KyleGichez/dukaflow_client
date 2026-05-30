@@ -31,7 +31,7 @@
 
 .summary-card{
     width: 200px;
-    height: 100px;
+    height: auto;
     padding: 10px 15px;
     background-color: #ffff;
     border: 1px solid var(--border-color);
@@ -64,6 +64,47 @@
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite linear;
     border-radius: 4px;
+  }
+
+  
+  @media print {
+    /* Hide sidebars, buttons, selects, and headers you don't want on paper */
+    .reportPage-content-wrapper-menu,
+    .export-btn,
+    select,
+    a,
+    h1 {
+      display: none !important;
+    }
+  
+    /* Reset layout constraints so it spans the full width of A4/Letter pages */
+    .reportPage-wrapper,
+    .reportPage-content,
+    .reportPage-content-info {
+      margin: 0 !important;
+      padding: 0 !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      box-shadow: none !important;
+    }
+  
+    /* Optimize table presentation for print legibility */
+    table {
+      width: 100% !important;
+      border-collapse: collapse !important;
+    }
+    
+    th, td {
+      padding: 8px !important;
+      border-bottom: 1px solid #ddd !important;
+      font-size: 12px !important;
+    }
+  
+    /* Prevent page breaks right in the middle of a table row */
+    tr {
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+    }
   }
   
   @keyframes shimmer {

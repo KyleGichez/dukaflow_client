@@ -42,6 +42,7 @@ const MobileMenu = () => {
       name: "Staff",
       path: "/staff",
       icon: <Users size={20} />,
+      adminOnly: true,
     },
     {
       name: "Subscribe",

@@ -14,7 +14,7 @@ import Subscription from "./assets/pages/admin/Subscription";
 import DashboardPage from "./assets/pages/dashboard/DashboardPage";
 import ProductPage from "./assets/pages/products/ProductPage";
 import StockPage from "./assets/pages/stock/StockPage";
-import SalesPage from "./assets/pages/sales/SalesPage";
+import SalesPage from "./assets/pages/sales/SalesPage"
 import ReportsPage from "./assets/pages/reports/ReportsPage";
 import CreditSalesPage from "./assets/pages/credit/CreditSalesPage";
 import StaffPage from "./assets/pages/staff/StaffPage";
