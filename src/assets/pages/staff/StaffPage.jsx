@@ -442,7 +442,7 @@ const StaffPage = () => {
                               {new Date(member.createdAt).toLocaleTimeString("en-KE", { hour: "2-digit", minute: "2-digit", hour12: true })}
                             </p>
                           </td>
-                          <td className="py-2 px-3 font-semibold font-mono text-sm text-gray-700">
+                          <td className="py-2 px-3 font-mono font-semibold text-sm text-gray-700">
                             KSH {(member.totalSales || 0).toLocaleString()}
                           </td>
                           <td className="py-2 px-3 font-semibold text-sm text-gray-600">

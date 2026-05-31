@@ -289,7 +289,6 @@ const ProductPage = () => {
                 <div className="flex flex-col justify-between items-end sm:flex-row sm:items-center sm:justify-between mb-5 gap-4 w-full">
                   <div className="inventory-controls flex flex-wrap gap-4 items-center w-full sm:w-auto justify-between sm:justify-start">
                     <div className="flex flex-wrap sm:flex-nowrap gap-4 items-center w-full sm:w-auto">
-                      {/* Search Input */}
                       <div className="relative w-full sm:w-auto">
                         <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
                           <Icon
@@ -306,7 +305,6 @@ const ProductPage = () => {
                           className="pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none w-full sm:w-[250px]"
                         />
                       </div>
-                      {/* Category Filter Dropdown */}
                       <select
                         value={selectedCategory}
                         onChange={(e) => setSelectedCategory(e.target.value)}
@@ -320,7 +318,6 @@ const ProductPage = () => {
                         ))}
                       </select>
                     </div>
-                    {/* Clear Button (Optional) */}
                     {(searchTerm || selectedCategory !== "All") && (
                       <button
                         onClick={() => {
@@ -333,9 +330,6 @@ const ProductPage = () => {
                       </button>
                     )}
                   </div>
-
-                  {/* Add Button */}
-                  {/* 🟢 CHANGED: Added sm:ml-auto as an extra guardrail to enforce far-right spacing on desktop layout sizes */}
                   <button
                     type="button"
                     className="add-product-btn flex items-center gap-[5px] sm:ml-auto"
@@ -511,7 +505,7 @@ const ProductPage = () => {
                           <th className="py-2 px-2" scope="row">
                             {startIndex + index + 1}
                           </th>
-                          <td className="py-3 px-2 Capitalize font-semibold text-sm text-gray-700">
+                          <td className="py-3 px-2 capitalize font-semibold text-sm text-gray-700">
                             {product.name}
                           </td>
                           <td className="py-3 px-2 capitalize">
