@@ -431,7 +431,7 @@ const StaffPage = () => {
                           </td>
                           <td className="py-2 px-3">
                             {member.email}
-                            <p className="text-gray-500">{member.phone}</p>
+                            <p className="text-xs font-semibold text-gray-500">{member.phone}</p>
                           </td>
                           <td className="py-2 px-3 capitalize">
                             {member.role}
@@ -442,14 +442,14 @@ const StaffPage = () => {
                               {new Date(member.createdAt).toLocaleTimeString("en-KE", { hour: "2-digit", minute: "2-digit", hour12: true })}
                             </p>
                           </td>
-                          <td className="py-2 px-3 font-mono font-semibold text-sm text-gray-700">
+                          <td className="py-2 px-3 font-mono font-semibold text-emerald-600">
                             KSH {(member.totalSales || 0).toLocaleString()}
                           </td>
-                          <td className="py-2 px-3 font-semibold text-sm text-gray-600">
+                          <td className="py-2 px-3 font-semibold text-amber-600">
                             {(member.itemsSold || 0).toLocaleString()}
                           </td>
                           <td className="py-2 px-3 font-semibold">
-                            <span className={`px-2 py-1 rounded text-xs ${member.isActive ? "bg-green-200" : "bg-red-200"}`}>
+                            <span className={`px-2 py-1 rounded text-xs text-white ${member.isActive ? "bg-emerald-600" : "bg-red-200"}`}>
                               {member.isActive ? "Active" : "Inactive"}
                             </span>
                           </td>
