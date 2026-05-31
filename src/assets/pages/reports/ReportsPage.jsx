@@ -541,7 +541,7 @@ const ReportsPage = () => {
 
             {/* Collected Methods Breakdown */}
             <h3 className="font-bold uppercase text-sm text-gray-600 mb-[10px] tracking-wider">
-              Revenue Collection (Sales + Repayments)
+              Revenue Collection
             </h3>
             <div className="grid grid-cols-4 gap-6 mb-[30px]">
               <div className="summary-card">
@@ -756,13 +756,13 @@ const ReportsPage = () => {
                       recentSales.map((sale, index) => (
                         <tr key={sale._id} className="border-b">
                           <th className="py-2 px-3">{index + 1}</th>
-                          <td className="py-2 px-3 capitalize">
+                          <td className="py-2 px-3 uppercase text-gray-700 font-semibold text-xs">
                             {sale.productId?.name || "Deleted Product"}
                           </td>
                           <td className="py-2 px-3">
                             {sale.quantitySold} {sale.productId?.units}
                           </td>
-                          <td className="py-2 px-3">
+                          <td className="py-2 px-3 font-mono uppercase">
                             Ksh {sale.totalPrice?.toLocaleString()}
                           </td>
                           <td className="py-2 px-3">{sale.paymentMethod}</td>

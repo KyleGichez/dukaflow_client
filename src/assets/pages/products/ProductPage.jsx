@@ -31,6 +31,7 @@ const ProductPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const location = useLocation();
 
   const categories = [...new Set(products.map((p) => p.category))];
@@ -282,307 +283,318 @@ const ProductPage = () => {
               </ul>
             </div>
           </div>
-          <div className="product-content-table">
+          <div className="product-content-table flex-1 min-w-0">
             <div className="product-table mb-[20px]">
               <div className="product-btn-wrapper mb-[10px]">
-                <div className="inventory-controls mb-5 flex flex-wrap gap-4 items-center justify-between">
-                  <div className="flex gap-4 items-center">
-                    {/* Search Input */}
-                    <div className="relative">
-                      <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
-                        <Icon
-                          icon="material-symbols:search"
-                          width="20"
-                          height="20"
+                <div className="flex flex-col justify-between items-end sm:flex-row sm:items-center sm:justify-between mb-5 gap-4 w-full">
+                  <div className="inventory-controls flex flex-wrap gap-4 items-center w-full sm:w-auto justify-between sm:justify-start">
+                    <div className="flex flex-wrap sm:flex-nowrap gap-4 items-center w-full sm:w-auto">
+                      {/* Search Input */}
+                      <div className="relative w-full sm:w-auto">
+                        <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+                          <Icon
+                            icon="material-symbols:search"
+                            width="20"
+                            height="20"
+                          />
+                        </span>
+                        <input
+                          type="text"
+                          placeholder="Search products..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none w-full sm:w-[250px]"
                         />
-                      </span>
-                      <input
-                        type="text"
-                        placeholder="Search products..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none w-[250px]"
-                      />
+                      </div>
+                      {/* Category Filter Dropdown */}
+                      <select
+                        value={selectedCategory}
+                        onChange={(e) => setSelectedCategory(e.target.value)}
+                        className="capitalize p-2 border rounded-lg bg-white shadow-sm outline-none cursor-pointer max-w-[150px] sm:max-w-none text-sm sm:text-base"
+                      >
+                        <option value="All">All Categories</option>
+                        {categories.map((cat, index) => (
+                          <option key={index} value={cat}>
+                            {cat}
+                          </option>
+                        ))}
+                      </select>
                     </div>
-                    {/* Category Filter Dropdown */}
-                    <select
-                      value={selectedCategory}
-                      onChange={(e) => setSelectedCategory(e.target.value)}
-                      className="capitalize p-2 border rounded-lg bg-white shadow-sm outline-none"
-                    >
-                      <option value="All">All Categories</option>
-                      {categories.map((cat, index) => (
-                        <option key={index} value={cat}>
-                          {cat}
-                        </option>
-                      ))}
-                    </select>
+                    {/* Clear Button (Optional) */}
+                    {(searchTerm || selectedCategory !== "All") && (
+                      <button
+                        onClick={() => {
+                          setSearchTerm("");
+                          setSelectedCategory("All");
+                        }}
+                        className="text-sm font-medium text-red-500 hover:text-red-700 cursor-pointer"
+                      >
+                        Clear Filters
+                      </button>
+                    )}
                   </div>
-                  {/* Clear Button (Optional) */}
-                  {(searchTerm || selectedCategory !== "All") && (
-                    <button
-                      onClick={() => {
-                        setSearchTerm("");
-                        setSelectedCategory("All");
-                      }}
-                      className="text-sm font-medium text-red-500 hover:text-red-700 cursor-pointer"
-                    >
-                      Clear Filters
-                    </button>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  className="add-product-btn flex items-center gap-[5px]"
-                  onClick={() => {
-                    setIsEditing(false); // Reset editing mode
-                    setEditId(null); // Clear edit ID
-                    setFormData(initialFormState); // Clear the form
-                    setShowModal(true);
-                  }}
-                >
-                  <span>
-                    <Icon icon="si:add-fill" width="20" height="20" />
-                  </span>
-                  Add
-                </button>
-                {showModal && (
-                  <div
-                    className="fixed bg-black/80 min-h-screen z-10 w-screen flex justify-center items-center top-0 left-0"
+
+                  {/* Add Button */}
+                  {/* 🟢 CHANGED: Added sm:ml-auto as an extra guardrail to enforce far-right spacing on desktop layout sizes */}
+                  <button
+                    type="button"
+                    className="add-product-btn flex items-center gap-[5px] sm:ml-auto"
                     onClick={() => {
-                      setShowModal(false);
+                      setIsEditing(false); // Reset editing mode
+                      setEditId(null); // Clear edit ID
+                      setFormData(initialFormState); // Clear the form
+                      setShowModal(true);
                     }}
                   >
+                    <span>
+                      <Icon icon="si:add-fill" width="20" height="20" />
+                    </span>
+                    Add
+                  </button>
+                  {showModal && (
                     <div
-                      className="modal-wrapper bg-white px-[25px] py-[20px] max-w-[650px]"
-                      onClick={(e) => e.stopPropagation()}
+                      className="fixed bg-black/80 min-h-screen z-10 w-screen flex justify-center items-center top-0 left-0"
+                      onClick={() => {
+                        setShowModal(false);
+                      }}
                     >
-                      <div className="modal-content">
-                        <h1 className="text-xl font-bold uppercase mb-[20px] flex justify-between">
-                          {isEditing ? "Edit Product" : "Add Product"}
-                          <span className="cursor-pointer">
-                            <Icon
-                              onClick={() => {
-                                setShowModal(false);
-                              }}
-                              icon="material-symbols:cancel"
-                              width="30"
-                              height="30"
-                            />
-                          </span>
-                        </h1>
-                        <form
-                          onSubmit={handleSubmit}
-                          className="mb-[20px] form-modal"
-                        >
-                          <legend>
-                            {isEditing
-                              ? "Edit Current Product"
-                              : "Add New Product"}
-                          </legend>
-                          <div className="flex">
-                            <div className="form-input">
-                              <label htmlFor="name">Product Name</label>
-                              <input
-                                type="text"
-                                name="name"
-                                placeholder="Enter product name"
-                                value={formData.name}
-                                onChange={handleChange}
-                                required
+                      <div
+                        className="modal-wrapper bg-white px-[25px] py-[20px] max-w-[650px]"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="modal-content">
+                          <h1 className="text-xl font-bold uppercase mb-[20px] flex justify-between">
+                            {isEditing ? "Edit Product" : "Add Product"}
+                            <span className="cursor-pointer">
+                              <Icon
+                                onClick={() => {
+                                  setShowModal(false);
+                                }}
+                                icon="material-symbols:cancel"
+                                width="30"
+                                height="30"
                               />
-                            </div>
-                            <div className="form-input">
-                              <label htmlFor="category">Product Category</label>
-                              <input
-                                type="text"
-                                name="category"
-                                placeholder="Enter or select category"
-                                value={formData.category}
-                                onChange={handleChange}
-                                list="category-options"
-                                required
-                              />
+                            </span>
+                          </h1>
+                          <form
+                            onSubmit={handleSubmit}
+                            className="mb-[20px] form-modal"
+                          >
+                            <legend>
+                              {isEditing
+                                ? "Edit Current Product"
+                                : "Add New Product"}
+                            </legend>
+                            <div className="flex">
+                              <div className="form-input">
+                                <label htmlFor="name">Product Name</label>
+                                <input
+                                  type="text"
+                                  name="name"
+                                  placeholder="Enter product name"
+                                  value={formData.name}
+                                  onChange={handleChange}
+                                  required
+                                />
+                              </div>
+                              <div className="form-input">
+                                <label htmlFor="category">
+                                  Product Category
+                                </label>
+                                <input
+                                  type="text"
+                                  name="category"
+                                  placeholder="Enter or select category"
+                                  value={formData.category}
+                                  onChange={handleChange}
+                                  list="category-options"
+                                  required
+                                />
 
-                              <datalist id="category-options">
-                                {categories.map((cat, index) => (
-                                  <option key={index} value={cat} />
+                                <datalist id="category-options">
+                                  {categories.map((cat, index) => (
+                                    <option key={index} value={cat} />
+                                  ))}
+                                </datalist>
+                              </div>
+                            </div>
+                            <div className="flex">
+                              <div className="form-input">
+                                <label htmlFor="quantity">Total Quantity</label>
+                                <input
+                                  type="number"
+                                  name="quantity"
+                                  placeholder="Enter total quantity"
+                                  value={formData.quantity}
+                                  onChange={handleChange}
+                                  required
+                                />
+                              </div>
+                              <div className="form-input">
+                                <label htmlFor="price">Unit Price</label>
+                                <input
+                                  type="number"
+                                  name="price"
+                                  placeholder="Enter unit price(Ksh)"
+                                  value={formData.price}
+                                  onChange={handleChange}
+                                  required
+                                />
+                              </div>
+                            </div>
+                            <div className="form-input">
+                              <label htmlFor="units">Metric Units</label>
+                              <select
+                                className="py-3 px-2 border rounded"
+                                name="units"
+                                value={formData.units}
+                                onChange={handleChange}
+                                required
+                              >
+                                <option value="">Select unit</option>
+                                {unitOptions.map((unit, index) => (
+                                  <option key={index} value={unit}>
+                                    {unit}
+                                  </option>
                                 ))}
-                              </datalist>
+                              </select>
                             </div>
-                          </div>
-                          <div className="flex">
-                            <div className="form-input">
-                              <label htmlFor="quantity">Total Quantity</label>
-                              <input
-                                type="number"
-                                name="quantity"
-                                placeholder="Enter total quantity"
-                                value={formData.quantity}
-                                onChange={handleChange}
-                                required
-                              />
+                            <div className="modal-buttons-wrapper flex gap-[20px] justify-end">
+                              <button
+                                className="modal-add-btn py-2 px-3 w-[75px] cursor-pointer"
+                                type="submit"
+                                disabled={isSubmitting}
+                              >
+                                {isEditing ? "Save" : "Add"}
+                                {isSubmitting ? "Processing..." : ""}
+                              </button>
+                              <button
+                                className="modal-close-btn py-2 px-3 w-[75px] cursor-pointer"
+                                type="button"
+                                onClick={() => {
+                                  setShowModal(false);
+                                }}
+                              >
+                                Close
+                              </button>
                             </div>
-                            <div className="form-input">
-                              <label htmlFor="price">Unit Price</label>
-                              <input
-                                type="number"
-                                name="price"
-                                placeholder="Enter unit price(Ksh)"
-                                value={formData.price}
-                                onChange={handleChange}
-                                required
-                              />
-                            </div>
-                          </div>
-                          <div className="form-input">
-                            <label htmlFor="units">Metric Units</label>
-                            <select
-                              className="py-3 px-2 border rounded"
-                              name="units"
-                              value={formData.units}
-                              onChange={handleChange}
-                              required
-                            >
-                              <option value="">Select unit</option>
-                              {unitOptions.map((unit, index) => (
-                                <option key={index} value={unit}>
-                                  {unit}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                          <div className="modal-buttons-wrapper flex gap-[20px] justify-end">
-                            <button
-                              className="modal-add-btn py-2 px-3 w-[75px] cursor-pointer"
-                              type="submit"
-                            >
-                              {isEditing ? "Save" : "Add"}
-                            </button>
-                            <button
-                              className="modal-close-btn py-2 px-3 w-[75px] cursor-pointer"
-                              type="button"
-                              onClick={() => {
-                                setShowModal(false);
-                              }}
-                            >
-                              Close
-                            </button>
-                          </div>
-                        </form>
+                          </form>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
-              <table className="table-auto w-full text-left">
-                <thead>
-                  <tr>
-                    <th className="py-2 px-3">#</th>
-                    <th className="py-2 px-3">Item</th>
-                    <th className="py-2 px-3">Category</th>
-                    <th className="py-2 px-3">Total Quantity</th>
-                    <th className="py-2 px-3">Unit Price(Ksh)</th>
-                    <th className="py-2 px-3 text-center">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedProducts.length > 0 ? (
-                    paginatedProducts.map((product, index) => (
-                      <tr
-                        key={product._id}
-                        className={
-                          product.quantity < LOW_STOCK_THRESHOLD
-                            ? "bg-red-100"
-                            : ""
-                        }
-                      >
-                        <th className="py-2 px-2" scope="row">
-                          {startIndex + index + 1}
-                        </th>
-                        <td className="py-3 px-2 Capitalize font-semibold text-sm text-gray-700">
-                          {product.name}
-                        </td>
-                        <td className="py-3 px-2 capitalize">
-                          {product.category}
-                        </td>
-                        <td className="py-3 px-2">
-                          {product.quantity?.toLocaleString()} {product.units}
-                          {product.quantity < LOW_STOCK_THRESHOLD && (
-                            <span className="text-left ml-2 text-red-600 font-semibold">
-                              ⚠ low stock
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-3 px-2">
-                          Ksh {product.price?.toLocaleString()}
-                        </td>
-                        <td className="py-3 px-2">
-                          <div className="flex gap-[5px]">
-                            <button
-                              type="button"
-                              className="edit-btn flex items-center gap-[5px]"
-                              onClick={() => handleEdit(product)}
-                            >
-                              <span>
-                                <Icon
-                                  icon="tabler:edit"
-                                  width="20"
-                                  height="20"
-                                />
+              <div className="w-full overflow-x-auto">
+                <table className="table-auto w-full min-w-auto text-left">
+                  <thead>
+                    <tr>
+                      <th className="py-2 px-3">#</th>
+                      <th className="py-2 px-3">Item</th>
+                      <th className="py-2 px-3">Category</th>
+                      <th className="py-2 px-3">Total Quantity</th>
+                      <th className="py-2 px-3">Unit Price(Ksh)</th>
+                      <th className="py-2 px-3 text-center">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedProducts.length > 0 ? (
+                      paginatedProducts.map((product, index) => (
+                        <tr
+                          key={product._id}
+                          className={
+                            product.quantity < LOW_STOCK_THRESHOLD
+                              ? "bg-red-100"
+                              : ""
+                          }
+                        >
+                          <th className="py-2 px-2" scope="row">
+                            {startIndex + index + 1}
+                          </th>
+                          <td className="py-3 px-2 Capitalize font-semibold text-sm text-gray-700">
+                            {product.name}
+                          </td>
+                          <td className="py-3 px-2 capitalize">
+                            {product.category}
+                          </td>
+                          <td className="py-3 px-2">
+                            {product.quantity?.toLocaleString()} {product.units}
+                            {product.quantity < LOW_STOCK_THRESHOLD && (
+                              <span className="text-left ml-2 text-red-600 font-semibold">
+                                ⚠ low stock
                               </span>
-                            </button>
+                            )}
+                          </td>
+                          <td className="py-3 px-2 font-mono uppercase">
+                            Ksh {product.price?.toLocaleString()}
+                          </td>
+                          <td className="py-3 px-2">
+                            <div className="flex gap-[5px]">
+                              <button
+                                type="button"
+                                className="edit-btn flex items-center gap-[5px]"
+                                onClick={() => handleEdit(product)}
+                              >
+                                <span>
+                                  <Icon
+                                    icon="tabler:edit"
+                                    width="20"
+                                    height="20"
+                                  />
+                                </span>
+                              </button>
+                              <button
+                                type="button"
+                                className="delete-btn flex items-center gap-[5px]"
+                                onClick={() => confirmDelete(product._id)}
+                              >
+                                <span>
+                                  <Icon
+                                    icon="material-symbols:delete"
+                                    width="20"
+                                    height="20"
+                                  />
+                                </span>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      /* Empty State for Products Page */
+                      <tr>
+                        <td colSpan="6" className="py-20 text-center">
+                          <div className="flex flex-col items-center justify-center text-gray-500">
+                            <Icon
+                              icon="fluent:box-search-24-regular"
+                              width="60"
+                              height="60"
+                              className="mb-4 opacity-20"
+                            />
+                            <p className="text-xl font-bold text-gray-700">
+                              No products found
+                            </p>
+                            <p className="text-gray-500 mt-1">
+                              No matches for "<strong>{searchTerm}</strong>"
+                              {selectedCategory !== "All" &&
+                                ` in ${selectedCategory}`}
+                            </p>
                             <button
-                              type="button"
-                              className="delete-btn flex items-center gap-[5px]"
-                              onClick={() => confirmDelete(product._id)}
+                              onClick={() => {
+                                setSearchTerm("");
+                                setSelectedCategory("All");
+                              }}
+                              className="mt-4 px-4 py-2 bg-blue-50 text-blue-600 rounded-full text-sm font-semibold hover:bg-blue-100 transition-colors"
                             >
-                              <span>
-                                <Icon
-                                  icon="material-symbols:delete"
-                                  width="20"
-                                  height="20"
-                                />
-                              </span>
+                              Clear all Filters
                             </button>
                           </div>
                         </td>
                       </tr>
-                    ))
-                  ) : (
-                    /* Empty State for Products Page */
-                    <tr>
-                      <td colSpan="6" className="py-20 text-center">
-                        <div className="flex flex-col items-center justify-center text-gray-500">
-                          <Icon
-                            icon="fluent:box-search-24-regular"
-                            width="60"
-                            height="60"
-                            className="mb-4 opacity-20"
-                          />
-                          <p className="text-xl font-bold text-gray-700">
-                            No products found
-                          </p>
-                          <p className="text-gray-500 mt-1">
-                            No matches for "<strong>{searchTerm}</strong>"
-                            {selectedCategory !== "All" &&
-                              ` in ${selectedCategory}`}
-                          </p>
-                          <button
-                            onClick={() => {
-                              setSearchTerm("");
-                              setSelectedCategory("All");
-                            }}
-                            className="mt-4 px-4 py-2 bg-blue-50 text-blue-600 rounded-full text-sm font-semibold hover:bg-blue-100 transition-colors"
-                          >
-                            Clear all Filters
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                    )}
+                  </tbody>
+                </table>
+              </div>
               {/* Pagination */}
               {allFilteredProducts.length > ITEMS_PER_PAGE && (
                 <div className="flex justify-between items-center mt-5 flex-wrap gap-3">

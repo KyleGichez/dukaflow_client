@@ -487,7 +487,7 @@ const DashboardPage = () => {
                   </p>
                   <p className="flex justify-between my-2">
                     <span>
-                      <a href="/products" className="text-green-700 text-sm">
+                      <a href="/products" className="text-green-700">
                         All Items
                       </a>
                     </span>
@@ -498,7 +498,7 @@ const DashboardPage = () => {
                     </span>
                   </p>
                   <p className="flex justify-between my-2">
-                    <span className="text-orange-700 text-sm">
+                    <span className="text-orange-700">
                       <a
                         href="/products?category=Unconfirmed"
                         className="text-orange-700"
@@ -573,13 +573,13 @@ const DashboardPage = () => {
                         recentSales.map((sale, index) => (
                           <tr key={sale._id}>
                             <th className="py-2 px-3">{index + 1}</th>
-                            <td className="py-2 px-3 capitalize">
+                            <td className="py-2 px-3 uppercase text-gray-700 font-semibold text-xs">
                               {sale.productId?.name || "Deleted Product"}
                             </td>
                             <td className="py-2 px-3">
                               {sale.quantitySold} {sale.productId?.units}
                             </td>
-                            <td className="py-2 px-3">
+                            <td className="py-2 px-3 font-mono uppercase">
                               Ksh {sale.totalPrice?.toLocaleString()}
                             </td>
                             <td className="py-2 px-3">{sale.paymentMethod}</td>

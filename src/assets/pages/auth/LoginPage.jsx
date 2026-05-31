@@ -9,6 +9,7 @@ import "../../styles/LoginPage.css";
 const LoginPage = () => {
   const [credentials, setCredentials] = useState({ phone: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const navigate = useNavigate();
 
@@ -100,8 +101,8 @@ const LoginPage = () => {
               </div>
             </div>
             <div className="submit-btn-wrapper">
-              <button type="submit" className="submit-btn">
-                Submit
+              <button type="submit" className="submit-btn" disabled={isSubmitting}>
+                {isSubmitting ? "Submitting..." : "Submit"}
               </button>
             </div>
           </fieldset>

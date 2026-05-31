@@ -37,7 +37,7 @@ const MobileMenu = () => {
     { name: "Stock", path: "/stock", icon: <Database size={20} /> },
     { name: "Sales", path: "/sales", icon: <ShoppingCart size={20} /> },
     { name: "Credit", path: "/credit", icon: <CoinsIcon size={20} /> },
-    { name: "Reports", path: "/summary", icon: <BarChart3 size={20} /> },
+    { name: "Reports", path: "/summary", icon: <BarChart3 size={20} />, adminOnly: true },
     {
       name: "Staff",
       path: "/staff",

@@ -29,6 +29,7 @@ const StockPage = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const categories = [...new Set(stockItems.map((s) => s.category))];
 
@@ -348,13 +349,12 @@ const StockPage = () => {
               </ul>
             </div>
           </div>
-          <div className="stock-content-table">
+          <div className="stock-content-table flex-1 min-w-0">
             <div className="stock-table">
-              <div className="stock-btn-wrapper mb-[10px]">
-                <div className="inventory-controls mb-5 flex flex-wrap gap-4 items-center justify-between">
-                  <div className="flex gap-4 items-center">
-                    {/* Search Input */}
-                    <div className="relative">
+              <div className="stock-btn-wrapper mb-[10px] w-full relative">
+                <div className="inventory-controls mb-5 flex flex-wrap gap-4 items-center justify-start w-full pr-[80px] sm:pr-0 sm:flex-row sm:justify-between">
+                  <div className="flex flex-wrap gap-3 items-center w-full sm:w-auto">
+                    <div className="relative w-full sm:w-auto min-w-[140px]">
                       <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
                         <Icon
                           icon="material-symbols:search"
@@ -367,14 +367,15 @@ const StockPage = () => {
                         placeholder="Search products..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none w-[250px]"
+                        className="pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none w-full sm:w-[250px]"
                       />
                     </div>
+
                     {/* Category Filter */}
                     <select
                       value={selectedCategory}
                       onChange={(e) => setSelectedCategory(e.target.value)}
-                      className="capitalize p-2 border rounded-lg bg-white shadow-sm outline-none cursor-pointer"
+                      className="capitalize p-2 border rounded-lg bg-white shadow-sm outline-none cursor-pointer max-w-[150px] sm:max-w-none text-sm sm:text-base"
                     >
                       <option value="All">All Categories</option>
                       {categories.map((cat, index) => (
@@ -383,40 +384,41 @@ const StockPage = () => {
                         </option>
                       ))}
                     </select>
-                    {/* Clear Button - Only shows if filters are active */}
+
+                    {/* Clear Button */}
                     {(searchTerm !== "" || selectedCategory !== "All") && (
                       <button
                         onClick={() => {
                           setSearchTerm("");
                           setSelectedCategory("All");
                         }}
-                        className="flex items-center gap-1 text-sm font-medium text-red-500 hover:text-red-700 cursor-pointer transition-colors"
+                        className="flex items-center gap-1 text-sm font-medium text-red-500 hover:text-red-700 cursor-pointer transition-colors whitespace-nowrap"
                       >
                         <Icon
-                          icon="Material-symbols:close-rounded"
+                          icon="material-symbols:close-rounded"
                           width="18"
                           height="18"
                         />
-                        Clear Filters
+                        Clear
                       </button>
                     )}
                   </div>
+                  <button
+                    type="button"
+                    className="add-stock-btn flex items-center gap-[5px] absolute top-0 right-0 sm:static shrink-0"
+                    onClick={() => {
+                      setIsEditing(false);
+                      setEditId(null);
+                      setFormData(initialFormState);
+                      setShowModal(true);
+                    }}
+                  >
+                    <span>
+                      <Icon icon="si:add-fill" width="20" height="20" />
+                    </span>
+                    Add
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  className="add-stock-btn flex items-center gap-[5px]"
-                  onClick={() => {
-                    setIsEditing(false);
-                    setEditId(null);
-                    setFormData(initialFormState);
-                    setShowModal(true);
-                  }}
-                >
-                  <span>
-                    <Icon icon="si:add-fill" width="20" height="20" />
-                  </span>
-                  Add
-                </button>
               </div>
               {showModal && (
                 <div
@@ -546,8 +548,10 @@ const StockPage = () => {
                           <button
                             className="modal-add-btn py-2 px-3 w-[75px] cursor-pointer"
                             type="submit"
+                            disabled={isSubmitting}
                           >
                             {isEditing ? "Save" : "Add"}
+                            {isSubmitting ? "Processing..." : ""}
                           </button>
                           <button
                             className="modal-close-btn py-2 px-3 w-[75px] cursor-pointer"
@@ -564,7 +568,8 @@ const StockPage = () => {
                   </div>
                 </div>
               )}
-              <table className="table-auto w-full text-left">
+              <div className="w-full overflow-x-auto">
+              <table className="w-full min-w-full table-auto w-full text-left">
                 <thead>
                   <tr>
                     <th className="py-2 px-3">#</th>
@@ -609,7 +614,7 @@ const StockPage = () => {
                             </span>
                           )}
                         </td>
-                        <td className="py-2 px-2">
+                        <td className="py-2 px-2 font-mono uppercase">
                           Ksh {stockItem.price?.toLocaleString()}
                         </td>
                         <td className="py-2 px-2">
@@ -680,8 +685,8 @@ const StockPage = () => {
                             No results found
                           </p>
                           <p className="text-gray-500 mt-1">
-                            We couldn't find anything matching "
-                            <strong>{searchTerm}</strong>"
+                            We couldn't find any matches for ""
+                            <strong>{searchTerm}</strong>
                             {selectedCategory !== "All" &&
                               ` in ${selectedCategory}`}
                           </p>
@@ -700,6 +705,7 @@ const StockPage = () => {
                   )}
                 </tbody>
               </table>
+              </div>
               {/* Pagination */}
               {filteredItems.length > ITEMS_PER_PAGE && (
                 <div className="flex justify-between items-center mt-5 flex-wrap gap-3">

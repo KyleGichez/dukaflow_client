@@ -35,6 +35,7 @@ const SalesPage = () => {
   const [selectedSaleForPrint, setSelectedSaleForPrint] = useState(null);
   const [cart, setCart] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const itemsPerPage = 10;
 
   useEffect(() => {
@@ -511,7 +512,7 @@ const SalesPage = () => {
               </ul>
             </div>
           </div>
-          <div className="sales-content-table">
+          <div className="sales-content-table flex-1 min-w-0">
             <div className="sales-table mb-[20px]">
               <div className="sales-btn-wrapper mb-[10px]">
                 <div className="flex flex-wrap items-end gap-4 mb-3">
@@ -836,148 +837,149 @@ const SalesPage = () => {
                               ? "bg-blue-400 cursor-not-allowed"
                               : "bg-blue-600 hover:bg-blue-700"
                           }`}
-                          disabled={cart.length === 0}
+                          disabled={cart.length === 0 || isSubmitting}
                         >
-                          Complete Sale
+                          {isSubmitting ? "Processing..." : "Complete Sale"}
                         </button>
                       </div>
                     </form>
                   </div>
                 </div>
               )}
-
-              <table className="table-auto w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-gray-100 border-b">
-                    <th className="py-2 px-3">#</th>
-                    <th className="py-2 px-3">Item</th>
-                    <th className="py-2 px-3">Quantity</th>
-                    <th className="py-2 px-3">Total(Ksh)</th>
-                    <th className="py-2 px-3">Payment</th>
-                    <th className="py-2 px-3">Sold At</th>
-                    <th className="py-2 px-3">Sold By</th>
-                    <th className="py-2 px-3">Status</th>
-                    <th className="py-2 px-3">Balance</th>
-                    <th className="py-2 px-3 text-center">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredSales.length > 0 ? (
-                    filteredSales
-                      .slice(
-                        (currentPage - 1) * itemsPerPage,
-                        currentPage * itemsPerPage
-                      )
-                      .map((sale, index) => {
-                        // Compute consecutive layout indexing across active sub-pages
-                        const globalRowNumber =
-                          (currentPage - 1) * itemsPerPage + index + 1;
-
-                        return (
-                          <tr
-                            key={sale._id}
-                            className="border-b hover:bg-gray-50"
-                          >
-                            <td className="py-2 px-3">
-                              {globalRowNumber}
-                              {sale._id?.toString().startsWith("offline-") && (
-                                <span
-                                  className="ml-1 text-[10px] bg-amber-500 text-white px-1 rounded"
-                                  title="Unsynced local transaction"
-                                >
-                                  Offline
-                                </span>
-                              )}
-                            </td>
-                            <td className="py-2 px-3 uppercase text-xs text-gray-700 font-semibold">
-                              {sale.productId?.name || "Deleted Product"}
-                            </td>
-                            <td className="py-2 px-3">
-                              {sale.quantitySold} pcs
-                            </td>
-                            <td className="py-2 px-3">
-                              Ksh {(sale.totalPrice || 0).toLocaleString()}
-                            </td>
-                            <td className="py-2 px-3">{sale.paymentMethod}</td>
-                            <td className="py-2 px-3">
-                              <p>
-                                {" "}
-                                {new Date(
-                                  sale.createdAt || sale.date
-                                ).toLocaleDateString()}
-                              </p>
-                              <p className="font-semibold text-xs text-gray-500">
-                                {new Date(
-                                  sale.createdAt || sale.date
-                                ).toLocaleTimeString([], {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                })}
-                              </p>
-                            </td>
-                            <td className="py-2 px-3">
-                              {sale.soldBy?.fname ?? "cashier"}
-                              <p className="text-xs font-semibold text-gray-500 uppercase">
-                                {sale.soldBy?.role}
-                              </p>
-                            </td>
-                            <td className="p-3">
-                              <span
-                                className={`inline-block px-3 py-1 text-xs font-semibold rounded ${
-                                  sale.paymentStatus === "Paid"
-                                    ? "bg-green-600 text-white"
-                                    : sale.paymentStatus === "Partial"
-                                    ? "bg-amber-600 text-white"
-                                    : "bg-red-600 text-white"
-                                }`}
-                              >
-                                {sale.paymentStatus || "Paid"}
-                              </span>
-                            </td>
-                            <td className="py-2 px-3 font-mono">
-                              {sale.paymentMethod === "Credit" &&
-                              sale.balance > 0 ? (
-                                <span className="text-red-800 font-bold">
-                                  Ksh {sale.balance.toLocaleString()}
-                                </span>
-                              ) : (
-                                <span className="text-gray-400">
-                                  {" "}
-                                  No Balance
-                                </span>
-                              )}
-                            </td>
-                            <td className="py-2 px-2 text-center">
-                              <div className="sale-delete-btn flex justify-center gap-2">
-                                <button
-                                  type="button"
-                                  className="delete-btn p-1 text-red-600 hover:text-red-800"
-                                  onClick={() => confirmDelete(sale._id)}
-                                  title="Delete Entry"
-                                >
-                                  <Icon
-                                    icon="material-symbols:delete"
-                                    width="20"
-                                    height="20"
-                                  />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })
-                  ) : (
-                    <tr>
-                      <td
-                        colSpan="10"
-                        className="text-center py-4 text-gray-500"
-                      >
-                        No sales recorded yet.
-                      </td>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-full table-auto text-left border-collapse">
+                  <thead>
+                    <tr className="bg-gray-100 border-b">
+                      <th className="py-2 px-3">#</th>
+                      <th className="py-2 px-3">Item</th>
+                      <th className="py-2 px-3">Quantity</th>
+                      <th className="py-2 px-3">Total(Ksh)</th>
+                      <th className="py-2 px-3">Payment</th>
+                      <th className="py-2 px-3">Sold At</th>
+                      <th className="py-2 px-3">Sold By</th>
+                      <th className="py-2 px-3">Status</th>
+                      <th className="py-2 px-3">Balance</th>
+                      <th className="py-2 px-3 text-center">Action</th>
                     </tr>
-                  )}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {filteredSales.length > 0 ? (
+                      filteredSales
+                        .slice(
+                          (currentPage - 1) * itemsPerPage,
+                          currentPage * itemsPerPage
+                        )
+                        .map((sale, index) => {
+                          // Compute consecutive layout indexing across active sub-pages
+                          const globalRowNumber =
+                            (currentPage - 1) * itemsPerPage + index + 1;
+
+                          return (
+                            <tr
+                              key={sale._id}
+                              className="border-b hover:bg-gray-50"
+                            >
+                              <td className="py-2 px-3">
+                                {globalRowNumber}
+                                {sale._id?.toString().startsWith("offline-") && (
+                                  <span
+                                    className="ml-1 text-[10px] bg-amber-500 text-white px-1 rounded"
+                                    title="Unsynced local transaction"
+                                  >
+                                    Offline
+                                  </span>
+                                )}
+                              </td>
+                              <td className="py-2 px-3 uppercase text-xs text-gray-700 font-semibold">
+                                {sale.productId?.name || "Deleted Product"}
+                              </td>
+                              <td className="py-2 px-3">
+                                {sale.quantitySold} pcs
+                              </td>
+                              <td className="py-2 px-3 font-mono uppercase">
+                                Ksh {(sale.totalPrice || 0).toLocaleString()}
+                              </td>
+                              <td className="py-2 px-3">{sale.paymentMethod}</td>
+                              <td className="py-2 px-3">
+                                <p>
+                                  {" "}
+                                  {new Date(
+                                    sale.createdAt || sale.date
+                                  ).toLocaleDateString()}
+                                </p>
+                                <p className="font-semibold text-xs text-gray-500">
+                                  {new Date(
+                                    sale.createdAt || sale.date
+                                  ).toLocaleTimeString([], {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </p>
+                              </td>
+                              <td className="py-2 px-3">
+                                {sale.soldBy?.fname ?? "cashier"}
+                                <p className="text-xs font-semibold text-gray-500 uppercase">
+                                  {sale.soldBy?.role}
+                                </p>
+                              </td>
+                              <td className="p-3">
+                                <span
+                                  className={`inline-block px-3 py-1 text-xs font-semibold rounded ${
+                                    sale.paymentStatus === "Paid"
+                                      ? "bg-green-600 text-white"
+                                      : sale.paymentStatus === "Partial"
+                                      ? "bg-amber-600 text-white"
+                                      : "bg-red-600 text-white"
+                                  }`}
+                                >
+                                  {sale.paymentStatus || "Paid"}
+                                </span>
+                              </td>
+                              <td className="py-2 px-3 font-mono">
+                                {sale.paymentMethod === "Credit" &&
+                                sale.balance > 0 ? (
+                                  <span className="text-red-800 font-bold">
+                                    Ksh {sale.balance.toLocaleString()}
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-400">
+                                    {" "}
+                                    No Balance
+                                  </span>
+                                )}
+                              </td>
+                              <td className="py-2 px-2 text-center">
+                                <div className="sale-delete-btn flex justify-center gap-2">
+                                  <button
+                                    type="button"
+                                    className="delete-btn p-1 text-red-600 hover:text-red-800"
+                                    onClick={() => confirmDelete(sale._id)}
+                                    title="Delete Entry"
+                                  >
+                                    <Icon
+                                      icon="material-symbols:delete"
+                                      width="20"
+                                      height="20"
+                                    />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })
+                    ) : (
+                      <tr>
+                        <td
+                          colSpan="10"
+                          className="text-center py-4 text-gray-500"
+                        >
+                          No sales recorded yet.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
               {/* Responsive Navigation Button Footer */}
               {filteredSales.length > itemsPerPage && (
                 <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 mt-4">

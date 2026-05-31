@@ -408,7 +408,6 @@ const CreditSalesTable = () => {
                       <tr>
                         <th className="py-3 px-4">Date</th>
                         <th className="py-3 px-4">Customer</th>
-                        <th className="py-3 px-4">Phone</th>
                         <th className="py-3 px-4">Items Ordered</th>
                         <th className="py-3 px-4 text-center">Total Qty</th>
                         <th className="py-3 px-4 text-right">Total (KSh)</th>
@@ -445,11 +444,9 @@ const CreditSalesTable = () => {
                                   "en-KE"
                                 )}
                               </td>
-                              <td className="py-3 px-4 font-bold text-gray-900 capitalize">
-                                {credit.customerName || "Walking Client"}
-                              </td>
                               <td className="py-3 px-4">
-                                {credit.customerPhone || "N/A"}
+                               <p className="font-bold text-gray-900 capitalize">{credit.customerName || "Walking Client"}</p>
+                                <p className="text-gray-500">{credit.customerPhone || "N/A"}</p>
                               </td>
                               <td className="py-3 px-4 capitalize font-semibold text-emerald-700 max-w-xs truncate">
                                 {credit.itemsList.join(", ")}
