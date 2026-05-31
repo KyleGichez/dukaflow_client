@@ -16,6 +16,9 @@ const CreditSalesTable = () => {
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("Cash");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // 1. State for handling the search term text
+  const [searchQuery, setSearchQuery] = useState("");
   const rowsPerPage = 20;
 
   const fetchCredits = async () => {
@@ -95,12 +98,10 @@ const CreditSalesTable = () => {
     });
 
     Object.values(groups).forEach((group) => {
-      // 1. Clean and filter any broken or empty entries in payment history
       const validPayments = group.paymentHistory.filter(
         (p) => p !== null && p !== undefined
       );
 
-      // 2. Calculate what was actually paid purely based on explicit payment records
       let totalPaidFromHistory = 0;
       validPayments.forEach((payment) => {
         const amt =
@@ -114,17 +115,14 @@ const CreditSalesTable = () => {
         }
       });
 
-      // 3. Force alignment: If no real ledger payments exist, paid must be 0
       group.aggregatedPaid =
         validPayments.length > 0 ? Math.max(0, totalPaidFromHistory) : 0;
 
-      // 4. Balance calculation: Total Invoice Amount minus the clean history totals
       group.remainingBalance = Math.max(
         0,
         group.totalAmount - group.aggregatedPaid
       );
 
-      // Sort payment dates
       group.paymentHistory.sort((a, b) => {
         const dateA = new Date(a?.date || a);
         const dateB = new Date(b?.date || b);
@@ -205,7 +203,24 @@ const CreditSalesTable = () => {
     (credit) => Math.max(0, Number(credit.remainingBalance || 0)) > 0
   );
 
-  const paginatedCredits = activeCreditRows.slice(
+  // 2. Filter the active items dynamic list based on name or phone matches
+  const filteredCreditRows = activeCreditRows.filter((credit) => {
+    const searchLower = searchQuery.toLowerCase().trim();
+    if (!searchLower) return true; // If no input, show everything
+
+    const nameMatch = credit.customerName
+      ? credit.customerName.toLowerCase().includes(searchLower)
+      : false;
+      
+    const phoneMatch = credit.customerPhone
+      ? credit.customerPhone.toLowerCase().includes(searchLower)
+      : false;
+
+    return nameMatch || phoneMatch;
+  });
+
+  // 3. Paginate the filtered items instead of the raw active list
+  const paginatedCredits = filteredCreditRows.slice(
     (creditPage - 1) * rowsPerPage,
     creditPage * rowsPerPage
   );
@@ -294,6 +309,7 @@ const CreditSalesTable = () => {
       }
 
       toast.success("Payment updated successfully!");
+      setSearchQuery(""); // Optional: clear search on reset view
       await fetchCredits();
       setSelectedCredit(null);
     } catch (error) {
@@ -391,7 +407,35 @@ const CreditSalesTable = () => {
             </div>
 
             {/* Main ledger block */}
-            <div className="credit-content-wrapper-info flex-1 min-w-0">
+            <div className="credit-content-wrapper-info flex-1 min-w-0 space-y-4">
+              
+              {/* 4. Brand New Search Component Block */}
+              <div className="bg-white p-4 rounded-lg shadow border border-gray-200 flex items-center gap-3">
+                <div className="relative flex-1 max-w-md">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
+                    <Icon icon="lucide:search" width="18" height="18" />
+                  </span>
+                  <input
+                    type="text"
+                    placeholder="Search customer by name or phone number..."
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setCreditPage(1); // Safely reset page to 1 when changing filters
+                    }}
+                    className="w-full bg-gray-50 border border-gray-300 rounded-lg pl-10 pr-4 py-2 text-sm text-gray-900 focus:ring-emerald-500 focus:border-emerald-500 font-medium"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery("")}
+                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+                    >
+                      <Icon icon="lucide:x" width="16" height="16" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
               <div className="bg-white rounded-lg shadow border border-gray-200 overflow-x-auto">
                 <div className="p-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
                   <h3 className="font-bold text-gray-800 text-sm uppercase tracking-wider">
@@ -445,8 +489,12 @@ const CreditSalesTable = () => {
                                 )}
                               </td>
                               <td className="py-3 px-4">
-                               <p className="font-bold text-gray-900 capitalize">{credit.customerName || "Walking Client"}</p>
-                                <p className="text-gray-500">{credit.customerPhone || "N/A"}</p>
+                                <p className="font-bold text-gray-900 capitalize">
+                                  {credit.customerName || "Walking Client"}
+                                </p>
+                                <p className="text-gray-500">
+                                  {credit.customerPhone || "N/A"}
+                                </p>
                               </td>
                               <td className="py-3 px-4 capitalize font-semibold text-emerald-700 max-w-xs truncate">
                                 {credit.itemsList.join(", ")}
@@ -586,7 +634,7 @@ const CreditSalesTable = () => {
                             colSpan="11"
                             className="text-center py-8 text-gray-400 font-medium"
                           >
-                            No active credits found in this ledger cycle.
+                            No credit records match your search filter criteria.
                           </td>
                         </tr>
                       )}
