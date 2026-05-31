@@ -410,14 +410,6 @@ const DashboardPage = () => {
                   </p>
                 </div>
               </div>
-              {/* <div className="content-stats-card">
-                <div className="content-stat-card">
-                  <h3 className="font-bold uppercase">Active Credits</h3>
-                  <p className="font-semibold text-red-800">
-                    KSH {totalCreditsAmount?.toLocaleString() || 0}
-                  </p>
-                </div>
-              </div> */}
               <div className="content-stats-card">
                 <div className="content-stat-card">
                   <h3 className="font-bold uppercase">All Transactions</h3>
@@ -460,8 +452,6 @@ const DashboardPage = () => {
                 </div>
               </div>
             </div>
-
-            {/* --- Remaining Details and Summaries elements continue untouched --- */}
             <div className="dashboard-product-details">
               <div className="flex gap-[20px] mb-[30px] dashboard-product-detail">
                 <div className="dashboard-product-stats-left">
@@ -483,7 +473,7 @@ const DashboardPage = () => {
                     <span className="text-gray-700">
                       <a href="/stock">All Categories</a>
                     </span>
-                    <span>{allCategories}</span>
+                    <span className="text-gray-700">{allCategories}</span>
                   </p>
                   <p className="flex justify-between my-2">
                     <span>
@@ -491,7 +481,7 @@ const DashboardPage = () => {
                         All Items
                       </a>
                     </span>
-                    <span>
+                    <span className="text-green-700">
                       {products
                         .reduce((sum, p) => sum + p.qty, 0)
                         .toLocaleString()}
@@ -506,7 +496,7 @@ const DashboardPage = () => {
                         Unconfirmed Items
                       </a>
                     </span>
-                    <span>{unconfirmedItemsCount.toLocaleString()}</span>
+                    <span className="text-orange-700">{unconfirmedItemsCount.toLocaleString()}</span>
                   </p>
                 </div>
 
