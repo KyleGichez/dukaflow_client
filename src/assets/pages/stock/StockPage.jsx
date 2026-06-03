@@ -630,7 +630,7 @@ const StockPage = () => {
 
                                   return (
                                     <>
-                                      <p>{d.toLocaleDateString("en-GB")}</p>
+                                      <p className="">{d.toLocaleDateString()}</p>
                                       <p className="font-semibold text-xs text-gray-600">
                                         {d.toLocaleTimeString([], {
                                           hour: "2-digit",
