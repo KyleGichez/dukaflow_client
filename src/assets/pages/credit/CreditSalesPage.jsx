@@ -426,7 +426,7 @@ const CreditSalesTable = () => {
 
                           return (
                             <tr key={credit._id} className={`hover:bg-gray-50 ${balance > 0 ? "bg-red-50/30" : "bg-emerald-50/20"}`}>
-                              <td className="py-3 px-4 font-medium">
+                              <td className="py-3 px-4 text-gray-800 font-semibold">
                                 {new Date(credit.createdAt).toLocaleDateString("en-KE")}
                                 <p className="text-xs text-emerald-600">
                                   {new Date(credit.createdAt).toLocaleTimeString("en-KE", { hour: "2-digit", minute: "2-digit", hour12: true })}
@@ -460,6 +460,7 @@ const CreditSalesTable = () => {
                                     return (
                                       <div className="flex flex-col justify-center leading-tight">
                                         <span className="font-semibold text-gray-800">{new Date(paymentDate).toLocaleDateString("en-KE")}</span>
+                                        <span className="font-semibold text-xs text-emerald-600">{new Date(paymentDate).toLocaleTimeString("en-KE", {hour12:true, hour:"2-digit", minute:"2-digit"})}</span>
                                       </div>
                                     );
                                   })()
@@ -568,7 +569,7 @@ const CreditSalesTable = () => {
 
                 <div className="space-y-1 text-[11px] border-b pb-2 mb-2 border-gray-100">
                   <p><span className="text-gray-500">Receipt No :</span> <span className="font-bold">{printReceiptData.receiptNo}</span></p>
-                  <p><span className="text-gray-500">Date Info  :</span> {new Date(printReceiptData.date).toLocaleString("en-GB", { hour12: true })}</p>
+                  <p><span className="text-gray-500">Date Info  :</span> {new Date(printReceiptData.date).toLocaleDateString("en-KE", { hour12: true, hour:'2-digit', minute:'2-digit' })}</p>
                   <p><span className="text-gray-500">Customer   :</span> <span className="font-bold uppercase text-gray-900">{printReceiptData.customerName}</span></p>
                   <p><span className="text-gray-500">Phone ref  :</span> {printReceiptData.customerPhone}</p>
                 </div>
