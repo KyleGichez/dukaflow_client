@@ -393,7 +393,7 @@ const DashboardPage = () => {
 
           <div className="dashboard-content-wrapper-info flex-1 w-full min-w-0">
             {/* --- Metrics Cards Section Linked directly to computed states --- */}
-            <div className="dashboard-content-stats-cards grid grid-cols-4 gap-[40px] mb-[30px]">
+            <div className="dashboard-content-stats-cards flex flex-wrap gap-[20px] mb-[30px]">
               <div className="content-stats-card flex-1">
                 <div className="content-stat-card">
                   <h3 className="font-bold uppercase">Today's Sales</h3>
