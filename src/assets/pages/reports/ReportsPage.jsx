@@ -541,7 +541,7 @@ const ReportsPage = () => {
 
             {/* Collected Methods Breakdown */}
             <h3 className="font-bold uppercase text-sm text-gray-600 mb-[10px] tracking-wider">
-              Revenue Collection
+              Revenue Collection (Sales + Repayments)
             </h3>
             <div className="grid grid-cols-4 gap-6 mb-[30px]">
               <div className="summary-card">
