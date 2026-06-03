@@ -28,6 +28,34 @@
     background-color: #d3d3d3;
 }
 
+/* Screen utility rules */
+.no-print {
+  display: flex !important;
+}
+
+@media print {
+  /* Hide the dashboard, tables, and the layout controls container wrapper */
+  body * {
+    visibility: hidden;
+  }
+  .no-print, .no-print * {
+    display: none !important;
+    visibility: hidden !important;
+  }
+  
+  /* Force system output alignment targeted only to the print receipt element container block */
+  .print-only, .print-only * {
+    visibility: visible;
+  }
+  .print-only {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80mm;
+    display: block !important;
+  }
+}
+
 
 @media screen and (max-width: 768px) {
     html,

@@ -303,8 +303,8 @@ const DashboardPage = () => {
   }
 
   return (
-    <div className="dashboard-wrapper">
-      <div className="dashboard-content">
+    <div className="dashboard-wrapper w-full overflow-hidden max-w-full box-border">
+      <div className="dashboard-content w-full p-4 lg:p-6">
         <h1 className="text-2xl font-bold uppercase mb-[20px]">Dashboard</h1>
 
         {/* Render trial banner notification safely if parameters are met */}
@@ -319,7 +319,7 @@ const DashboardPage = () => {
           Welcome back, <strong className="capitalize">{userName}</strong>
         </h2>
 
-        <div className="dashboard-content-wrapper flex justify-between gap-[20px]">
+        <div className="dashboard-content-wrapper flex flex-col md:flex-row justify-between gap-[20px] w-full items-start">
           <div className="dashboard-content-wrapper-menu">
             <div className="dashboard-content-menu">
               <ul>
@@ -391,10 +391,10 @@ const DashboardPage = () => {
             </div>
           </div>
 
-          <div className="dashboard-content-wrapper-info">
+          <div className="dashboard-content-wrapper-info flex-1 w-full min-w-0">
             {/* --- Metrics Cards Section Linked directly to computed states --- */}
             <div className="dashboard-content-stats-cards flex flex-wrap gap-[20px] mb-[30px]">
-              <div className="content-stats-card flex-1">
+              <div className="content-stats-card">
                 <div className="content-stat-card">
                   <h3 className="font-bold uppercase">Today's Sales</h3>
                   <p className="font-semibold text-gray-700">
@@ -499,7 +499,6 @@ const DashboardPage = () => {
                     <span className="text-orange-700">{unconfirmedItemsCount.toLocaleString()}</span>
                   </p>
                 </div>
-
                 <div className="dashboard-product-stats-right">
                   <h4 className="font-bold uppercase">Top Selling Items</h4>
                   <div className="dashboard-product-stat">
@@ -524,7 +523,6 @@ const DashboardPage = () => {
                   </div>
                 </div>
               </div>
-
               <div className="dashboard-product-sales mb-[30px]">
                 <h5 className="font-bold uppercase flex items-center justify-between">
                   Sales Summary
@@ -543,7 +541,7 @@ const DashboardPage = () => {
                   </span>
                 </h5>
 
-                <div className="sales-table">
+                <div className="sales-table w-full overflow-x-auto">
                   <table className="table-auto w-full text-left">
                     <thead>
                       <tr>

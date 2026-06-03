@@ -505,7 +505,7 @@ const ProductPage = () => {
                           <th className="py-2 px-2" scope="row">
                             {startIndex + index + 1}
                           </th>
-                          <td className="py-3 px-2 capitalize font-semibold text-sm text-gray-700">
+                          <td className="py-3 px-2 uppercase font-semibold text-sm text-gray-700">
                             {product.name}
                           </td>
                           <td className="py-3 px-2 capitalize">

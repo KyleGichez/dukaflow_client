@@ -58,7 +58,11 @@ const StockPage = () => {
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const endIndex = startIndex + ITEMS_PER_PAGE;
 
-  const paginatedItems = filteredItems.slice(startIndex, endIndex);
+  const sortedItems = [...stockItems].sort((a, b) => {
+    return new Date(b.date || 0) - new Date(a.date || 0);
+  });
+
+  const paginatedItems = sortedItems.slice(startIndex, endIndex);
 
   // Reset to page 1 when filters/search change
   useEffect(() => {
@@ -569,142 +573,142 @@ const StockPage = () => {
                 </div>
               )}
               <div className="w-full overflow-x-auto">
-              <table className="w-full min-w-full table-auto w-full text-left">
-                <thead>
-                  <tr>
-                    <th className="py-2 px-3">#</th>
-                    <th className="py-2 px-3">Category</th>
-                    <th className="py-2 px-3">Item</th>
-                    <th className="py-2 px-3">Total Quantity</th>
-                    <th className="py-2 px-3">Unit Price(Ksh)</th>
-                    <th className="py-2 px-3">Date Added</th>
-                    <th className="py-2 px-3 text-center">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedItems.length > 0 ? (
-                    paginatedItems.map((stockItem, index) => (
-                      <tr
-                        key={stockItem._id}
-                        className={
-                          stockItem.quantityAdded < LOW_STOCK_THRESHOLD
-                            ? "bg-red-100"
-                            : ""
-                        }
-                      >
-                        <th className="py-2 px-2" scope="row">
-                          {startIndex + index + 1}
-                        </th>
+                <table className="w-full min-w-full table-auto w-full text-left">
+                  <thead>
+                    <tr>
+                      <th className="py-2 px-3">#</th>
+                      <th className="py-2 px-3">Category</th>
+                      <th className="py-2 px-3">Item</th>
+                      <th className="py-2 px-3">Total Quantity</th>
+                      <th className="py-2 px-3">Unit Price(Ksh)</th>
+                      <th className="py-2 px-3">Date Added</th>
+                      <th className="py-2 px-3 text-center">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedItems.length > 0 ? (
+                      paginatedItems.map((stockItem, index) => (
+                        <tr
+                          key={stockItem._id}
+                          className={
+                            stockItem.quantityAdded < LOW_STOCK_THRESHOLD
+                              ? "bg-red-100"
+                              : ""
+                          }
+                        >
+                          <th className="py-2 px-2" scope="row">
+                            {startIndex + index + 1}
+                          </th>
 
-                        <td className="py-2 px-2 font-semibold uppercase text-sm text-gray-700">
-                          {stockItem.category}
-                        </td>
-                        <td className="py-2 px-2 capitalize">
-                          {stockItem.name}
-                        </td>
-                        <td className="py-2 px-2">
-                          {/* If totalStockAfter exists, show it; otherwise show quantityAdded */}
-                          {stockItem.totalStockAfter !== undefined
-                            ? stockItem.totalStockAfter.toLocaleString()
-                            : stockItem.quantityAdded.toLocaleString()}{" "}
-                          {stockItem.units}
-                          {stockItem.quantityAdded < LOW_STOCK_THRESHOLD && (
-                            <span className="text-left ml-2 text-red-600 font-semibold">
-                              ⚠ low stock
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-2 px-2 font-mono uppercase">
-                          Ksh {stockItem.price?.toLocaleString()}
-                        </td>
-                        <td className="py-2 px-2">
-                          {stockItem.date
-                            ? (() => {
-                                const d = new Date(stockItem.date);
-
-                                if (isNaN(d.getTime())) return "Invalid date";
-
-                                return (
-                                  <>
-                                    <p>{d.toLocaleDateString("en-GB")}</p>
-                                    <p className="font-semibold text-xs text-gray-500">
-                                      {d.toLocaleTimeString([], {
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                      })}
-                                    </p>
-                                  </>
-                                );
-                              })()
-                            : "N/A"}
-                        </td>
-                        <td className="py-2 px-2">
-                          <div className="flex gap-[5px]">
-                            <button
-                              type="button"
-                              className="edit-btn flex items-center gap-[5px]"
-                              onClick={() => handleEdit(stockItem)}
-                            >
-                              <span>
-                                <Icon
-                                  icon="tabler:edit"
-                                  width="20"
-                                  height="20"
-                                />
+                          <td className="py-2 px-2 font-semibold uppercase text-sm text-gray-700">
+                            {stockItem.category}
+                          </td>
+                          <td className="py-2 px-2 capitalize">
+                            {stockItem.name}
+                          </td>
+                          <td className="py-2 px-2">
+                            {/* If totalStockAfter exists, show it; otherwise show quantityAdded */}
+                            {stockItem.totalStockAfter !== undefined
+                              ? stockItem.totalStockAfter.toLocaleString()
+                              : stockItem.quantityAdded.toLocaleString()}{" "}
+                            {stockItem.units}
+                            {stockItem.quantityAdded < LOW_STOCK_THRESHOLD && (
+                              <span className="text-left ml-2 text-red-600 font-semibold">
+                                ⚠ low stock
                               </span>
-                            </button>
+                            )}
+                          </td>
+                          <td className="py-2 px-2 font-mono uppercase">
+                            Ksh {stockItem.price?.toLocaleString()}
+                          </td>
+                          <td className="py-2 px-2">
+                            {stockItem.date
+                              ? (() => {
+                                  const d = new Date(stockItem.date);
+
+                                  if (isNaN(d.getTime())) return "Invalid date";
+
+                                  return (
+                                    <>
+                                      <p>{d.toLocaleDateString("en-GB")}</p>
+                                      <p className="font-semibold text-xs text-emerald-600">
+                                        {d.toLocaleTimeString([], {
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                        })}
+                                      </p>
+                                    </>
+                                  );
+                                })()
+                              : "N/A"}
+                          </td>
+                          <td className="py-2 px-2">
+                            <div className="flex gap-[5px]">
+                              <button
+                                type="button"
+                                className="edit-btn flex items-center gap-[5px]"
+                                onClick={() => handleEdit(stockItem)}
+                              >
+                                <span>
+                                  <Icon
+                                    icon="tabler:edit"
+                                    width="20"
+                                    height="20"
+                                  />
+                                </span>
+                              </button>
+                              <button
+                                type="button"
+                                className="delete-btn flex items-center gap-[5px]"
+                                onClick={() => confirmDelete(stockItem._id)}
+                              >
+                                <span>
+                                  <Icon
+                                    icon="material-symbols:delete"
+                                    width="20"
+                                    height="20"
+                                  />
+                                </span>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      /* Empty State / No Results Found */
+                      <tr>
+                        <td colSpan="7" className="py-20 text-center">
+                          <div className="flex flex-col items-center justify-center text-gray-500">
+                            <Icon
+                              icon="material-symbols:search-off-rounded"
+                              width="60"
+                              height="60"
+                              className="mb-4 opacity-20"
+                            />
+                            <p className="text-xl font-bold text-gray-700">
+                              No results found
+                            </p>
+                            <p className="text-gray-500 mt-1">
+                              We couldn't find any matches for ""
+                              <strong>{searchTerm}</strong>
+                              {selectedCategory !== "All" &&
+                                ` in ${selectedCategory}`}
+                            </p>
                             <button
-                              type="button"
-                              className="delete-btn flex items-center gap-[5px]"
-                              onClick={() => confirmDelete(stockItem._id)}
+                              onClick={() => {
+                                setSearchTerm("");
+                                setSelectedCategory("All");
+                              }}
+                              className="mt-4 px-4 py-2 bg-blue-50 text-blue-600 rounded-full text-sm font-semibold hover:bg-blue-100 transition-colors"
                             >
-                              <span>
-                                <Icon
-                                  icon="material-symbols:delete"
-                                  width="20"
-                                  height="20"
-                                />
-                              </span>
+                              Clear all filters
                             </button>
                           </div>
                         </td>
                       </tr>
-                    ))
-                  ) : (
-                    /* Empty State / No Results Found */
-                    <tr>
-                      <td colSpan="7" className="py-20 text-center">
-                        <div className="flex flex-col items-center justify-center text-gray-500">
-                          <Icon
-                            icon="material-symbols:search-off-rounded"
-                            width="60"
-                            height="60"
-                            className="mb-4 opacity-20"
-                          />
-                          <p className="text-xl font-bold text-gray-700">
-                            No results found
-                          </p>
-                          <p className="text-gray-500 mt-1">
-                            We couldn't find any matches for ""
-                            <strong>{searchTerm}</strong>
-                            {selectedCategory !== "All" &&
-                              ` in ${selectedCategory}`}
-                          </p>
-                          <button
-                            onClick={() => {
-                              setSearchTerm("");
-                              setSelectedCategory("All");
-                            }}
-                            className="mt-4 px-4 py-2 bg-blue-50 text-blue-600 rounded-full text-sm font-semibold hover:bg-blue-100 transition-colors"
-                          >
-                            Clear all filters
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                    )}
+                  </tbody>
+                </table>
               </div>
               {/* Pagination */}
               {filteredItems.length > ITEMS_PER_PAGE && (
