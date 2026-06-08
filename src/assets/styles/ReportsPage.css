@@ -58,6 +58,10 @@
     margin-bottom: 10px;
 }
 
+.filter-range{
+  border: 1px solid var(--border-color);
+}
+
 .skeleton {
     background: #e0e0e0;
     background-image: linear-gradient(90deg, #e0e0e0 0px, #f0f0f0 40px, #e0e0e0 80px);

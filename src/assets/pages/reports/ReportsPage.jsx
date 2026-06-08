@@ -23,6 +23,9 @@ const ReportsPage = () => {
   const [filter, setFilter] = useState("today");
   const [credits, setCredits] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [paymentFilter, setPaymentFilter] = useState("All");
 
   useEffect(() => {
     const fetchReportData = async () => {
@@ -37,10 +40,13 @@ const ReportsPage = () => {
 
         const [summaryRes, salesRes, creditsRes] = await Promise.all([
           axiosInstance.get(
-            `${API_URL}/api/sales/summary?range=${filter}`,
+            `${API_URL}/api/sales/summary?range=${filter}&startDate=${startDate}&endDate=${endDate}&paymentMethod=${paymentFilter}`,
             config
           ),
-          axiosInstance.get(`${API_URL}/api/sales?range=${filter}`, config),
+          axiosInstance.get(
+            `${API_URL}/api/sales?range=${filter}&startDate=${startDate}&endDate=${endDate}&paymentMethod=${paymentFilter}`,
+            config
+          ),
           axiosInstance.get(`${API_URL}/api/credits`, config).catch((err) => {
             console.warn("Credits endpoint failed fallback:", err.message);
             return { data: [] };
@@ -57,7 +63,7 @@ const ReportsPage = () => {
       }
     };
     fetchReportData();
-  }, [filter]);
+  }, [filter, startDate, endDate, paymentFilter]);
 
   const recentSales = sales
     .sort((a, b) => new Date(b.date) - new Date(a.date))
@@ -269,54 +275,6 @@ const ReportsPage = () => {
     });
   }
 
-  const exportToPDF = () => {
-    const doc = new jsPDF();
-    doc.setFontSize(16);
-    doc.text("DukaFlow - Sales Summary Report", 14, 15);
-    doc.setFontSize(10);
-    doc.text(
-      `Filter Range: ${filter.toUpperCase()} | Generated: ${new Date().toLocaleDateString()}`,
-      14,
-      22
-    );
-
-    const tableColumn = [
-      "#",
-      "Date",
-      "Item Sold",
-      "Qty",
-      "Total (Ksh)",
-      "Payment",
-      "Sold By",
-      "Status",
-    ];
-    const tableRows = [];
-
-    sales.forEach((sale, index) => {
-      const saleData = [
-        index + 1,
-        new Date(sale.date).toLocaleDateString(),
-        sale.productId?.name || "Deleted Product",
-        `${sale.quantitySold} ${sale.productId?.units || ""}`,
-        sale.totalPrice?.toLocaleString(),
-        sale.paymentMethod,
-        sale.soldBy?.fname ?? "cashier",
-        sale.paymentStatus,
-      ];
-      tableRows.push(saleData);
-    });
-
-    autoTable(doc, {
-      startY: 28,
-      head: [tableColumn],
-      body: tableRows,
-      theme: "striped",
-      headStyles: { fillColor: [37, 99, 235] },
-    });
-
-    doc.save(`Sales_Report_${filter}_${new Date().toLocaleDateString()}.pdf`);
-  };
-
   if (loading) {
     return (
       <div className="reportPage-wrapper">
@@ -503,6 +461,68 @@ const ReportsPage = () => {
           </div>
 
           <div className="reportPage-content-info">
+            <div className="filter-range flex items-center gap-2 flex-wrap mb-[20px] bg-white px-3 py-4 rounded">
+              {/* Start Date */}
+              <div className="flex flex-col">
+                <label className="text-xs font-semibold text-gray-500">
+                  From
+                </label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="border rounded px-2 py-1 text-sm bg-white"
+                />
+              </div>
+
+              {/* End Date */}
+              <div className="flex flex-col">
+                <label className="text-xs font-semibold text-gray-500">
+                  To
+                </label>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="border rounded px-2 py-1 text-sm bg-white"
+                />
+              </div>
+
+              {/* Payment Method */}
+              <div className="flex flex-col">
+                <label className="text-xs font-semibold text-gray-500">
+                  Payment
+                </label>
+                <select
+                  value={paymentFilter}
+                  onChange={(e) => setPaymentFilter(e.target.value)}
+                  className="border rounded px-2 py-1 text-sm bg-white"
+                >
+                  <option value="All">All</option>
+                  <option value="Cash">Cash</option>
+                  <option value="M-pesa">M-pesa</option>
+                  <option value="Bank Transfer">Bank Transfer</option>
+                  <option value="Credit">Credit</option>
+                </select>
+              </div>
+
+              {/* Existing Range Filter */}
+              <div className="flex flex-col">
+                <label className="text-xs font-semibold text-gray-500">
+                  Quick Filter
+                </label>
+                <select
+                  value={filter}
+                  onChange={(e) => setFilter(e.target.value)}
+                  className="border rounded px-2 py-1 text-sm bg-white"
+                >
+                  <option value="today">Today</option>
+                  <option value="this-week">This Week</option>
+                  <option value="this-month">This Month</option>
+                  <option value="all-time">All Time</option>
+                </select>
+              </div>
+            </div>
             {/* Core Statistics Financial Grid */}
             <div className="grid grid-cols-4 gap-6 mb-[20px]">
               <div className="summary-card border-l-4 border-blue-500">
