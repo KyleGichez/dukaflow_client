@@ -647,19 +647,19 @@ const ReportsPage = () => {
               <div className="grid grid-cols-2 gap-6 mb-6">
                 <div className="bg-gray-50 p-4 rounded border border-gray-200">
                   <span className="text-xs text-gray-400 uppercase font-medium">
-                    Current Week Realized Cash Flow
+                    Last 7 Days Realized Profits
                   </span>
                   <p className="text-lg font-bold text-green-600 mt-1">
                     Ksh {last7DaysProfits.toLocaleString()}
                   </p>
                   <span className="text-[11px] text-gray-500 mt-1 block">
-                    Liquid cash collections plus active debt repayments
+                    Calculated over the last 7 days revenue
                   </span>
                 </div>
 
                 <div className="bg-gray-50 p-4 rounded border border-gray-200">
                   <span className="text-xs text-gray-400 uppercase font-medium">
-                    Avg. Daily Cash Flow
+                    Avg. Daily Profits
                   </span>
                   <p className="text-lg font-bold text-blue-600 mt-1">
                     Ksh {Math.round(avgDailyProfit).toLocaleString()}/day
