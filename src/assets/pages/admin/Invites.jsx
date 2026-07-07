@@ -1,53 +1,72 @@
-import React from 'react';
-import '../../styles/Invites.css';
-import { Icon } from '@iconify/react';
+import React from "react";
+import "../../styles/Invites.css";
+import { Icon } from "@iconify/react";
+import { useNavigate } from "react-router-dom";
+import {
+  LayoutDashboard,
+  Users,
+  HeartPlus,
+  CoinsIcon,
+  ShieldCheck,
+  Store,
+} from "lucide-react";
 
 const Invites = () => {
   function getTodaysDate() {
     return new Date().toLocaleDateString();
   }
 
+  const navigate = useNavigate();
+
   return (
-      <div className="invites-wrapper">
+    <div className="invites-wrapper">
       <div className="invites-content">
         <h1 className="text-2xl uppercase font-bold mb-[20px]">All Invites</h1>
         <div className="invites-content-wrapper flex gap-[20px]">
           <div className="invites-content-wrapper-menu">
             <div className="invites-content-menu">
               <ul>
-                <li className="menu-item flex items-center gap-[10px]">
-                  <span>
-                    <Icon
-                      icon="material-symbols:dashboard"
-                      width="24"
-                      height="24"
-                    />
-                  </span>
-                  <a href="dashboard">Dashboard</a>
+                <li
+                  onClick={() => navigate("/admin/dashboard")}
+                  className="menu-item flex items-center gap-[10px]"
+                >
+                  <LayoutDashboard width="24" height="24" />
+                  Dashboard
                 </li>
-                <li className="menu-item flex items-center gap-[10px]">
-                  <span>
-                    <Icon icon="fa:users" width="24" height="24" />
-                  </span>
-                  <a href="users">Users</a>
+                <li
+                  onClick={() => navigate("/admin/users")}
+                  className="menu-item flex items-center gap-[10px]"
+                >
+                  <Users width="24" height="24" />
+                  Users
                 </li>
-                <li className="menu-item flex items-center gap-[10px]">
-                  <span>
-                    <Icon icon="material-symbols:add-business-rounded" width="24" height="24" />
-                  </span>
-                  <a href="businesses">Businesses</a>
+                <li
+                  onClick={() => navigate("/admin/businesses")}
+                  className="menu-item flex items-center gap-[10px]"
+                >
+                  <Store width="24" height="24" />
+                  Businesses
                 </li>
-                <li className="menu-item flex items-center gap-[10px]">
-                  <span>
-                    <Icon icon="ri:heart-add-fill" width="24" height="24" />
-                  </span>
-                  <a href="subscription">Subscription</a>
+                <li
+                  onClick={() => navigate("/admin/subscription")}
+                  className="menu-item flex items-center gap-[10px]"
+                >
+                  <CoinsIcon width="24" height="24" />
+                  Subscription
                 </li>
-                <li className="menu-item active flex items-center gap-[10px]">
-                  <span>
-                    <Icon icon="carbon:sales-ops" width="24" height="24" />
-                  </span>
-                  <a href="invites">Invites</a>
+                <li
+                  onClick={() => navigate("/admin/invites")}
+                  className="menu-item active flex items-center gap-[10px]"
+                >
+                  <HeartPlus width="24" height="24" />
+                  Invites
+                </li>
+                <li
+                  onClick={() => navigate("/admin/integration")}
+                  className="menu-item flex items-center gap-[10px]"
+                >
+                  <ShieldCheck width="24" height="24" />
+                  Integration
                 </li>
               </ul>
             </div>
@@ -114,7 +133,7 @@ const Invites = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Invites
+export default Invites;

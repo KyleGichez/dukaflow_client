@@ -1,12 +1,20 @@
-import React from "react";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import axiosInstance from "axios";
 import "../../styles/ReportsPage.css";
 import { Icon } from "@iconify/react";
-import CoinsIcon from "@iconify-react/lucide/coins";
 import API_URL from "../../../api";
-import { jsPDF } from "jspdf";
-import autoTable from "jspdf-autotable";
+import { useNavigate } from "react-router-dom";
+import {
+  Receipt,
+  LayoutDashboard,
+  Package,
+  Database,
+  ShoppingCart,
+  BarChart3,
+  Users,
+  HeartPlus,
+  CoinsIcon,
+} from "lucide-react";
 
 const ReportsPage = () => {
   const user = JSON.parse(localStorage.getItem("user"));
@@ -19,13 +27,44 @@ const ReportsPage = () => {
     totalStockValue: 0,
     paymentBreakdown: {},
   });
+
+  const navigate = useNavigate();
   const [sales, setSales] = useState([]);
   const [filter, setFilter] = useState("today");
   const [credits, setCredits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [paymentFilter, setPaymentFilter] = useState("All");
+  const [paymentFilter, setPaymentFilter] = useState("");
+  const [stats, setStats] = useState({
+    totalRevenue: 0,
+    cashReceived: 0,
+    creditIssued: 0,
+  });
+
+  // 📊 Live Backend Metrics State 
+  const [liveMetrics, setLiveMetrics] = useState({
+    trueGrossRevenue: 0,
+    rangeProfit: 0,
+    remainingActiveCredit: 0,
+    trueRealizedRevenue: 0,
+    finalCashTotal: 0,
+    directCashSales: 0,
+    cashRepayments: 0,
+    finalMpesaTotal: 0,
+    directMpesaSales: 0,
+    creditInitialPaymentsCollected: 0,
+    mpesaRepayments: 0,
+    finalBankTotal: 0,
+    directBankSales: 0,
+    bankRepayments: 0,
+    totalCollections: 0,
+    last7DaysProfits: 0,
+    avgDailyProfit: 0,
+    lastWeekProductivity: 0,
+    currentWeekProductivity: 0,
+    last7DaysProgressMap: [],
+  });
 
   useEffect(() => {
     const fetchReportData = async () => {
@@ -38,24 +77,67 @@ const ReportsPage = () => {
           },
         };
 
-        const [summaryRes, salesRes, creditsRes] = await Promise.all([
-          axiosInstance.get(
-            `${API_URL}/api/sales/summary?range=${filter}&startDate=${startDate}&endDate=${endDate}&paymentMethod=${paymentFilter}`,
-            config
-          ),
-          axiosInstance.get(
-            `${API_URL}/api/sales?range=${filter}&startDate=${startDate}&endDate=${endDate}&paymentMethod=${paymentFilter}`,
-            config
-          ),
-          axiosInstance.get(`${API_URL}/api/credits`, config).catch((err) => {
-            console.warn("Credits endpoint failed fallback:", err.message);
-            return { data: [] };
-          }),
-        ]);
+        const queryParams = `?range=${filter}&startDate=${startDate}&endDate=${endDate}&paymentMethod=${paymentFilter}`;
+
+        const [summaryRes, salesRes, creditsRes, analyticsRes] =
+          await Promise.all([
+            axiosInstance.get(
+              `${API_URL}/api/sales/summary${queryParams}`,
+              config
+            ),
+            axiosInstance.get(`${API_URL}/api/sales${queryParams}`, config),
+            axiosInstance.get(`${API_URL}/api/credits`, config).catch((err) => {
+              console.warn("Credits endpoint failed fallback:", err.message);
+              return { data: [] };
+            }),
+            axiosInstance
+              .get(
+                `${API_URL}/api/analytics/revenue-summary${queryParams}`,
+                config
+              )
+              .catch((err) => {
+                console.error(
+                  "Analytics revenue-summary engine blocked:",
+                  err.response?.data || err.message
+                );
+                return null;
+              }),
+          ]);
 
         setSummary(summaryRes.data);
         setSales(salesRes.data);
         setCredits(creditsRes.data || []);
+
+        if (analyticsRes && analyticsRes.data) {
+          setLiveMetrics({
+            trueGrossRevenue: analyticsRes.data.trueGrossRevenue || 0,
+            rangeProfit: analyticsRes.data.rangeProfit || 0,
+            remainingActiveCredit: analyticsRes.data.remainingActiveCredit || 0,
+            trueRealizedRevenue: analyticsRes.data.trueRealizedRevenue || 0,
+
+            // 🌟 FIXED: Map card values to direct sales totals returned by the clean backend variables
+            finalCashTotal: analyticsRes.data.directCashSales || 0,
+            directCashSales: analyticsRes.data.directCashSales || 0,
+            cashRepayments: analyticsRes.data.cashRepayments || 0,
+
+            finalMpesaTotal: analyticsRes.data.directMpesaSales || 0,
+            directMpesaSales: analyticsRes.data.directMpesaSales || 0,
+            creditInitialPaymentsCollected: analyticsRes.data.creditInitialPaymentsCollected || 0,
+            mpesaRepayments: analyticsRes.data.mpesaRepayments || 0,
+
+            finalBankTotal: analyticsRes.data.directBankSales || 0,
+            directBankSales: analyticsRes.data.directBankSales || 0,
+            bankRepayments: analyticsRes.data.bankRepayments || 0,
+
+            totalCollections: analyticsRes.data.totalCollections || 0,
+
+            last7DaysProfits: analyticsRes.data.last7DaysProfits || 0,
+            avgDailyProfit: analyticsRes.data.avgDailyProfit || 0,
+            lastWeekProductivity: analyticsRes.data.lastWeekProductivity || 0,
+            currentWeekProductivity: analyticsRes.data.currentWeekProductivity || 0,
+            last7DaysProgressMap: analyticsRes.data.progressMap || [],
+          });
+        }
       } catch (error) {
         console.error("Error fetching report data:", error);
       } finally {
@@ -65,215 +147,72 @@ const ReportsPage = () => {
     fetchReportData();
   }, [filter, startDate, endDate, paymentFilter]);
 
-  const recentSales = sales
-    .sort((a, b) => new Date(b.date) - new Date(a.date))
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const config = {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    };
+    fetch(`${API_URL}/api/sales/summary`, config)
+      .then((res) => res.json())
+      .then((data) => setStats(data))
+      .catch(async () => {
+        console.warn("Offline: Generating offline analytics summary...");
+        if (window.db) {
+          const offlineQueue = await window.db.sales
+            .where("synced")
+            .equals(0)
+            .toArray();
+
+          let extraRevenue = 0;
+          let extraCash = 0;
+          let extraCredit = 0;
+
+          offlineQueue.forEach((item) => {
+            const payload =
+              typeof item.payload === "string"
+                ? JSON.parse(item.payload)
+                : item.payload;
+
+            extraRevenue += Number(payload.totalAmount || 0);
+            if (payload.paymentMethod === "Credit") {
+              extraCash += Number(payload.amountPaid || 0);
+              extraCredit += Number(payload.balance || 0);
+            } else {
+              extraCash += Number(payload.totalAmount || 0);
+            }
+          });
+
+          setStats({
+            totalRevenue: extraRevenue,
+            cashReceived: extraCash,
+            creditIssued: extraCredit,
+            isStaleOfflineSummary: true,
+          });
+        }
+      });
+  }, []);
+
+  const recentSales = [...sales]
+    .sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt))
     .slice(0, 10);
 
-  // =========================================================
-  // 💰 REAL-TIME CASH FLOW COMBINATION ENGINE (REPAIRED)
-  // =========================================================
-
-  const directCashSales = sales
-    .filter((s) => s.paymentMethod === "Cash")
-    .reduce((sum, s) => sum + Number(s.totalPrice || 0), 0);
-  const directMpesaSales = sales
-    .filter((s) => s.paymentMethod === "M-pesa")
-    .reduce((sum, s) => sum + Number(s.totalPrice || 0), 0);
-  const directBankSales = sales
-    .filter(
-      (s) =>
-        s.paymentMethod === "Bank-Transfer" ||
-        s.paymentMethod === "Bank Transfer"
-    )
-    .reduce((sum, s) => sum + Number(s.totalPrice || 0), 0);
-
-  let cashRepayments = 0;
-  let mpesaRepayments = 0;
-  let bankRepayments = 0;
-
-  const now = new Date();
-  let rangeStartDate = new Date();
-  rangeStartDate.setHours(0, 0, 0, 0);
-
-  if (filter === "this-week") {
-    rangeStartDate.setDate(now.getDate() - 7);
-  } else if (filter === "this-month") {
-    rangeStartDate.setMonth(now.getMonth() - 1);
-  } else if (filter === "all-time") {
-    rangeStartDate = new Date(0);
-  }
-
-  credits.forEach((creditRecord) => {
-    if (Array.isArray(creditRecord.paymentHistory)) {
-      creditRecord.paymentHistory.forEach((payment) => {
-        const paymentDate = new Date(payment.date || creditRecord.updatedAt);
-
-        if (paymentDate >= rangeStartDate) {
-          const amount = Number(payment.amount || 0);
-          const method = payment.method;
-
-          if (method === "Cash") cashRepayments += amount;
-          else if (method === "M-pesa") mpesaRepayments += amount;
-          else if (method === "Bank Transfer" || method === "Bank-Transfer")
-            bankRepayments += amount;
-        }
-      });
-    }
-  });
-
-  const finalCashTotal = directCashSales + cashRepayments;
-  const finalMpesaTotal = directMpesaSales + mpesaRepayments;
-  const finalBankTotal = directBankSales + bankRepayments;
-  const trueRealizedRevenue = finalCashTotal + finalMpesaTotal + finalBankTotal;
-
-  const remainingActiveCredit = credits.reduce((sum, record) => {
-    const totalAmount = Number(record.totalAmount || 0);
-
-    const totalPaid = Array.isArray(record.paymentHistory)
-      ? record.paymentHistory.reduce(
-          (acc, payment) => acc + Number(payment?.amount || 0),
-          0
-        )
-      : 0;
-
-    const balance = Math.max(0, totalAmount - totalPaid);
-
-    return sum + balance;
-  }, 0);
-
-  const trueGrossRevenue = trueRealizedRevenue;
-
-  // ==========================================
-  // 📈 FIXED 7-DAY ROLLING PERFORMANCE ENGINE
-  // ==========================================
-
-  const startOfToday = new Date();
-  startOfToday.setHours(0, 0, 0, 0);
-
-  const sevenDaysAgo = new Date(startOfToday);
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-  const fourteenDaysAgo = new Date(startOfToday);
-  fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
-
-  // 1. Calculate base sales across windows
-  const last7DaysSales = sales.filter(
-    (s) => new Date(s.date || s.createdAt) >= sevenDaysAgo
-  );
-
-  // 🟢 MAKE SURE THIS LINE IS PRESENT AND ACCESSIBLE:
-  const previousWeekSales = sales.filter((s) => {
-    const d = new Date(s.date || s.createdAt);
-    return d >= fourteenDaysAgo && d < sevenDaysAgo;
-  });
-
-  let base7DaySalesRevenue = 0;
-  let last7DaysCreditsIssued = 0;
-
-  last7DaysSales.forEach((sale) => {
-    const total = Number(sale.totalPrice || 0);
-    const method = sale.paymentMethod?.toLowerCase() || "";
-
-    if (method === "credit") {
-      const matchingCreditRecord = credits.find(
-        (c) => c.saleId === sale._id || c._id === sale.creditId
-      );
-
-      if (matchingCreditRecord) {
-        const trueRemainingBalance =
-          matchingCreditRecord.balance !== undefined
-            ? Number(matchingCreditRecord.balance)
-            : Number(matchingCreditRecord.amount || 0) -
-              Number(matchingCreditRecord.totalPaid || 0);
-
-        last7DaysCreditsIssued += Math.max(0, trueRemainingBalance);
-      } else {
-        last7DaysCreditsIssued += total;
-      }
-    }
-    base7DaySalesRevenue += total;
-  });
-
-  // 2. Fetch and aggregate debt repayments collected strictly within those rolling windows
-  let rolling7DayRepayments = 0;
-  let rollingPreviousWeekRepayments = 0;
-
-  credits.forEach((creditRecord) => {
-    if (Array.isArray(creditRecord.paymentHistory)) {
-      creditRecord.paymentHistory.forEach((payment) => {
-        const paymentDate = new Date(payment.date || creditRecord.updatedAt);
-        const amount = Number(payment.amount || 0);
-
-        if (paymentDate >= sevenDaysAgo) {
-          rolling7DayRepayments += amount;
-        } else if (
-          paymentDate >= fourteenDaysAgo &&
-          paymentDate < sevenDaysAgo
-        ) {
-          rollingPreviousWeekRepayments += amount;
-        }
-      });
-    }
-  });
-
-  // 3. Re-synthesize precise metric velocities
-  const last7DaysRevenue = base7DaySalesRevenue + rolling7DayRepayments;
-  const last7DaysProfits =
-    base7DaySalesRevenue - last7DaysCreditsIssued + rolling7DayRepayments;
-  const avgDailyProfit = last7DaysProfits / 7;
-
-  const currentWeekProductivity = trueGrossRevenue;
-
-  // 🟢 This assignment will now find 'previousWeekSales' safely up above
-  const lastWeekProductivity =
-    previousWeekSales.reduce(
-      (acc, curr) => acc + Number(curr.totalPrice || 0),
-      0
-    ) + rollingPreviousWeekRepayments;
-
-  // 4. Distribution map allocation with integrated repayments
-  const dayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  const last7DaysProgressMap = [];
-
-  for (let i = 6; i >= 0; i--) {
-    const targetDate = new Date(startOfToday);
-    targetDate.setDate(targetDate.getDate() - i);
-
-    const nextTargetDate = new Date(targetDate);
-    nextTargetDate.setDate(nextTargetDate.getDate() + 1);
-
-    const daySalesRevenue = sales
-      .filter((s) => {
-        const d = new Date(s.date);
-        return d >= targetDate && d < nextTargetDate;
-      })
-      .reduce((acc, curr) => acc + Number(curr.totalPrice || 0), 0);
-
-    let dayRepaymentsCollected = 0;
-    credits.forEach((creditRecord) => {
-      if (Array.isArray(creditRecord.paymentHistory)) {
-        creditRecord.paymentHistory.forEach((payment) => {
-          const paymentDate = new Date(payment.date || creditRecord.updatedAt);
-          if (paymentDate >= targetDate && paymentDate < nextTargetDate) {
-            dayRepaymentsCollected += Number(payment.amount || 0);
-          }
-        });
-      }
-    });
-
-    const totalDayCombinedRevenue = daySalesRevenue + dayRepaymentsCollected;
-
-    const sharePercentage =
-      last7DaysRevenue > 0
-        ? Math.round((totalDayCombinedRevenue / last7DaysRevenue) * 100)
-        : 0;
-
-    last7DaysProgressMap.push({
-      dayLabel: dayLabels[targetDate.getDay()],
-      revenue: totalDayCombinedRevenue,
-      percentage: sharePercentage,
-    });
-  }
+  const {
+    trueGrossRevenue,
+    rangeProfit,
+    remainingActiveCredit,
+    trueRealizedRevenue,
+    finalCashTotal,
+    totalCollections,
+    finalMpesaTotal,
+    finalBankTotal,
+    last7DaysProfits,
+    avgDailyProfit,
+    lastWeekProductivity,
+    currentWeekProductivity,
+    last7DaysProgressMap,
+  } = liveMetrics;
 
   if (loading) {
     return (
@@ -392,67 +331,88 @@ const ReportsPage = () => {
           <div className="reportPage-content-wrapper-menu">
             <div className="reportPage-content-menu">
               <ul>
-                <li className="menu-item flex items-center gap-[10px]">
+                <li
+                  onClick={() => navigate("/dashboard")}
+                  className="menu-item flex items-center gap-[10px]"
+                >
                   <span>
-                    <Icon
-                      icon="material-symbols:dashboard"
-                      width="24"
-                      height="24"
-                    />
+                    <LayoutDashboard width="24" height="24" />
                   </span>
-                  <a href="/dashboard">Dashboard</a>
+                  Dashboard
                 </li>
-                <li className="menu-item flex items-center gap-[10px]">
+                <li
+                  onClick={() => navigate("/products")}
+                  className="menu-item flex items-center gap-[10px]"
+                >
                   <span>
-                    <Icon icon="dashicons:products" width="20" height="20" />
+                    <Package width="24" height="24" />
                   </span>
-                  <a href="/products">Products</a>
+                  Products
                 </li>
-                <li className="menu-item flex items-center gap-[10px]">
+                <li
+                  onClick={() => navigate("/stock")}
+                  className="menu-item flex items-center gap-[10px]"
+                >
                   <span>
-                    <Icon
-                      icon="lsicon:management-stockout-filled"
-                      width="24"
-                      height="24"
-                    />
+                    <Database width="24" height="24" />
                   </span>
-                  <a href="/stock">Stock</a>
+                  Stock
                 </li>
-                <li className="menu-item flex items-center gap-[10px]">
+                <li
+                  onClick={() => navigate("/sales")}
+                  className="menu-item flex items-center gap-[10px]"
+                >
                   <span>
-                    <Icon icon="carbon:sales-ops" width="24" height="24" />
+                    <ShoppingCart width="24" height="24" />
                   </span>
-                  <a href="/sales">Sales</a>
+                  Sales
                 </li>
-                <li className="menu-item flex items-center gap-[10px]">
+                <li
+                  onClick={() => navigate("/credit")}
+                  className="menu-item flex items-center gap-[10px]"
+                >
                   <span>
                     <CoinsIcon height="24" width="24" />
                   </span>
-                  <a href="/credit">Credit</a>
+                  Credit
+                </li>
+                <li
+                  onClick={() => navigate("/invoice")}
+                  className="menu-item flex items-center gap-[10px]"
+                >
+                  <span>
+                    <Receipt height="24" width="24" />
+                  </span>
+                  Invoices
                 </li>
                 {isAdmin && (
                   <>
-                    <li className="menu-item active flex items-center gap-[10px]">
+                    <li
+                      onClick={() => navigate("/summary")}
+                      className="menu-item active flex items-center gap-[10px]"
+                    >
                       <span>
-                        <Icon
-                          icon="garden:file-spreadsheet-fill-12"
-                          width="24"
-                          height="24"
-                        />
+                        <BarChart3 width="24" height="24" />
                       </span>
-                      <a href="/summary">Reports</a>
+                      Reports
                     </li>
-                    <li className="menu-item flex items-center gap-[10px]">
+                    <li
+                      onClick={() => navigate("/staff")}
+                      className="menu-item flex items-center gap-[10px]"
+                    >
                       <span>
-                        <Icon icon="fa:users" width="24" height="24" />
+                        <Users width="24" height="24" />
                       </span>
-                      <a href="/staff">Staff</a>
+                      Staff
                     </li>
-                    <li className="menu-item flex items-center gap-[10px]">
+                    <li
+                      onClick={() => navigate("/subscription")}
+                      className="menu-item flex items-center gap-[10px]"
+                    >
                       <span>
-                        <Icon icon="ri:heart-add-fill" width="24" height="24" />
+                        <HeartPlus width="24" height="24" />
                       </span>
-                      <a href="/subscription">Subscription</a>
+                      Subscription
                     </li>
                   </>
                 )}
@@ -460,7 +420,7 @@ const ReportsPage = () => {
             </div>
           </div>
 
-          <div className="reportPage-content-info">
+          <div className="reportPage-content-info flex-1">
             <div className="filter-range flex items-center gap-2 flex-wrap mb-[20px] bg-white px-3 py-4 rounded">
               {/* Start Date */}
               <div className="flex flex-col">
@@ -502,7 +462,6 @@ const ReportsPage = () => {
                   <option value="Cash">Cash</option>
                   <option value="M-pesa">M-pesa</option>
                   <option value="Bank Transfer">Bank Transfer</option>
-                  <option value="Credit">Credit</option>
                 </select>
               </div>
 
@@ -522,9 +481,26 @@ const ReportsPage = () => {
                   <option value="all-time">All Time</option>
                 </select>
               </div>
+
+              <div className="reset-btn">
+                {(startDate || endDate || paymentFilter) && (
+                  <button
+                    className="flex items-center gap-1 text-sm bg-emerald-600 rounded p-2 text-black-600 font-semibold hover:text-red-800 hover:underline transition-colors pb-2"
+                    onClick={() => {
+                      setStartDate("");
+                      setEndDate("");
+                      setPaymentFilter("");
+                    }}
+                  >
+                    <Icon icon="system-uicons:reset" width="18" height="18" />
+                    Reset Filter
+                  </button>
+                )}
+              </div>
             </div>
+
             {/* Core Statistics Financial Grid */}
-            <div className="grid grid-cols-4 gap-6 mb-[20px]">
+            <div className="grid grid-cols-4 gap-4 mb-[20px]">
               <div className="summary-card border-l-4 border-blue-500">
                 <h2 className="font-bold uppercase text-xs text-gray-500">
                   Total Revenue(Gross)
@@ -543,10 +519,18 @@ const ReportsPage = () => {
               </div>
               <div className="summary-card border-l-4 border-green-500 bg-green-50/30">
                 <h2 className="font-bold uppercase text-xs text-green-700">
-                  Realized Profits
+                  Realized Cashflow
                 </h2>
-                <p className="py-[10px] text-xl font-semibold text-green-800">
-                  Ksh {trueGrossRevenue.toLocaleString()}
+                <p className="py-[10px] text-xl font-semibold text-orange-600">
+                  Ksh {trueRealizedRevenue.toLocaleString()}
+                </p>
+              </div>
+              <div className="summary-card border-l-4 border-amber-500 bg-amber-50/30">
+                <h2 className="font-bold uppercase text-xs text-amber-700">
+                  Net Profit Margin
+                </h2>
+                <p className="py-[10px] text-xl font-semibold text-green-600">
+                  Ksh {(rangeProfit || 0).toLocaleString()}
                 </p>
               </div>
               <div className="summary-card">
@@ -561,55 +545,71 @@ const ReportsPage = () => {
 
             {/* Collected Methods Breakdown */}
             <h3 className="font-bold uppercase text-sm text-gray-600 mb-[10px] tracking-wider">
-              Revenue Collection (Sales + Repayments)
+              Revenue Collection
             </h3>
-            <div className="grid grid-cols-4 gap-6 mb-[30px]">
-              <div className="summary-card">
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-[30px]">
+              {/* CASH CARD */}
+              {(!paymentFilter ||
+                paymentFilter === "All" ||
+                paymentFilter === "Cash") && (
+                <div className="summary-card">
+                  <h2 className="font-bold uppercase text-xs text-gray-400">
+                    Cash Register
+                  </h2>
+                  <p className="py-[10px] text-lg font-medium text-gray-800">
+                    Ksh {finalCashTotal.toLocaleString()}
+                  </p>
+                  {/* <span className="text-gray-500 text-xs">Sales: {directCashSales} | Repayments: {cashRepayments}</span> */}
+                </div>
+              )}
+
+              {/* M-PESA CARD */}
+              {(!paymentFilter ||
+                paymentFilter === "All" ||
+                paymentFilter === "M-pesa") && (
+                <div className="summary-card">
+                  <h2 className="font-bold uppercase text-xs text-gray-400">
+                    M-pesa Till / Paybill
+                  </h2>
+                  <p className="py-[10px] text-lg font-medium text-gray-800">
+                    Ksh {finalMpesaTotal.toLocaleString()}
+                  </p>
+                  {/* <span className="text-gray-500 text-xs">Sales: {directMpesaSales} | Repayments: {mpesaRepayments}</span> */}
+                </div>
+              )}
+
+              {/* BANK CARD */}
+              {(!paymentFilter ||
+                paymentFilter === "All" ||
+                paymentFilter === "Bank Transfer") && (
+                <div className="summary-card">
+                  <h2 className="font-bold uppercase text-xs text-gray-400">
+                    Bank Account
+                  </h2>
+                  <p className="py-[10px] text-lg font-medium text-gray-800">
+                    Ksh {finalBankTotal.toLocaleString()}
+                  </p>
+                  {/* <span className="text-gray-500 text-xs">Sales: {directBankSales} | Repayments: {bankRepayments}</span> */}
+                </div>
+              )}
+
+              {/* TOTAL COLLECTIONS CARD */}
+              <div className="summary-card bg-slate-50/50 border border-dashed border-gray-200">
                 <h2 className="font-bold uppercase text-xs text-gray-400">
-                  Cash Register
-                </h2>
-                <p className="py-[10px] text-lg font-medium text-gray-800">
-                  Ksh {finalCashTotal.toLocaleString()}
-                </p>
-                <span className="text-[10px] text-gray-400 block">
-                  Sales: {directCashSales.toLocaleString()} | Repayments:{" "}
-                  {cashRepayments.toLocaleString()}
-                </span>
-              </div>
-              <div className="summary-card">
-                <h2 className="font-bold uppercase text-xs text-gray-400">
-                  M-pesa Till / Paybill
-                </h2>
-                <p className="py-[10px] text-lg font-medium text-gray-800">
-                  Ksh {finalMpesaTotal.toLocaleString()}
-                </p>
-                <span className="text-[10px] text-gray-400 block">
-                  Sales: {directMpesaSales.toLocaleString()} | Repayments:{" "}
-                  {mpesaRepayments.toLocaleString()}
-                </span>
-              </div>
-              <div className="summary-card">
-                <h2 className="font-bold uppercase text-xs text-gray-400">
-                  Bank Account
-                </h2>
-                <p className="py-[10px] text-lg font-medium text-gray-800">
-                  Ksh {finalBankTotal.toLocaleString()}
-                </p>
-                <span className="text-[10px] text-gray-400 block">
-                  Sales: {directBankSales.toLocaleString()} | Repayments:{" "}
-                  {bankRepayments.toLocaleString()}
-                </span>
-              </div>
-              <div className="summary-card">
-                <h2 className="font-bold uppercase text-xs text-gray-400">
-                  Total Collections
+                  Total{" "}
+                  {paymentFilter && paymentFilter !== "All"
+                    ? `(${paymentFilter})`
+                    : ""}{" "}
+                  Collections
                 </h2>
                 <p className="py-[10px] text-lg font-bold text-green-600">
-                  Ksh {trueRealizedRevenue.toLocaleString()}
+                  Ksh {totalCollections.toLocaleString()}
                 </p>
               </div>
             </div>
 
+            {/* Items & Transactions Row */}
             <div className="grid grid-cols-1 mb-[30px]">
               <div className="summary-card">
                 <h2 className="font-bold uppercase text-xs text-gray-400">
@@ -641,13 +641,13 @@ const ReportsPage = () => {
                   height="20"
                   className="text-blue-600"
                 />
-                Rolling 7-Day Performance Indicators
+                Rolling Weekly Performance Indicators
               </h3>
 
               <div className="grid grid-cols-2 gap-6 mb-6">
                 <div className="bg-gray-50 p-4 rounded border border-gray-200">
                   <span className="text-xs text-gray-400 uppercase font-medium">
-                    7 Days Realized Cash Flow
+                    Current Week Realized Cash Flow
                   </span>
                   <p className="text-lg font-bold text-green-600 mt-1">
                     Ksh {last7DaysProfits.toLocaleString()}
@@ -695,28 +695,25 @@ const ReportsPage = () => {
 
                 <div>
                   <h4 className="text-xs uppercase font-bold text-gray-500 mb-3 tracking-wider">
-                    Current Week Progress Distribution
+                    7-Days Productivity Progress
                   </h4>
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {last7DaysProgressMap.map((day, idx) => (
-                      <div key={idx} className="flex items-center gap-3">
-                        <span className="text-xs font-mono text-gray-500 w-8">
+                      <div
+                        key={idx}
+                        className="flex items-center text-xs gap-2"
+                      >
+                        <span className="w-8 font-medium text-gray-500">
                           {day.dayLabel}
                         </span>
-                        <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden flex">
+                        <div className="flex-1 bg-gray-100 h-2 rounded overflow-hidden">
                           <div
+                            className="bg-blue-500 h-full transition-all"
                             style={{ width: `${day.percentage}%` }}
-                            className={`h-full transition-all duration-500 ${
-                              day.percentage > 25
-                                ? "bg-blue-600"
-                                : day.percentage > 10
-                                ? "bg-sky-400"
-                                : "bg-slate-300"
-                            }`}
-                          ></div>
+                          />
                         </div>
-                        <span className="text-xs font-bold text-gray-700 w-10 text-right">
-                          {day.percentage}%
+                        <span className="w-16 text-right font-semibold text-gray-700">
+                          Ksh {day.revenue.toLocaleString()}
                         </span>
                       </div>
                     ))}
@@ -725,38 +722,26 @@ const ReportsPage = () => {
               </div>
             </div>
 
-            {/* Sales Summary Data Table Container */}
-            <div className="reportPage-table mb-[30px]">
-              <h3 className="font-bold uppercase flex justify-between mb-[20px]">
-                Sales Summary ({filter})
-                <span className="flex gap-[10px]">
+            {/* Sales Summary Table */}
+            <div className="dashboard-product-sales mb-[30px]">
+              <h5 className="font-bold uppercase flex items-center justify-between">
+                Sales Summary
+                <span>
                   <select
                     name="sales-made"
                     id="sales-made"
                     value={filter}
                     onChange={(e) => setFilter(e.target.value)}
-                    className="border rounded p-1 text-sm bg-white"
                   >
                     <option value="today">Today</option>
                     <option value="this-week">This Week</option>
                     <option value="this-month">This Month</option>
                     <option value="all-time">All Time</option>
                   </select>
-
-                  {/* <button
-                    onClick={exportToPDF}
-                    className="export-btn flex items-center gap-2 bg-rose-600 text-white px-3 py-1 text-sm rounded hover:bg-rose-700 transition"
-                  >
-                    <Icon
-                      icon="fluent:document-pdf-24-filled"
-                      width="16"
-                      height="16"
-                    />
-                    Download PDF
-                  </button> */}
                 </span>
-              </h3>
-              <div className="reports-table">
+              </h5>
+
+              <div className="sales-table w-full overflow-x-auto">
                 <table className="table-auto w-full text-left">
                   <thead>
                     <tr>
@@ -771,23 +756,36 @@ const ReportsPage = () => {
                       <th className="py-2 px-3">Balance</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="text-sm">
                     {recentSales.length > 0 ? (
                       recentSales.map((sale, index) => (
-                        <tr key={sale._id} className="border-b">
+                        <tr key={sale._id || sale.id}>
                           <th className="py-2 px-3">{index + 1}</th>
                           <td className="py-2 px-3 uppercase text-gray-700 font-semibold text-xs">
-                            {sale.productId?.name || "Deleted Product"}
+                            {sale.productId?.name ||
+                              sale.itemName ||
+                              "Offline Product"}
                           </td>
                           <td className="py-2 px-3">
-                            {sale.quantitySold} {sale.productId?.units}
+                            {sale.quantitySold ||
+                              sale.qty ||
+                              sale.quantity ||
+                              0}{" "}
+                            {sale.productId?.units || sale.units}{" "}
+                            {sale.productId?.units || "pcs"}
                           </td>
                           <td className="py-2 px-3 font-mono uppercase">
-                            Ksh {sale.totalPrice?.toLocaleString()}
+                            Ksh{" "}
+                            {(
+                              sale.totalPrice ||
+                              sale.total ||
+                              sale.amount ||
+                              0
+                            ).toLocaleString()}
                           </td>
                           <td className="py-2 px-3">{sale.paymentMethod}</td>
                           <td className="py-2 px-3">
-                            <p className="">
+                            <p>
                               {new Date(
                                 sale.createdAt || sale.date
                               ).toLocaleDateString()}
@@ -804,14 +802,16 @@ const ReportsPage = () => {
                           <td className="py-2 px-3">
                             {sale.soldBy?.fname ?? "cashier"}
                             <p className="text-xs font-semibold text-gray-500 uppercase">
-                              {sale.soldBy?.role}
+                              {sale.soldBy?.role || "staff"}
                             </p>
                           </td>
                           <td className="px-3 py-2">
                             <span
-                              className={`status-badge ${sale.paymentStatus?.toLowerCase()}`}
+                              className={`status-badge ${
+                                sale.paymentStatus?.toLowerCase() || "completed"
+                              }`}
                             >
-                              {sale.paymentStatus}
+                              {sale.paymentStatus || "Completed"}
                             </span>
                           </td>
                           <td className="py-2 px-3 font-mono">
@@ -821,18 +821,15 @@ const ReportsPage = () => {
                                 Ksh {sale.balance.toLocaleString()}
                               </span>
                             ) : (
-                              <span className="text-gray-400"> No Balance</span>
+                              <span className="text-gray-400">No Balance</span>
                             )}
                           </td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td
-                          colSpan="9"
-                          className="text-center px-3 py-8 text-gray-400"
-                        >
-                          No recent sales found for this filter range.
+                        <td colSpan="9" className="px-3 py-2 text-center">
+                          No recent sales found.
                         </td>
                       </tr>
                     )}

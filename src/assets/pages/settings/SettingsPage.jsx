@@ -2,22 +2,27 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import API_URL from "../../../api";
+import { useNavigate } from "react-router-dom";
 import "../../styles/SettingsPage.css";
 
 const SettingsPage = () => {
-
   const initialFormState = {
     fname: "",
     lname: "",
     currentPassword: "",
     newPassword: "",
-  }
+  };
+
+  const navigate = useNavigate();
   const [user, setUser] = useState(JSON.parse(localStorage.getItem("user")));
   const [formData, setFormData] = useState(initialFormState);
   const themeKey = `theme_${user?.id}`;
-  const [theme, setTheme] = useState(localStorage.getItem(themeKey) || user?.themePreference || "light");
+  const [theme, setTheme] = useState(
+    localStorage.getItem(themeKey) || user?.themePreference || "light"
+  );
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleThemeChange = (newTheme) => {
     setTheme(newTheme);
@@ -39,22 +44,21 @@ const SettingsPage = () => {
       const token = localStorage.getItem("token"); // Get token
 
       // Combine form data with the selected theme
-      const updateData = { 
-        ...formData, 
-        themePreference: theme 
+      const updateData = {
+        ...formData,
+        themePreference: theme,
       };
 
-      const res = await axios.put(
-        `${API_URL}/api/settings`, 
-        updateData, 
-        {
-          headers: { Authorization: `Bearer ${token}` } // Critical!
-        }
-      );
-      
+      const res = await axios.put(`${API_URL}/api/settings`, updateData, {
+        headers: { Authorization: `Bearer ${token}` }, // Critical!
+      });
+
       // Update local storage so the Navbar changes immediately
       localStorage.setItem("user", JSON.stringify(res.data.user));
-      localStorage.setItem(`theme_${res.data.user.id}`, res.data.user.themePreference);
+      localStorage.setItem(
+        `theme_${res.data.user.id}`,
+        res.data.user.themePreference
+      );
 
       window.dispatchEvent(new Event("userChanged")); // Refresh Navbar
       toast.success("Profile updated successfully!");
@@ -69,11 +73,13 @@ const SettingsPage = () => {
   return (
     <div className="p-6 max-w-2xl mx-auto settings-wrapper">
       <div className="settings-content">
-        <h1 className="text-2xl font-bold uppercase mb-6">Settings</h1>
+        <div className="flex justify-betweeen items-center gap-[60px]">
+          <h1 className="text-2xl font-bold uppercase mb-6">Settings</h1>
+        </div>
         {/* Theme Section */}
         <section className="choose-theme mb-10 p-4 border rounded-lg bg-white shadow-sm">
           <h2 className="text-lg font-semibold mb-4">Choose Theme:</h2>
-          <div className="flex flex-wrap gap-4">
+          <div className="flex justify-between flex-wrap">
             {["light", "dark", "mint", "warm"].map((t) => (
               <button
                 key={t}
@@ -87,6 +93,13 @@ const SettingsPage = () => {
                 {t}
               </button>
             ))}
+            <button
+            onClick={() => navigate("/dashboard")}
+            disabled={loading}
+            className=" py-2 px-3 bg-gray-600 rounded border text-gray-800 hover:text-gray-700 font-medium transition-colors cursor-pointer"
+          >
+            Go Back
+          </button>
           </div>
         </section>
         {/* Profile Section */}

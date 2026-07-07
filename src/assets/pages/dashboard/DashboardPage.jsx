@@ -1,10 +1,19 @@
 import React, { useState, useEffect, useCallback } from "react";
-import axios from "axios";
-import { Icon } from "@iconify/react";
-import CoinsIcon from "@iconify-react/lucide/coins";
+import {
+  Receipt,
+  LayoutDashboard,
+  Package,
+  Database,
+  ShoppingCart,
+  BarChart3,
+  Users,
+  HeartPlus,
+  CoinsIcon,
+} from "lucide-react";
 import "../../styles/DashboardPage.css";
 import { db } from "../../../db.js";
 import api from "../../../api/axios";
+import { useNavigate } from "react-router-dom";
 
 const DashboardPage = () => {
   function getTodaysDate() {
@@ -15,13 +24,7 @@ const DashboardPage = () => {
   const user = userString ? JSON.parse(userString) : null;
   const isAdmin = user?.role === "admin";
 
-  // Calculate days left in trial period
-  const daysLeft = user?.trialEndDate
-    ? Math.ceil(
-        (new Date(user.trialEndDate) - new Date()) / (1000 * 60 * 60 * 24)
-      )
-    : 0;
-
+  const navigate = useNavigate();
   const [sales, setSales] = useState([]);
   const [products, setProducts] = useState([]);
   const [filter, setFilter] = useState("today");
@@ -34,6 +37,19 @@ const DashboardPage = () => {
   });
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState("User");
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  // Keep track of the actual network status reactively
+  useEffect(() => {
+    const goOnline = () => setIsOnline(true);
+    const goOffline = () => setIsOnline(false);
+    window.addEventListener("online", goOnline);
+    window.addEventListener("offline", goOffline);
+    return () => {
+      window.removeEventListener("online", goOnline);
+      window.removeEventListener("offline", goOffline);
+    };
+  }, []);
 
   // Load dashboard data from backend APIs
   const loadDashboard = useCallback(async () => {
@@ -79,30 +95,47 @@ const DashboardPage = () => {
     loadDashboard();
   }, [loadDashboard]);
 
-  // Offline sales background worker integration
+  // Unified background synchronization loop
   useEffect(() => {
     const handleSync = async () => {
-      if (navigator.onLine) {
-        try {
-          const offlineSales = await db.offlineSales.toArray();
-          if (offlineSales.length > 0) {
-            console.log("Syncing offline sales to cloud...");
-            const token = localStorage.getItem("token");
+      if (!navigator.onLine) return;
 
-            for (const sale of offlineSales) {
-              await axios.post(
-                "https://dukaflow-server.onrender.com/api/sales",
-                sale,
-                { headers: { Authorization: `Bearer ${token}` } }
+      try {
+        const offlineSales = await db.sales.toArray();
+        if (offlineSales.length > 0) {
+          console.log("Syncing offline transactions to backend database...");
+
+          const validBusinessId =
+            user?.businessId && user.businessId !== 1 ? user.businessId : null;
+
+          for (const sale of offlineSales) {
+            const { _id, id, ...salePayload } = sale;
+
+            try {
+              await api.post("/sales", {
+                ...salePayload,
+                ...(validBusinessId && { businessId: validBusinessId }),
+              });
+
+              await db.sales.delete(_id || id);
+            } catch (singleSaleError) {
+              console.error(
+                `Failed to process transaction ID ${_id || id}:`,
+                singleSaleError
               );
-              await db.offlineSales.delete(sale.id);
+              if (singleSaleError.response?.status === 401) {
+                console.warn(
+                  "Session expired during background sync. Aborting queue processing."
+                );
+                break;
+              }
             }
-            console.log("Sync Complete!");
-            loadDashboard(); // Refresh data following synchronization
           }
-        } catch (err) {
-          console.error("Sync failed, will retry later.");
+          console.log("Background synchronization passes finished.");
+          loadDashboard();
         }
+      } catch (err) {
+        console.error("Fatal exception tripped worker queue process:", err);
       }
     };
 
@@ -110,32 +143,25 @@ const DashboardPage = () => {
     handleSync();
 
     return () => window.removeEventListener("online", handleSync);
-  }, [loadDashboard]);
+  }, [loadDashboard, user?.businessId]);
 
   // --- Derived Metrics & Dynamic Data Computations ---
-
-  // 1. Dynamic Credit Balances
-  // Aggregates unpaid credit configurations strictly mapped across current filtered transactions
   const totalCreditsAmount = sales
     .filter((s) => s.paymentMethod?.toLowerCase() === "credit")
     .reduce((acc, sale) => acc + Number(sale.balance || 0), 0);
 
-  const totalRevenue = sales.reduce(
-    (sum, sale) => sum + Number(sale.totalPrice || 0),
-    0
-  );
+  const displayRevenue =
+    summary.totalRevenue ||
+    sales.reduce((sum, sale) => sum + Number(sale.totalPrice || 0), 0);
 
-  // 2. Rolling 7-Day Profit & Margin Projections
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
 
-  const sevenDaysAgo = new Date(startOfToday);
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-  // Filters sales containing valid transaction stamps within the trailing 7 days
   const running7DaySales = sales.filter((s) => {
     const saleDate = new Date(s.date || s.createdAt);
-    return saleDate >= sevenDaysAgo;
+    return (
+      saleDate >= new Date(startOfToday.getTime() - 7 * 24 * 60 * 60 * 1000)
+    );
   });
 
   let base7DaySalesRevenue = 0;
@@ -144,43 +170,62 @@ const DashboardPage = () => {
   running7DaySales.forEach((sale) => {
     const total = Number(sale.totalPrice || 0);
     base7DaySalesRevenue += total;
-
     if (sale.paymentMethod?.toLowerCase() === "credit") {
       dynamic7DayCreditsIssued += Number(sale.balance || 0);
     }
   });
 
-  // Profit context safely removes outstanding credits away from cash flow
   const profit7Days = Math.max(
     0,
     base7DaySalesRevenue - dynamic7DayCreditsIssued
   );
   const avgDailyProfit = Math.round(profit7Days / 7);
 
-  // 3. Category & Product Calculations
-  const allCategories = [...new Set(products.map((p) => p.category))].length;
-  const productsRemaining = products.filter((p) => p.qty > 0).length;
-  const lowStockCount = products.filter((p) => p.qty > 0 && p.qty <= 20).length;
+  // Safe category mapping
+  const uniqueCategories = [
+    ...new Set(products.filter((p) => p && p.category).map((p) => p.category)),
+  ];
+  const allCategories = uniqueCategories.length;
 
-  const uniqueCategories = [...new Set(products.map((p) => p.category))];
+  const productsRemaining = products.filter(
+    (p) => Number(p.qty || 0) > 0
+  ).length;
+  const lowStockCount = products.filter(
+    (p) => Number(p.qty || 0) > 0 && Number(p.qty || 0) <= 20
+  ).length;
+
   const emptyCategories = uniqueCategories.filter((cat) =>
-    products.filter((p) => p.category === cat).every((p) => p.qty === 0)
+    products
+      .filter((p) => p.category === cat)
+      .every((p) => Number(p.qty || 0) === 0)
   ).length;
 
   const unconfirmedItemsCount = products.filter(
     (p) => !p.category || p.category.toLowerCase() === "unconfirmed"
   ).length;
 
-  const topSellingCategories = Object.values(
-    sales.reduce((acc, sale) => {
-      const category = sale.productId?.category || "Uncategorized";
-      if (!acc[category]) {
-        acc[category] = { category, totalSold: 0 };
+  // Safe Top Selling reduction
+  const topSellingItems = Object.values(
+    (sales || []).reduce((acc, sale) => {
+      if (!sale) return acc;
+      const itemName =
+        sale.productId?.name ||
+        sale.itemName ||
+        sale.productName ||
+        "Unknown Item";
+
+      const qtySold = Number(
+        sale.quantitySold ?? sale.qty ?? sale.quantity ?? 0
+      );
+
+      if (!acc[itemName]) {
+        acc[itemName] = { name: itemName, totalSold: 0 };
       }
-      acc[category].totalSold += sale.quantitySold || 0;
+      acc[itemName].totalSold += qtySold;
       return acc;
     }, {})
   )
+    .filter((item) => item.totalSold > 0)
     .sort((a, b) => b.totalSold - a.totalSold)
     .slice(0, 4);
 
@@ -306,99 +351,110 @@ const DashboardPage = () => {
     <div className="dashboard-wrapper w-full overflow-hidden max-w-full box-border">
       <div className="dashboard-content w-full p-4 lg:p-6">
         <h1 className="text-2xl font-bold uppercase mb-[20px]">Dashboard</h1>
-
-        {/* Render trial banner notification safely if parameters are met */}
-        {user && daysLeft > 0 && daysLeft <= 3 && (
-          <div className="bg-yellow-100 border border-yellow-300 text-yellow-800 p-3 rounded mb-4">
-            Your free trial ends in {daysLeft} days. Upgrade now to avoid
-            interruption!
-          </div>
-        )}
-
         <h2 className="mb-[20px]">
           Welcome back, <strong className="capitalize">{userName}</strong>
         </h2>
-
         <div className="dashboard-content-wrapper flex flex-col md:flex-row justify-between gap-[20px] w-full items-start">
+          {/* Menu / Sidebar */}
           <div className="dashboard-content-wrapper-menu">
             <div className="dashboard-content-menu">
               <ul>
-                <li className="menu-item active flex items-center gap-[10px]">
+                <li
+                  onClick={() => navigate("/dashboard")}
+                  className="menu-item active flex items-center gap-[10px]"
+                >
                   <span>
-                    <Icon
-                      icon="material-symbols:dashboard"
-                      width="24"
-                      height="24"
-                    />
+                    <LayoutDashboard width="24" height="24" />
                   </span>
-                  <a href="/dashboard">Dashboard</a>
+                  Dashboard
                 </li>
-                <li className="menu-item flex items-center gap-[10px]">
+                <li
+                  onClick={() => navigate("/products")}
+                  className="menu-item flex items-center gap-[10px]"
+                >
                   <span>
-                    <Icon icon="dashicons:products" width="20" height="20" />
+                    <Package width="24" height="24" />
                   </span>
-                  <a href="/products">Products</a>
+                  Products
                 </li>
-                <li className="menu-item flex items-center gap-[10px]">
+                <li
+                  onClick={() => navigate("/stock")}
+                  className="menu-item flex items-center gap-[10px]"
+                >
                   <span>
-                    <Icon
-                      icon="lsicon:management-stockout-filled"
-                      width="24"
-                      height="24"
-                    />
+                    <Database width="24" height="24" />
                   </span>
-                  <a href="/stock">Stock</a>
+                  Stock
                 </li>
-                <li className="menu-item flex items-center gap-[10px]">
+                <li
+                  onClick={() => navigate("/sales")}
+                  className="menu-item flex items-center gap-[10px]"
+                >
                   <span>
-                    <Icon icon="carbon:sales-ops" width="24" height="24" />
+                    <ShoppingCart width="24" height="24" />
                   </span>
-                  <a href="/sales">Sales</a>
+                  Sales
                 </li>
-                <li className="menu-item flex items-center gap-[10px]">
+                <li
+                  onClick={() => navigate("/credit")}
+                  className="menu-item flex items-center gap-[10px]"
+                >
                   <span>
                     <CoinsIcon height="24" width="24" />
                   </span>
-                  <a href="/credit">Credit</a>
+                  Credit
+                </li>
+                <li
+                  onClick={() => navigate("/invoice")}
+                  className="menu-item flex items-center gap-[10px]"
+                >
+                  <span>
+                    <Receipt height="24" width="24" />
+                  </span>
+                  Invoices
                 </li>
                 {isAdmin && (
                   <>
-                    <li className="menu-item flex items-center gap-[10px]">
+                    <li
+                      onClick={() => navigate("/summary")}
+                      className="menu-item flex items-center gap-[10px]"
+                    >
                       <span>
-                        <Icon
-                          icon="garden:file-spreadsheet-fill-12"
-                          width="24"
-                          height="24"
-                        />
+                        <BarChart3 width="24" height="24" />
                       </span>
-                      <a href="/summary">Reports</a>
+                      Reports
                     </li>
-                    <li className="menu-item flex items-center gap-[10px]">
+                    <li
+                      onClick={() => navigate("/staff")}
+                      className="menu-item flex items-center gap-[10px]"
+                    >
                       <span>
-                        <Icon icon="fa:users" width="24" height="24" />
+                        <Users width="24" height="24" />
                       </span>
-                      <a href="/staff">Staff</a>
+                      Staff
                     </li>
-                    <li className="menu-item flex items-center gap-[10px]">
+                    <li
+                      onClick={() => navigate("/subscription")}
+                      className="menu-item flex items-center gap-[10px]"
+                    >
                       <span>
-                        <Icon icon="ri:heart-add-fill" width="24" height="24" />
+                        <HeartPlus width="24" height="24" />
                       </span>
-                      <a href="/subscription">Subscription</a>
+                      Subscription
                     </li>
                   </>
                 )}
               </ul>
             </div>
           </div>
-
+          {/* Main Info Blocks */}
           <div className="dashboard-content-wrapper-info flex-1 w-full min-w-0">
-            {/* --- Metrics Cards Section Linked directly to computed states --- */}
             <div className="dashboard-content-stats-cards flex flex-wrap gap-[20px] mb-[30px]">
               <div className="content-stats-card flex-1">
                 <div className="content-stat-card">
                   <h3 className="font-bold uppercase">Today's Sales</h3>
                   <p className="font-semibold text-gray-700">
-                    KSH {totalRevenue?.toLocaleString() || 0}
+                    KSH {displayRevenue?.toLocaleString() || 0}
                   </p>
                 </div>
               </div>
@@ -414,7 +470,7 @@ const DashboardPage = () => {
                 <div className="content-stat-card">
                   <h3 className="font-bold uppercase">All Transactions</h3>
                   <p className="font-semibold text-green-700">
-                    Txns: {summary?.totalTransactions}
+                    Txns: {summary?.totalTransactions || 0}
                   </p>
                 </div>
               </div>
@@ -444,7 +500,7 @@ const DashboardPage = () => {
                 <div className="content-stat-card">
                   <h3 className="font-bold uppercase">Stock Value</h3>
                   <p className="font-semibold text-gray-700">
-                    KSH {summary.totalStockValue.toLocaleString()}
+                    KSH {summary.totalStockValue?.toLocaleString() || 0}
                   </p>
                   <p className="font-semibold text-gray-700">
                     Date: {getTodaysDate()}
@@ -452,35 +508,23 @@ const DashboardPage = () => {
                 </div>
               </div>
             </div>
+
             <div className="dashboard-product-details">
               <div className="flex gap-[20px] mb-[30px] dashboard-product-detail">
                 <div className="dashboard-product-stats-left">
                   <h4 className="font-bold uppercase">Product Details</h4>
                   <p className="flex justify-between my-2">
-                    <span>
-                      <a
-                        href="/products?filter=low-stock"
-                        className="text-red-700"
-                      >
-                        Low Stock Items
-                      </a>
-                    </span>
+                    <span className="text-red-700">Low Stock Items</span>
                     <span className="text-red-700">
                       {lowStockCount.toLocaleString()}
                     </span>
                   </p>
                   <p className="flex justify-between my-2">
-                    <span className="text-gray-700">
-                      <a href="/stock">All Categories</a>
-                    </span>
+                    <span className="text-gray-700">All Categories</span>
                     <span className="text-gray-700">{allCategories}</span>
                   </p>
                   <p className="flex justify-between my-2">
-                    <span>
-                      <a href="/products" className="text-green-700">
-                        All Items
-                      </a>
-                    </span>
+                    <span className="text-green-700">All Items</span>
                     <span className="text-green-700">
                       {products
                         .reduce((sum, p) => sum + p.qty, 0)
@@ -488,26 +532,38 @@ const DashboardPage = () => {
                     </span>
                   </p>
                   <p className="flex justify-between my-2">
+                    <span className="text-orange-700">Unconfirmed Items</span>
                     <span className="text-orange-700">
-                      <a
-                        href="/products?category=Unconfirmed"
-                        className="text-orange-700"
-                      >
-                        Unconfirmed Items
-                      </a>
+                      {unconfirmedItemsCount.toLocaleString()}
                     </span>
-                    <span className="text-orange-700">{unconfirmedItemsCount.toLocaleString()}</span>
                   </p>
                 </div>
+
                 <div className="dashboard-product-stats-right">
-                  <h4 className="font-bold uppercase">Top Selling Items</h4>
+                  <h4 className="font-bold uppercase flex justify-between mb-[20px]">
+                    Top Selling Items
+                    <span className="flex gap-[10px]">
+                      <select
+                        name="sales-made"
+                        id="sales-made"
+                        value={filter}
+                        onChange={(e) => setFilter(e.target.value)}
+                        className="credit-content-search border rounded p-1 text-sm"
+                      >
+                        <option value="today">Today</option>
+                        <option value="this-week">This Week</option>
+                        <option value="this-month">This Month</option>
+                        <option value="all-time">All Time</option>
+                      </select>
+                    </span>
+                  </h4>
                   <div className="dashboard-product-stat">
                     <ul>
-                      {topSellingCategories.length > 0 ? (
-                        topSellingCategories.map((item, index) => (
+                      {topSellingItems.length > 0 ? (
+                        topSellingItems.map((item, index) => (
                           <li key={index} className="flex justify-between my-2">
                             <span className="font-semibold text-sm text-gray-700 uppercase">
-                              {item.category}
+                              {item.name}
                             </span>
                             <span className="font-normal">
                               {item.totalSold.toLocaleString()} items
@@ -516,13 +572,15 @@ const DashboardPage = () => {
                         ))
                       ) : (
                         <li className="text-gray-500 italic">
-                          No sales recorded today
+                          No sales recorded for this timeframe
                         </li>
                       )}
                     </ul>
                   </div>
                 </div>
               </div>
+
+              {/* Sales Summary Table */}
               <div className="dashboard-product-sales mb-[30px]">
                 <h5 className="font-bold uppercase flex items-center justify-between">
                   Sales Summary
@@ -556,19 +614,32 @@ const DashboardPage = () => {
                         <th className="py-2 px-3">Balance</th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="text-sm">
                       {recentSales.length > 0 ? (
                         recentSales.map((sale, index) => (
-                          <tr key={sale._id}>
+                          <tr key={sale._id || sale.id}>
                             <th className="py-2 px-3">{index + 1}</th>
                             <td className="py-2 px-3 uppercase text-gray-700 font-semibold text-xs">
-                              {sale.productId?.name || "Deleted Product"}
+                              {sale.productId?.name ||
+                                sale.itemName ||
+                                "Offline Product"}
                             </td>
                             <td className="py-2 px-3">
-                              {sale.quantitySold} {sale.productId?.units}
+                              {sale.quantitySold ||
+                                sale.qty ||
+                                sale.quantity ||
+                                0}{" "}
+                              {sale.productId?.units || sale.units}{" "}
+                              {sale.productId?.units || "pcs"}
                             </td>
                             <td className="py-2 px-3 font-mono uppercase">
-                              Ksh {sale.totalPrice?.toLocaleString()}
+                              Ksh{" "}
+                              {(
+                                sale.totalPrice ||
+                                sale.total ||
+                                sale.amount ||
+                                0
+                              ).toLocaleString()}
                             </td>
                             <td className="py-2 px-3">{sale.paymentMethod}</td>
                             <td className="py-2 px-3">
@@ -589,14 +660,17 @@ const DashboardPage = () => {
                             <td className="py-2 px-3">
                               {sale.soldBy?.fname ?? "cashier"}
                               <p className="text-xs font-semibold text-gray-500 uppercase">
-                                {sale.soldBy?.role}
+                                {sale.soldBy?.role || "staff"}
                               </p>
                             </td>
                             <td className="px-3 py-2">
                               <span
-                                className={`status-badge ${sale.paymentStatus?.toLowerCase()}`}
+                                className={`status-badge ${
+                                  sale.paymentStatus?.toLowerCase() ||
+                                  "completed"
+                                }`}
                               >
-                                {sale.paymentStatus}
+                                {sale.paymentStatus || "Completed"}
                               </span>
                             </td>
                             <td className="py-2 px-3 font-mono">

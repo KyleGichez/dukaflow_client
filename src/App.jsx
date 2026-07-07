@@ -11,17 +11,21 @@ import Business from "./assets/pages/admin/Business";
 import Users from "./assets/pages/admin/Users";
 import Invites from "./assets/pages/admin/Invites";
 import Subscription from "./assets/pages/admin/Subscription";
+import Integration from "./assets/pages/admin/Integration";
 import DashboardPage from "./assets/pages/dashboard/DashboardPage";
 import ProductPage from "./assets/pages/products/ProductPage";
 import StockPage from "./assets/pages/stock/StockPage";
-import SalesPage from "./assets/pages/sales/SalesPage"
+import SalesPage from "./assets/pages/sales/SalesPage";
 import ReportsPage from "./assets/pages/reports/ReportsPage";
 import CreditSalesPage from "./assets/pages/credit/CreditSalesPage";
 import StaffPage from "./assets/pages/staff/StaffPage";
+import InvoicesPage from "./assets/pages/invoices/InvoicePage";
+import InvoiceDetails from "./assets/pages/invoices/InvoiceDetails";
 import SettingsPage from "./assets/pages/settings/SettingsPage";
 import SubscriptionPage from "./assets/pages/subscription/SubscriptionPage";
 import ProtectedRoute from "./assets/components/ProtectedRoutes/ProtectedRoute";
 import MobileMenu from "./assets/components/Mobilemenu/MobileMenu";
+import NewInvoicePage from "./assets/components/Invoice/NewInvoicePage";
 import UseIdleTimeout from "./assets/components/Hooks/UseIdleTimeout";
 import SessionWarningModal from "./assets/components/Modals/SessionWarningModal";
 
@@ -29,9 +33,14 @@ function App() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Only run this in production/serve mode
+    // Guard statement for Electron's internal production file system execution
+    if (window.location.protocol === "file:") {
+      console.log("Skipping Service Worker registration inside Electron production bundle.");
+      return;
+    }
+  
+    // Unified single registration loop with a 3-second delay initialization
     if ("serviceWorker" in navigator) {
-      // 3-second delay ensures the Dashboard or Login page is fully "Stable"
       const timer = setTimeout(() => {
         navigator.serviceWorker
           .register("/sw.js")
@@ -42,7 +51,7 @@ function App() {
             }
           });
       }, 3000);
-
+  
       return () => clearTimeout(timer);
     }
   }, []);
@@ -102,7 +111,7 @@ function App() {
           path="admin/businesses"
           element={
             <ProtectedRoute>
-              <Business/>
+              <Business />
             </ProtectedRoute>
           }
         />
@@ -114,7 +123,7 @@ function App() {
             </ProtectedRoute>
           }
         />
-         <Route
+        <Route
           path="admin/invites"
           element={
             <ProtectedRoute>
@@ -127,6 +136,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Subscription />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/integration"
+          element={
+            <ProtectedRoute>
+              <Integration />
             </ProtectedRoute>
           }
         />
@@ -175,6 +192,30 @@ function App() {
           element={
             <ProtectedRoute>
               <CreditSalesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/invoice"
+          element={
+            <ProtectedRoute>
+              <InvoicesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/invoice/new"
+          element={
+            <ProtectedRoute>
+              <NewInvoicePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/invoice/:id"
+          element={
+            <ProtectedRoute>
+              <InvoiceDetails />
             </ProtectedRoute>
           }
         />

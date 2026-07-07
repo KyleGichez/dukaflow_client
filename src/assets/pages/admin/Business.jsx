@@ -1,7 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
 import api from "../../../api/axios";
-import { toast } from "react-hot-toast"; // Ensure toast is imported
+import { toast } from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
+import {
+  LayoutDashboard,
+  Store,
+  Users,
+  HeartPlus,
+  CoinsIcon,
+  ShieldCheck,
+} from "lucide-react";
 
 const Business = () => {
   const initialFormState = {
@@ -13,6 +22,7 @@ const Business = () => {
     status: "active",
   };
 
+  const navigate = useNavigate();
   const [formData, setFormData] = useState(initialFormState);
   const [businesses, setBusinesses] = useState([]); // Focus on business data
   const [showModal, setShowModal] = useState(false);
@@ -83,18 +93,18 @@ const Business = () => {
   const filteredBusinesses = businesses.filter((biz) => {
     // 1. Access the nested business name
     const bName = biz.businessId?.businessName || "";
-    
+
     // 2. Access the owner's email and phone (since they are in ownerId now)
     const bEmail = biz.businessId?.ownerId?.email || "";
     const bPhone = biz.businessId?.ownerId?.phone || "";
-  
+
     const matchesSearch =
       bName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       bEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
       String(bPhone).includes(searchTerm);
-  
+
     const matchesTown = selectedTown ? biz.city === selectedTown : true;
-  
+
     return matchesSearch && matchesTown;
   });
 
@@ -132,43 +142,62 @@ const Business = () => {
           <div className="invites-content-wrapper-menu">
             <div className="invites-content-menu">
               <ul>
-                <li className="menu-item flex items-center gap-[10px]">
+                <li
+                  onClick={() => navigate("/admin/dashboard")}
+                  className="menu-item flex items-center gap-[10px]"
+                >
                   <span>
-                    <Icon
-                      icon="material-symbols:dashboard"
+                    <LayoutDashboard
                       width="24"
                       height="24"
                     />
                   </span>
-                  <a href="dashboard">Dashboard</a>
+                  Dashboard
                 </li>
-                <li className="menu-item flex items-center gap-[10px]">
+                <li
+                  onClick={() => navigate("/admin/users")}
+                  className="menu-item flex items-center gap-[10px]"
+                >
                   <span>
-                    <Icon icon="fa:users" width="24" height="24" />
+                    <Users width="24" height="24" />
                   </span>
-                  <a href="users">Users</a>
+                  Users
                 </li>
-                <li className="menu-item active flex items-center gap-[10px]">
+                <li
+                  onClick={() => navigate("/admin/businesses")}
+                  className="menu-item active flex items-center gap-[10px]"
+                >
                   <span>
-                    <Icon
-                      icon="material-symbols:add-business-rounded"
+                    <Store
                       width="24"
                       height="24"
                     />
                   </span>
-                  <a href="businesses">Businesses</a>
+                  Businesses
                 </li>
-                <li className="menu-item flex items-center gap-[10px]">
+                <li
+                  onClick={() => navigate("/admin/subscription")}
+                  className="menu-item flex items-center gap-[10px]"
+                >
                   <span>
-                    <Icon icon="ri:heart-add-fill" width="24" height="24" />
+                    <CoinsIcon width="24" height="24" />
                   </span>
-                  <a href="subscription">Subscription</a>
+                  Subscription
                 </li>
-                <li className="menu-item flex items-center gap-[10px]">
+                <li
+                  onClick={() => navigate("/admin/invites")}
+                  className="menu-item flex items-center gap-[10px]"
+                >
                   <span>
-                    <Icon icon="carbon:sales-ops" width="24" height="24" />
+                    <HeartPlus width="24" height="24" />
                   </span>
-                  <a href="invites">Invites</a>
+                  Invites
+                </li>
+                <li onClick={() => navigate("/admin/integration")} className="menu-item flex items-center gap-[10px]">
+                  <span>
+                    <ShieldCheck width="24" height="24" />
+                  </span>
+                  Integration
                 </li>
               </ul>
             </div>
@@ -208,18 +237,18 @@ const Business = () => {
                 {/* 📊 Business Table */}
                 <table className="table-auto w-full text-left">
                   <thead>
-                    <tr className="border-b">
+                    <tr className="border-b text-sm">
                       <th className="py-2 px-3">#</th>
                       <th className="py-2 px-3">Business</th>
+                      <th className="py-2 px-3">Location</th>
                       <th className="py-2 px-3">Admin</th>
                       <th className="py-2 px-3">Contact</th>
-                      <th className="py-2 px-3">Location</th>
-                      <th className="py-2 px-3">Users</th>
-                      <th className="py-2 px-3">Status</th>
+                      <th className="py-2 px-3">Total Users</th>
+                      {/* <th className="py-2 px-3">Status</th> */}
                       <th className="py-2 px-3 text-center">Created At</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="text-sm">
                     {filteredBusinesses.length === 0 ? (
                       <tr>
                         <td colSpan="8" className="text-center py-4">
@@ -230,18 +259,20 @@ const Business = () => {
                       filteredBusinesses.map((biz, index) => (
                         <tr key={biz._id} className="border-b hover:bg-gray-50">
                           <td className="py-3 px-3">{index + 1}</td>
-                          <td className="py-3 px-3 font-medium capitalize">
+                          <td className="py-3 px-3 uppercase text-xs text-gray-800 font-semibold">
                             {biz.businessId?.businessName ||
                               "No Business Linked"}
                           </td>
+                          <td className="py-3 px-3">{biz.city}</td>
                           <td className="py-2 px-2">
                             {biz.fname} {biz.lname}
                           </td>
                           <td className="py-3 px-3">
                             <div className="">{biz.phone}</div>
-                            <div className="text-sm">{biz.email}</div>
+                            <div className="text-xs text-gray-800 font-semibold">
+                              {biz.email}
+                            </div>
                           </td>
-                          <td className="py-3 px-3">{biz.city}</td>
                           <td className="py-3 px-3">
                             {
                               users.filter(
@@ -252,7 +283,7 @@ const Business = () => {
                               ).length
                             }
                           </td>
-                          <td className="py-3 px-3">
+                          {/* <td className="py-3 px-3">
                             <span
                               className={`px-2 py-1 rounded text-xs ${
                                 biz.isActive ? "bg-green-200" : "bg-red-200"
@@ -260,9 +291,15 @@ const Business = () => {
                             >
                               {biz.isActive ? "Active" : "Inactive"}
                             </span>
-                          </td>
+                          </td> */}
                           <td className="py-3 px-2">
                             {new Date(biz.createdAt).toLocaleDateString()}
+                            <p className="font-semibold text-xs text-emerald-600">
+                              {new Date(biz.createdAt).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </p>
                           </td>
                         </tr>
                       ))

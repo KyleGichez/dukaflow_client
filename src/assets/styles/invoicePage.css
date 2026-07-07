@@ -1,0 +1,91 @@
+.invoice-wrapper {
+  width: 100%;
+  min-height: 150vh;
+  background-color: var(background-color);
+}
+
+.invoice-content {
+  width: 70%;
+  margin: 0 auto;
+  padding-top: 120px;
+}
+
+.invoice-content-menu ul {
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  background-color: #ffff;
+  cursor: pointer;
+}
+
+.invoice-content-menu ul li {
+  padding: 15px 20px;
+  border-bottom: 1px solid var(--border-color);
+  font-weight: bold;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.invoice-content-menu ul li:hover {
+  background-color: #d3d3d3;
+}
+
+.invoice-table {
+  padding: 20px 25px;
+  background-color: #ffff;
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+}
+
+/* Search Bar Styling */
+.invoice-search {
+  width: 100%;
+  max-width: 400px;
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  margin-bottom: 20px;
+  outline: none;
+  transition: all 0.2s ease;
+  background-color: var(--bg-card);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.invoice-search:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.add-btn{
+    background-color: var(--primary-color);
+}
+
+@media screen and (max-width: 768px) {
+    html,
+    body {
+      overflow-x: hidden;
+    }
+  
+    .invoice-content {
+      width: 100%;
+      padding: 0 20px;
+      padding-top: 30%;
+    }
+  
+    .invoice-content-wrapper-menu {
+      display: none;
+    }
+  
+    .table-auto {
+      width: 100%;
+      font-size: 14px;
+      display: block;
+      white-space: nowrap; /* Allows horizontal scrolling without squishing text */
+    }
+  
+    .invoice-table{
+      width: 100%;
+      overflow-x: auto;
+    }
+  }
+  

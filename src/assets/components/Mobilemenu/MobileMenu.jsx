@@ -11,6 +11,8 @@ import {
   Building2, 
   Send, 
   CoinsIcon,
+  Receipt,
+  ShieldCheck,
 } from "lucide-react";
 import "../../styles/Navbar.css";
 
@@ -37,6 +39,7 @@ const MobileMenu = () => {
     { name: "Stock", path: "/stock", icon: <Database size={20} /> },
     { name: "Sales", path: "/sales", icon: <ShoppingCart size={20} /> },
     { name: "Credit", path: "/credit", icon: <CoinsIcon size={20} /> },
+    { name: "Invoice", path: "/invoice", icon: <Receipt size={20} />},
     { name: "Reports", path: "/summary", icon: <BarChart3 size={20} />, adminOnly: true },
     {
       name: "Staff",
@@ -63,6 +66,7 @@ const MobileMenu = () => {
     { name: "Businesses", path: "/admin/businesses", icon: <Building2 size={20} /> },
     { name: "Subs", path: "/admin/subscription", icon: <HeartPlus size={20} /> },
     { name: "Invites", path: "/admin/invites", icon: <Send size={20} /> },
+    { name: "Integrations", path: "/admin/integration", icon: <ShieldCheck size={20} /> },
   ];
 
   const isAdminSection = location.pathname.startsWith("/admin");

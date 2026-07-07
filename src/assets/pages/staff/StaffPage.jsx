@@ -3,8 +3,20 @@ import { useState, useEffect } from "react";
 import api from "../../../api/axios";
 import toast from "react-hot-toast";
 import { Icon } from "@iconify/react";
-import CoinsIcon from "@iconify-react/lucide/coins";
 import "../../styles/StaffPage.css";
+import { useNavigate } from "react-router-dom";
+import {
+  Receipt,
+  LayoutDashboard,
+  Package,
+  Database,
+  ShoppingCart,
+  BarChart3,
+  Users,
+  HeartPlus,
+  CoinsIcon,
+  Plus, Pencil, Trash
+} from "lucide-react";
 
 const StaffPage = () => {
   const initialFormState = {
@@ -16,19 +28,18 @@ const StaffPage = () => {
     role: "cashier",
   };
 
-  const [formData, setFormData] = useState(initialFormState);
+  const navigate = useNavigate();
   const [staffList, setStaffList] = useState([]);
   const [showModal, setShowModal] = useState(false);
-  const [showRoleModal, setShowRoleModal] = useState(false); // Controls the Role Edit Modal
+  const [showRoleModal, setShowRoleModal] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // Tracks the specific staff member currently being edited in the modal
-  const [selectedStaff, setSelectedStaff] = useState(null); 
+
+  const [selectedStaff, setSelectedStaff] = useState(null);
 
   const [newStaff, setNewStaff] = useState({
-    FName: "",
-    LName: "",
+    fname: "",
+    lname: "",
     email: "",
     phone: "",
     password: "",
@@ -43,7 +54,14 @@ const StaffPage = () => {
       const res = await api.get("/staff");
       setStaffList(res.data);
     } catch (err) {
-      console.error("Fetch Error:", err.response?.data || err.message);
+      // Unpack the detailed error response explicitly
+      if (err.response) {
+        console.error("Backend Error Data:", err.response.data);
+        console.error("Backend Status Code:", err.response.status);
+      } else {
+        console.error("Network / Setup Error:", err.message);
+      }
+      toast.error("Failed to load staff records from server.");
     }
   };
 
@@ -54,15 +72,18 @@ const StaffPage = () => {
   const handleAddStaff = async (e) => {
     e.preventDefault();
     try {
+      setIsSubmitting(true);
       await api.post("/staff", newStaff);
       setShowModal(false);
       setNewStaff(initialFormState);
-      fetchStaff(); 
+      fetchStaff();
       toast.success("Staff member added successfully!");
     } catch (err) {
       console.error("Failed to add staff:", err.response?.data);
       const errorMsg = err.response?.data?.message || "Failed to add staff";
       toast.error(errorMsg);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -77,7 +98,8 @@ const StaffPage = () => {
 
     try {
       setIsSubmitting(true);
-      await api.put(`/staff/${selectedStaff._id}`, {
+      // FIXED: Swapped ._id to .id for SQLite
+      await api.put(`/staff/${selectedStaff.id}`, {
         role: selectedStaff.role,
       });
 
@@ -96,7 +118,8 @@ const StaffPage = () => {
   const handleDeleteStaff = async (id, name) => {
     try {
       await api.delete(`/staff/${id}`);
-      setStaffList(staffList.filter((member) => member._id !== id));
+      // FIXED: Swapped member._id to member.id for SQLite state filtering
+      setStaffList(staffList.filter((member) => member.id !== id));
       toast.success(`${name} removed successfully.`);
     } catch (err) {
       console.error("Delete Failed:", err.response?.data || err.message);
@@ -135,7 +158,8 @@ const StaffPage = () => {
   };
 
   useEffect(() => {
-    document.body.style.overflow = (showModal || showRoleModal) ? "hidden" : "auto";
+    document.body.style.overflow =
+      showModal || showRoleModal ? "hidden" : "auto";
   }, [showModal, showRoleModal]);
 
   const togglePasswordVisibility = () => {
@@ -151,39 +175,88 @@ const StaffPage = () => {
           <div className="staff-content-wrapper-menu">
             <div className="staff-content-menu">
               <ul>
-                <li className="menu-item flex items-center gap-[10px]">
-                  <span><Icon icon="material-symbols:dashboard" width="24" height="24" /></span>
-                  <a href="/dashboard">Dashboard</a>
+                <li
+                  onClick={() => navigate("/dashboard")}
+                  className="menu-item flex items-center gap-[10px]"
+                >
+                  <span>
+                    <LayoutDashboard width="24" height="24" />
+                  </span>
+                  Dashboard
                 </li>
-                <li className="menu-item flex items-center gap-[10px]">
-                  <span><Icon icon="dashicons:products" width="20" height="20" /></span>
-                  <a href="/products">Products</a>
+                <li
+                  onClick={() => navigate("/products")}
+                  className="menu-item flex items-center gap-[10px]"
+                >
+                  <span>
+                    <Package width="24" height="24" />
+                  </span>
+                  Products
                 </li>
-                <li className="menu-item flex items-center gap-[10px]">
-                  <span><Icon icon="lsicon:management-stockout-filled" width="24" height="24" /></span>
-                  <a href="/stock">Stock</a>
+                <li
+                  onClick={() => navigate("/stock")}
+                  className="menu-item flex items-center gap-[10px]"
+                >
+                  <span>
+                    <Database width="24" height="24" />
+                  </span>
+                  Stock
                 </li>
-                <li className="menu-item flex items-center gap-[10px]">
-                  <span><Icon icon="carbon:sales-ops" width="24" height="24" /></span>
-                  <a href="/sales">Sales</a>
+                <li
+                  onClick={() => navigate("/sales")}
+                  className="menu-item flex items-center gap-[10px]"
+                >
+                  <span>
+                    <ShoppingCart width="24" height="24" />
+                  </span>
+                  Sales
                 </li>
-                <li className="menu-item flex items-center gap-[10px]">
-                  <span><CoinsIcon height="24" width="24" /></span>
-                  <a href="/credit">Credit</a>
+                <li
+                  onClick={() => navigate("/credit")}
+                  className="menu-item flex items-center gap-[10px]"
+                >
+                  <span>
+                    <CoinsIcon height="24" width="24" />
+                  </span>
+                  Credit
+                </li>
+                <li
+                  onClick={() => navigate("/invoice")}
+                  className="menu-item flex items-center gap-[10px]"
+                >
+                  <span>
+                    <Receipt height="24" width="24" />
+                  </span>
+                  Invoices
                 </li>
                 {isAdmin && (
                   <>
-                    <li className="menu-item flex items-center gap-[10px]">
-                      <span><Icon icon="garden:file-spreadsheet-fill-12" width="24" height="24" /></span>
-                      <a href="/summary">Reports</a>
+                    <li
+                      onClick={() => navigate("/summary")}
+                      className="menu-item flex items-center gap-[10px]"
+                    >
+                      <span>
+                        <BarChart3 width="24" height="24" />
+                      </span>
+                      Reports
                     </li>
-                    <li className="menu-item active flex items-center gap-[10px]">
-                      <span><Icon icon="fa:users" width="24" height="24" /></span>
-                      <a href="/staff">Staff</a>
+                    <li
+                      onClick={() => navigate("/staff")}
+                      className="menu-item active flex items-center gap-[10px]"
+                    >
+                      <span>
+                        <Users width="24" height="24" />
+                      </span>
+                      Staff
                     </li>
-                    <li className="menu-item flex items-center gap-[10px]">
-                      <span><Icon icon="ri:heart-add-fill" width="24" height="24" /></span>
-                      <a href="/subscription">Subscription</a>
+                    <li
+                      onClick={() => navigate("/subscription")}
+                      className="menu-item flex items-center gap-[10px]"
+                    >
+                      <span>
+                        <HeartPlus width="24" height="24" />
+                      </span>
+                      Subscription
                     </li>
                   </>
                 )}
@@ -199,11 +272,13 @@ const StaffPage = () => {
                   type="button"
                   className="add-staff-btn flex items-center gap-[5px]"
                   onClick={() => {
-                    setFormData(initialFormState);
+                    setNewStaff(initialFormState);
                     setShowModal(true);
                   }}
                 >
-                  <span><Icon icon="si:add-fill" width="20" height="20" /></span>
+                  <span>
+                    <Plus width="20" height="20" />
+                  </span>
                   Add
                 </button>
 
@@ -229,88 +304,153 @@ const StaffPage = () => {
                             />
                           </span>
                         </h1>
-                        <form onSubmit={handleAddStaff} className="mb-[20px] form-modal">
+                        <form
+                          onSubmit={handleAddStaff}
+                          className="mb-[20px] form-modal"
+                        >
                           <legend>Add New Staff</legend>
                           <div className="flex">
                             <div className="form-input">
-                              <label className="block text-sm font-medium mb-1">First Name</label>
+                              <label className="block text-sm font-medium mb-1">
+                                First Name
+                              </label>
                               <input
                                 type="text"
                                 className="w-full border p-2 rounded"
                                 placeholder="Enter first name"
                                 required
                                 value={newStaff.fname}
-                                onChange={(e) => setNewStaff({ ...newStaff, fname: e.target.value })}
+                                onChange={(e) =>
+                                  setNewStaff({
+                                    ...newStaff,
+                                    fname: e.target.value,
+                                  })
+                                }
                               />
                             </div>
                             <div className="form-input">
-                              <label className="block text-sm font-medium mb-1">Last Name</label>
+                              <label className="block text-sm font-medium mb-1">
+                                Last Name
+                              </label>
                               <input
                                 type="text"
                                 className="w-full border p-2 rounded"
                                 placeholder="Enter last name"
                                 required
                                 value={newStaff.lname}
-                                onChange={(e) => setNewStaff({ ...newStaff, lname: e.target.value })}
+                                onChange={(e) =>
+                                  setNewStaff({
+                                    ...newStaff,
+                                    lname: e.target.value,
+                                  })
+                                }
                               />
                             </div>
                           </div>
                           <div className="flex">
                             <div className="form-input">
-                              <label className="block text-sm font-medium mb-1">Email Address</label>
+                              <label className="block text-sm font-medium mb-1">
+                                Email Address
+                              </label>
                               <input
                                 type="email"
                                 className="w-full border p-2 rounded"
                                 placeholder="Enter email address"
                                 required
                                 value={newStaff.email}
-                                onChange={(e) => setNewStaff({ ...newStaff, email: e.target.value })}
+                                onChange={(e) =>
+                                  setNewStaff({
+                                    ...newStaff,
+                                    email: e.target.value,
+                                  })
+                                }
                               />
                             </div>
                             <div className="form-input">
-                              <label className="block text-sm font-medium mb-1">Phone Number</label>
+                              <label className="block text-sm font-medium mb-1">
+                                Phone Number
+                              </label>
                               <input
                                 type="text"
                                 className="w-full border p-2 rounded"
                                 placeholder="Enter phone number"
                                 required
                                 value={newStaff.phone}
-                                onChange={(e) => setNewStaff({ ...newStaff, phone: e.target.value })}
+                                onChange={(e) =>
+                                  setNewStaff({
+                                    ...newStaff,
+                                    phone: e.target.value,
+                                  })
+                                }
                               />
                             </div>
                           </div>
                           <div className="flex">
                             <div className="form-input">
-                              <label className="block text-sm font-medium mb-1">Login Password</label>
-                              <div className="password-input-wrapper" style={{ position: "relative" }}>
+                              <label className="block text-sm font-medium mb-1">
+                                Login Password
+                              </label>
+                              <div
+                                className="password-input-wrapper"
+                                style={{ position: "relative" }}
+                              >
                                 <input
                                   type={showPassword ? "text" : "password"}
                                   className="w-full border p-2 rounded"
                                   placeholder="Enter password"
                                   required
-                                  style={{ width: "100%", paddingRight: "40px" }}
+                                  style={{
+                                    width: "100%",
+                                    paddingRight: "40px",
+                                  }}
                                   value={newStaff.password}
-                                  onChange={(e) => setNewStaff({ ...newStaff, password: e.target.value })}
+                                  onChange={(e) =>
+                                    setNewStaff({
+                                      ...newStaff,
+                                      password: e.target.value,
+                                    })
+                                  }
                                 />
                                 <button
                                   type="button"
                                   onClick={togglePasswordVisibility}
-                                  style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer" }}
+                                  style={{
+                                    position: "absolute",
+                                    right: "10px",
+                                    top: "50%",
+                                    transform: "translateY(-50%)",
+                                    background: "none",
+                                    border: "none",
+                                    cursor: "pointer",
+                                  }}
                                 >
                                   {showPassword ? "Hide" : "Show"}
                                 </button>
                               </div>
                             </div>
                             <div className="form-input mb-6">
-                              <label className="block text-sm font-medium mb-1">Role</label>
+                              <label className="block text-sm font-medium mb-1">
+                                Role
+                              </label>
                               <select
                                 className="w-full border py-3 px-3 rounded"
                                 value={newStaff.role}
-                                onChange={(e) => setNewStaff({ ...newStaff, role: e.target.value })}
+                                onChange={(e) =>
+                                  setNewStaff({
+                                    ...newStaff,
+                                    role: e.target.value,
+                                  })
+                                }
                               >
-                                <option value="cashier">Cashier (Point of Sale Only)</option>
-                                <option value="manager">Manager (Inventory & Sales)</option>
-                                <option value="admin">Admin (Full System Access)</option>
+                                <option value="cashier">
+                                  Cashier (Point of Sale Only)
+                                </option>
+                                <option value="manager">
+                                  Manager (Inventory & Sales)
+                                </option>
+                                <option value="admin">
+                                  Admin (Full System Access)
+                                </option>
                               </select>
                             </div>
                           </div>
@@ -353,15 +493,41 @@ const StaffPage = () => {
                         <h3 className="text-lg font-bold text-gray-900 uppercase">
                           Change User Role
                         </h3>
-                        <span className="cursor-pointer" onClick={() => { setShowRoleModal(false); setSelectedStaff(null); }}>
-                          <Icon icon="material-symbols:cancel" width="28" height="28" className="text-gray-500 hover:text-gray-700" />
+                        <span
+                          className="cursor-pointer"
+                          onClick={() => {
+                            setShowRoleModal(false);
+                            setSelectedStaff(null);
+                          }}
+                        >
+                          <Icon
+                            icon="material-symbols:cancel"
+                            width="28"
+                            height="28"
+                            className="text-gray-500 hover:text-gray-700"
+                          />
                         </span>
                       </div>
-                      
+
                       <div className="mb-4 text-sm bg-gray-50 p-3 rounded border border-gray-100">
-                        <p className="text-gray-600">Staff Member: <span className="font-bold text-gray-800 uppercase">{selectedStaff.fname} {selectedStaff.lname}</span></p>
-                        <p className="text-gray-600">Email: <span className="font-semibold text-gray-800">{selectedStaff.email}</span></p>
-                        <p className="text-gray-600">Phone: <span className="font-semibold capitalize text-gray-800">{selectedStaff.phone}</span></p>
+                        <p className="text-gray-600">
+                          Staff Member:{" "}
+                          <span className="font-bold text-gray-800 uppercase">
+                            {selectedStaff.fname} {selectedStaff.lname}
+                          </span>
+                        </p>
+                        <p className="text-gray-600">
+                          Email:{" "}
+                          <span className="font-semibold text-gray-800">
+                            {selectedStaff.email}
+                          </span>
+                        </p>
+                        <p className="text-gray-600">
+                          Phone:{" "}
+                          <span className="font-semibold capitalize text-gray-800">
+                            {selectedStaff.phone}
+                          </span>
+                        </p>
                       </div>
 
                       <form onSubmit={handleRoleUpdateSubmit}>
@@ -372,11 +538,22 @@ const StaffPage = () => {
                           <select
                             className="w-full border border-gray-300 p-2.5 rounded-md shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 capitalize"
                             value={selectedStaff.role}
-                            onChange={(e) => setSelectedStaff({ ...selectedStaff, role: e.target.value })}
+                            onChange={(e) =>
+                              setSelectedStaff({
+                                ...selectedStaff,
+                                role: e.target.value,
+                              })
+                            }
                           >
-                            <option value="admin">Admin (Full System Access)</option>
-                            <option value="manager">Manager (Inventory & Sales)</option>
-                            <option value="cashier">Cashier (Point of Sale Only)</option>
+                            <option value="admin">
+                              Admin (Full System Access)
+                            </option>
+                            <option value="manager">
+                              Manager (Inventory & Sales)
+                            </option>
+                            <option value="cashier">
+                              Cashier (Point of Sale Only)
+                            </option>
                           </select>
                         </div>
 
@@ -414,76 +591,97 @@ const StaffPage = () => {
                       <th className="py-2 px-3">Name</th>
                       <th className="py-2 px-3">Contact</th>
                       <th className="py-2 px-3">Role</th>
-                      <th className="py-2 px-3">Created At</th>
                       <th className="py-2 px-3">Total Sales(Ksh)</th>
                       <th className="py-2 px-3">Items Sold</th>
                       <th className="py-2 px-3">Status</th>
                       <th className="py-2 px-3 text-center">Action</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="text-sm">
                     {staffList.length > 0 ? (
-                      staffList.map((member, index) => (
-                        <tr key={member._id} className="border-b hover:bg-gray-50">
-                          <td className="py-2 px-3">{index + 1}</td>
-                          <td className="py-2 px-3 uppercase text-gray-700 text-sm font-semibold">
-                            {member.fname} {member.lname}
-                          </td>
-                          <td className="py-2 px-3">
-                            {member.email}
-                            <p className="text-xs font-semibold text-gray-500">{member.phone}</p>
-                          </td>
-                          <td className="py-2 px-3 capitalize">
-                            {member.role}
-                          </td>
-                          <td className="py-2 px-3">
-                            <p>{new Date(member.createdAt).toLocaleDateString("en-KE")}</p>
-                            <p className="text-xs font-semibold text-gray-500">
-                              {new Date(member.createdAt).toLocaleTimeString("en-KE", { hour: "2-digit", minute: "2-digit", hour12: true })}
-                            </p>
-                          </td>
-                          <td className="py-2 px-3 font-mono font-semibold text-emerald-600">
-                            KSH {(member.totalSales || 0).toLocaleString()}
-                          </td>
-                          <td className="py-2 px-3 font-semibold text-amber-600">
-                            {(member.itemsSold || 0).toLocaleString()}
-                          </td>
-                          <td className="py-2 px-3 font-semibold">
-                            <span className={`px-2 py-1 rounded text-xs text-white ${member.isActive ? "bg-emerald-600" : "bg-red-200"}`}>
-                              {member.isActive ? "Active" : "Inactive"}
-                            </span>
-                          </td>
-                          <td className="py-2 px-3 text-center">
-                            <div className="flex items-center justify-center gap-2">
-                              {/* Open Role Edit Modal Button */}
-                              <button
-                                type="button"
-                                className="bg-blue-600 hover:bg-blue-700 px-3 py-2 text-white flex items-center rounded transition-all shadow-sm"
-                                title="Change Staff Role"
-                                onClick={() => openRoleModal(member)}
-                              >
-                                <span>
-                                  <Icon icon="fluent:person-edit-24-filled" width="20" height="20" />
-                                </span>
-                              </button>
+                      staffList.map((member, index) => {
+                        const isActiveStatus =
+                          member.isActive === true ||
+                          member.active === true ||
+                          member.status === "active" ||
+                          member.status === "Active" ||
+                          (member.isActive === undefined &&
+                            member.active === undefined &&
+                            member.status === undefined);
 
-                              <button
-                                type="button"
-                                className="bg-red-600 px-3 py-2 text-white flex items-center rounded hover:font-bold"
-                                title="Delete staff member"
-                                onClick={() => confirmDelete(member._id, member.fname)}
+                        return (
+                          // FIXED: Swapped key to use member.id instead of member._id
+                          <tr
+                            key={member.id || index}
+                            className="border-b hover:bg-gray-50"
+                          >
+                            <td className="py-2 px-3">{index + 1}</td>
+                            <td className="py-2 px-3 uppercase text-gray-700 text-sm font-semibold">
+                              {member.fname} {member.lname}
+                            </td>
+                            <td className="py-2 px-3">
+                              {member.email}
+                              <p className="text-xs font-semibold text-gray-500">
+                                {member.phone}
+                              </p>
+                            </td>
+                            <td className="py-2 px-3 capitalize">
+                              {member.role}
+                            </td>
+                            <td className="py-2 px-3 font-mono font-semibold text-emerald-600">
+                              KSH {(member.totalSales || 0).toLocaleString()}
+                            </td>
+                            <td className="py-2 px-3 font-semibold text-amber-600">
+                              {(member.itemsSold || 0).toLocaleString()}
+                            </td>
+                            <td className="py-2 px-3 font-semibold">
+                              <span
+                                className={`px-2 py-1 rounded text-xs text-white ${
+                                  isActiveStatus
+                                    ? "bg-emerald-600"
+                                    : "bg-red-500"
+                                }`}
                               >
-                                <span>
-                                  <Icon icon="material-symbols:delete" width="20" height="20" />
-                                </span>
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
+                                {isActiveStatus ? "Active" : "Inactive"}
+                              </span>
+                            </td>
+                            <td className="py-2 px-3 text-center">
+                              <div className="flex items-center justify-center gap-2">
+                                <button
+                                  type="button"
+                                  className="bg-blue-600 hover:bg-blue-700 px-3 py-2 text-white flex items-center rounded transition-all shadow-sm"
+                                  title="Change Staff Role"
+                                  onClick={() => openRoleModal(member)}
+                                >
+                                  <span>
+                                    <Pencil width="10" height="10" />
+                                  </span>
+                                </button>
+
+                                <button
+                                  type="button"
+                                  className="bg-red-600 px-3 py-2 text-white flex items-center rounded hover:font-bold"
+                                  title="Delete staff member"
+                                  // FIXED: Swapped member._id to member.id
+                                  onClick={() =>
+                                    confirmDelete(member.id, member.fname)
+                                  }
+                                >
+                                  <span>
+                                    <Trash width="10" height="10" />
+                                  </span>
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
                     ) : (
                       <tr>
-                        <td colSpan="9" className="text-center py-4 text-gray-400">
+                        <td
+                          colSpan="9"
+                          className="text-center py-4 text-gray-400"
+                        >
                           No staff found.
                         </td>
                       </tr>

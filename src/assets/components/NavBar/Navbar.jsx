@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { User, Settings, LogOut } from "lucide-react";
-import { Icon } from "@iconify/react";
+import { Settings, LogIn, LogOut, ShieldCheck, CircleUserRound } from "lucide-react";
 import "../../styles/Navbar.css";
 import api from "../../../api/axios";
 
@@ -11,7 +10,7 @@ const Navbar = () => {
   const [showDropdown, setShowDropdown] = useState(false);
   const navigate = useNavigate();
 
-  // 1. Combined User & Business Loader
+  // 1. Combined User & Business Loader with Local Caching
   useEffect(() => {
     const loadData = async () => {
       const savedUser = localStorage.getItem("user");
@@ -20,16 +19,33 @@ const Navbar = () => {
       const parsedUser = JSON.parse(savedUser);
       setUser(parsedUser);
 
+      // --- OFFLINE ADAPTATION LAYER ---
+      if (!navigator.onLine) {
+        const cachedBusiness = localStorage.getItem("business_profile");
+        if (cachedBusiness) {
+          setBusiness(JSON.parse(cachedBusiness));
+        }
+        return; 
+      }
+
+      // --- ONLINE SYNC LAYER ---
       try {
         const token = localStorage.getItem("token");
-        // Fetch the combined business + subscription data
         const response = await api.get("myprofile", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
+        // Save a snapshot of the business data for offline reading
+        localStorage.setItem("business_profile", JSON.stringify(response.data));
         setBusiness(response.data);
       } catch (error) {
-        console.error("Failed to sync profile:", error);
+        console.error("Failed to sync profile online:", error);
+        
+        // Fallback gracefully to cache if request fails but network is flaky
+        const cachedBusiness = localStorage.getItem("business_profile");
+        if (cachedBusiness) {
+          setBusiness(JSON.parse(cachedBusiness));
+        }
       }
     };
 
@@ -49,10 +65,20 @@ const Navbar = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showDropdown]);
 
+  // Robust cross-browser date evaluator
   const calculateDaysLeft = (expiryDate) => {
     if (!expiryDate) return 0;
+    
+    // Normalize SQLite space timestamps 'YYYY-MM-DD HH:mm:ss' to ISO 'YYYY-MM-DDTHH:mm:ss'
+    const formattedDateString = String(expiryDate).replace(" ", "T");
+    const expiry = new Date(formattedDateString);
     const now = new Date();
-    const expiry = new Date(expiryDate);
+
+    if (isNaN(expiry.getTime())) {
+      console.warn("Invalid expiry date format received:", expiryDate);
+      return 0;
+    }
+
     const diff = expiry - now;
     const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
     return days > 0 ? days : 0;
@@ -68,19 +94,25 @@ const Navbar = () => {
     navigate("/login");
   };
 
-  // 3. Logic for Subscription Display
-  const isTrial = business?.subscription?.plan === "trial";
+  // 3. Normalized Mapping Logic across SQLite / MongoDB shapes
+  const currentPlan = (business?.subscriptionPlan || business?.subscriptionId?.plan || "trial").toLowerCase(); 
+  const isTrial = currentPlan === "trial";
+  
+  // Unified fallback: looks for schema specific trial flags, falls back to common backend field: 'endDate'
   const expiryDate = isTrial
-    ? business?.subscription?.trialEndDate
-    : business?.subscription?.endDate;
+    ? (business?.trialEndsAt || business?.endDate || business?.subscriptionId?.endDate)
+    : (business?.subscriptionEndsAt || business?.endDate || business?.subscriptionId?.endDate);
 
   const daysRemaining = calculateDaysLeft(expiryDate);
 
-  // Progress bar logic (assuming 30-day billing cycle)
+  // Dynamic progress scaling baselines
+  const billingCycleDays = currentPlan === "yearly" ? 365 : isTrial ? 7 : 30;
+  
   const progressPercentage = Math.max(
     0,
-    Math.min((daysRemaining / 30) * 100, 100)
+    Math.min((daysRemaining / billingCycleDays) * 100, 100)
   );
+  
   const isCritical = daysRemaining <= 3;
 
   return (
@@ -103,7 +135,7 @@ const Navbar = () => {
                 onClick={() => setShowDropdown(!showDropdown)}
               >
                 <span>
-                  <Icon icon="mdi:account" width="24" height="24" />
+                  <CircleUserRound width="24" height="24" />
                 </span>
                 <span className="capitalize font-medium">{user.fname}</span>
                 <span
@@ -129,14 +161,12 @@ const Navbar = () => {
                       <p className="font-bold truncate mb-1 capitalize">
                         {user.fname} {user.lname}
                       </p>
-                      <p className="text-xs truncate mb-1">{user.email}</p>
+                      {user.email && <p className="text-xs truncate mb-1">{user.email}</p>}
                       <p
                         className="text-xs font-semibold text-blue-600 truncate mb-1 capitalize"
                         style={{ color: "var(--primary-color)" }}
                       >
-                        {business?.businessName ||
-                          user?.businessName ||
-                          "No Business Linked"}
+                        {business?.businessName || "No Business Linked"}
                       </p>
                       <span
                         className="inline-block mt-1 px-2 py-0.5 rounded bg-blue-100 text-blue-700 text-[10px] font-bold uppercase mb-2"
@@ -151,56 +181,46 @@ const Navbar = () => {
                     </div>
                   </div>
 
-                  {/* SUBSCRIPTION SECTION */}
-                  {user?.role !== "superadmin" &&
-                    business &&
-                    business.subscriptionPlan !== "lifetime" &&
-                    (isTrial ||
-                      ["monthly", "yearly"].includes(
-                        business.subscriptionPlan
-                      )) && (
-                      <div className="p-4 border-b">
-                        <div className="flex justify-between items-end mb-2">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                            {isTrial ? "Trial Period" : "Active Plan"}
-                          </span>
-                          <span
-                            className="text-xs font-bold"
-                            style={{
-                              color: isCritical
-                                ? "#EF4444"
-                                : "var(--primary-color)",
-                            }}
-                          >
-                            {daysRemaining} Days Left
-                          </span>
-                        </div>
-
-                        <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
-                          <div
-                            className="h-full transition-all duration-700 ease-out"
-                            style={{
-                              width: `${progressPercentage}%`,
-                              backgroundColor: isCritical
-                                ? "#EF4444"
-                                : "var(--primary-color)",
-                            }}
-                          ></div>
-                        </div>
-
-                        {isCritical && (
-                          <button
-                            onClick={() => {
-                              setShowDropdown(false);
-                              navigate("/subscription");
-                            }}
-                            className="mt-3 w-full py-2 text-[10px] font-bold bg-red-50 text-red-600 rounded-lg border border-red-100 hover:bg-red-100 transition"
-                          >
-                            RENEW SUBSCRIPTION
-                          </button>
-                        )}
+                  {/* SUBSCRIPTION PROGRESS SECTION */}
+                  {user?.role !== "superadmin" && currentPlan !== "lifetime" && (
+                    <div className="p-4 border-b bg-gray-50/30">
+                      <div className="flex justify-between items-end mb-2">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                          {isTrial ? "Trial Period" : `${currentPlan} Plan`}
+                        </span>
+                        <span
+                          className="text-xs font-bold"
+                          style={{
+                            color: isCritical ? "#EF4444" : "var(--primary-color)",
+                          }}
+                        >
+                          {daysRemaining} Days Left
+                        </span>
                       </div>
-                    )}
+
+                      <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                        <div
+                          className="h-full transition-all duration-700 ease-out"
+                          style={{
+                            width: `${progressPercentage}%`,
+                            backgroundColor: isCritical ? "#EF4444" : "var(--primary-color)",
+                          }}
+                        ></div>
+                      </div>
+
+                      {isCritical && (
+                        <button
+                          onClick={() => {
+                            setShowDropdown(false);
+                            navigate("/subscription");
+                          }}
+                          className="mt-3 w-full py-2 text-[10px] font-bold bg-red-50 text-red-600 rounded-lg border border-red-100 hover:bg-red-100 transition"
+                        >
+                          RENEW SUBSCRIPTION
+                        </button>
+                      )}
+                    </div>
+                  )}
 
                   {/* NAV LINKS */}
                   <div className="p-2">
@@ -212,6 +232,17 @@ const Navbar = () => {
                       <Settings size={16} />
                       Settings
                     </Link>
+                    {/* {user?.role === "superadmin"  && (
+                        <Link
+                        to="/integration"
+                        className="flex items-center gap-3 w-full p-3 text-sm rounded-lg hover:bg-gray-100 transition text-gray-700"
+                        onClick={() => setShowDropdown(false)}
+                      >
+                        <ShieldCheck size={16} />
+                        Integration
+                      </Link>
+                      )} */}
+                    
                     <button
                       onClick={handleLogout}
                       className="flex items-center gap-3 w-full p-3 text-sm rounded-lg text-red-600 hover:bg-red-50 transition"
@@ -230,7 +261,7 @@ const Navbar = () => {
             >
               Login
               <span>
-                <Icon icon="material-symbols:login" width="24" height="24" />
+                <LogIn width="24" height="24" />
               </span>
             </Link>
           )}

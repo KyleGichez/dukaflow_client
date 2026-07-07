@@ -71,7 +71,14 @@
 .reportPage-content-menu ul li,
 .staff-content-menu ul li,
 .invites-content-menu ul li,
+.credit-content-menu ul li,
+.credit-content-table,
+.credit-content-search,
+.filter-range,
+.filter-range input,
+.filter-range select,
 .subscription-content-menu ul li,
+.invoice-content-menu ul li,
 .summary-card,
 .users-stat-card,
 .new-users-table,
@@ -82,6 +89,8 @@
 .product-table,
 .stock-table,
 .staff-table,
+.invoice-table,
+.invoice-back,
 .subscription-table,
 .choose-theme,
 .update-settings,
@@ -106,7 +115,9 @@
 .sales-content-menu ul li a,
 .staff-content-menu ul li a,
 .invites-content-menu ul li a,
+.credit-content-menu ul li a,
 .subscription-content-menu ul li a,
+.invoice-content-menu ul li a,
 .reportPage-content-menu ul li a{
   color: var(--text-color);
 }

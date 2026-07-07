@@ -6,12 +6,12 @@ import { useNavigate } from "react-router-dom";
 import API_URL from "../../../api";
 import "../../styles/LoginPage.css";
 
-const LoginPage = () => {
+const LoginPage = () => {  
   const [credentials, setCredentials] = useState({ phone: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const navigate = useNavigate();
+  const navigate = useNavigate(); 
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
@@ -23,29 +23,132 @@ const LoginPage = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-  
-    try {
-      const res = await api.post("/auth/login", credentials);
+    setIsSubmitting(true);
 
-      const user = res.data.user;
-  
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("user", JSON.stringify(user));
-  
-      window.dispatchEvent(new Event("userChanged"));
+    // --- OFFLINE MODE ---
+    if (!navigator.onLine) {
+      console.log("Offline detected...");
+      if (window.electronAPI) {
+        try {
+          const response = await window.electronAPI.attemptOfflineLogin(
+            credentials
+          );
 
-      if (user.role === "superadmin") {
-        navigate("/admin/dashboard");
-        toast.success(`Welcome back admin, ${user.fname}!`);
+          if (response.success) {
+            console.log("Logged in offline successfully!", response.user);
+
+            // Mock local storage tokens/profiles just like online mode
+            localStorage.setItem("token", response.token);
+            localStorage.setItem("user", JSON.stringify(response.user));
+
+            // [FIX]: Extract and save the cached business metadata from Electron to localStorage
+            // so that Navbar can render the subscription bar while offline.
+            if (response.business) {
+              localStorage.setItem(
+                "business_profile",
+                JSON.stringify(response.business)
+              );
+            } else if (response.user?.business) {
+              // Fallback if your desktop database embeds business parameters inside the user object
+              localStorage.setItem(
+                "business_profile",
+                JSON.stringify(response.user.business)
+              );
+            }
+
+            // Trigger state updates across the app
+            window.dispatchEvent(new Event("userChanged"));
+
+            // Role-based routing
+            const userRole = response.user?.role;
+            if (userRole === "superadmin") {
+              navigate("/admin/dashboard");
+            } else {
+              navigate("/dashboard");
+            }
+          } else {
+            toast.error(response.message || "Offline login failed.");
+          }
+        } catch (err) {
+          console.error("Offline login execution error:", err);
+          toast.error("An error occurred during offline login.");
+        } finally {
+          setIsSubmitting(false);
+        }
       } else {
-        toast.success(`Welcome back, ${user.fname}!`);
+        toast.error("Offline login is only available on the Desktop app.");
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
+    // --- ONLINE MODE ---
+    try {
+      // 🛠️ FIX: Change 'axios.post' to your configured local 'api.post' instance
+      const response = await api.post(
+        "/auth/login", // If your api client has a baseURL set to localhost:5000, just use this!
+        credentials
+      );
+
+      console.log("Logged in online structural payload:", response.data);
+
+      const data = response.data;
+
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+      } else {
+        throw new Error(
+          "Security verification token missing from server engine payload."
+        );
+      }
+
+      if (data.user) {
+        localStorage.setItem("user", JSON.stringify(data.user));
+
+        // Inject a fallback business profile structure if the backend doesn't provide one
+        // This stops your Navbar/Sidebar layout components from throwing a null pointer crash and forcing a logout
+        const businessMetadata = data.business || {
+          id: data.user.businessId || 1,
+          businessName: data.user.businessName || "DukaFlow Retailer",
+          subscriptionPlan:
+            data.user.role === "superadmin" ? "lifetime" : "trial",
+        };
+
+        localStorage.setItem(
+          "business_profile",
+          JSON.stringify(businessMetadata)
+        );
+
+        // Persist to Electron cache for offline sync records
+        if (window.electronAPI) {
+          await window.electronAPI.cacheOfflineCredentials({
+            phone: credentials.phone,
+            password: credentials.password,
+            user: data.user,
+            business: businessMetadata,
+          });
+        }
+      }
+
+      // Execute routing based on role mappings safely
+      const userRole = data.user?.role;
+      if (userRole === "superadmin") {
+        navigate("/admin/dashboard");
+      } else {
         navigate("/dashboard");
       }
-  
+
+      // 2. Defer the event dispatch slightly to give the layout time to bind listeners
+      setTimeout(() => {
+        window.dispatchEvent(new Event("userChanged"));
+      }, 50);
     } catch (err) {
-      const message = err.response?.data?.message || "Login failed";
-      toast.error(message);
-      console.error("Login Error:", err);
+      console.error("Online Login Error:", err);
+      toast.error(
+        err.response?.data?.message || err.message || "Login failed."
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -80,7 +183,7 @@ const LoginPage = () => {
                     onChange={handleChange}
                     placeholder="Enter your password"
                     required
-                    style={{ width: "100%", paddingRight: "40px" }} // Space for the button
+                    style={{ width: "100%", paddingRight: "40px" }}
                   />
                   <button
                     type="button"
@@ -101,7 +204,11 @@ const LoginPage = () => {
               </div>
             </div>
             <div className="submit-btn-wrapper">
-              <button type="submit" className="submit-btn" disabled={isSubmitting}>
+              <button
+                type="submit"
+                className="submit-btn"
+                disabled={isSubmitting}
+              >
                 {isSubmitting ? "Submitting..." : "Submit"}
               </button>
             </div>
@@ -111,7 +218,6 @@ const LoginPage = () => {
           <span>
             <input type="checkbox"></input> Remember me?
           </span>
-          {/* <a href="/login">Forgot password? </a> */}
         </div>
       </div>
     </div>

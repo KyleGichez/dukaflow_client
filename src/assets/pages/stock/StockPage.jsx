@@ -1,10 +1,22 @@
 import React from "react";
 import { useMemo, useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
-import CoinsIcon from "@iconify-react/lucide/coins";
 import toast from "react-hot-toast";
 import "../../styles/StockPage.css";
 import API_URL from "../../../api";
+import { useNavigate } from "react-router-dom";
+import {
+  Receipt,
+  LayoutDashboard,
+  Package,
+  Database,
+  ShoppingCart,
+  BarChart3,
+  Users,
+  HeartPlus,
+  CoinsIcon,
+  Plus, Pencil, Trash
+} from "lucide-react";
 
 const StockPage = () => {
   const initialFormState = {
@@ -14,6 +26,7 @@ const StockPage = () => {
     quantityAdded: "",
     units: "",
     price: "",
+    buyingPrice: "",
   };
 
   const user = JSON.parse(localStorage.getItem("user"));
@@ -21,6 +34,7 @@ const StockPage = () => {
 
   const unitOptions = ["pieces", "kgs", "bags", "packets", "meters", "litres"];
 
+  const navigate = useNavigate();
   const [formData, setFormData] = useState(initialFormState);
   const [stockItems, setStockItems] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -52,15 +66,15 @@ const StockPage = () => {
 
   const ITEMS_PER_PAGE = 10;
 
+  const sortedItems = [...filteredItems].sort((a, b) => {
+    return new Date(b.date || 0) - new Date(a.date || 0);
+  });
+
   // Calculate pagination
-  const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(sortedItems.length / ITEMS_PER_PAGE);
 
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const endIndex = startIndex + ITEMS_PER_PAGE;
-
-  const sortedItems = [...stockItems].sort((a, b) => {
-    return new Date(b.date || 0) - new Date(a.date || 0);
-  });
 
   const paginatedItems = sortedItems.slice(startIndex, endIndex);
 
@@ -130,6 +144,7 @@ const StockPage = () => {
       quantityAdded: Number(formData.quantityAdded),
       units: formData.units,
       price: Number(formData.price),
+      buyingPrice: Number(formData.buyingPrice),
     };
 
     const method = isEditing ? "PUT" : "POST";
@@ -204,6 +219,7 @@ const StockPage = () => {
       quantityAdded: stockItem.quantityAdded,
       units: stockItem.units,
       price: stockItem.price,
+      buyingPrice: stockItem.buying_price || stockItem.buyingPrice || "",
       product: stockItem.product || "",
     });
 
@@ -285,68 +301,88 @@ const StockPage = () => {
           <div className="stock-content-wrapper-menu">
             <div className="stock-content-menu">
               <ul>
-                <li className="menu-item flex items-center gap-[10px]">
+                <li
+                  onClick={() => navigate("/dashboard")}
+                  className="menu-item flex items-center gap-[10px]"
+                >
                   <span>
-                    <Icon
-                      icon="material-symbols:dashboard"
-                      width="24"
-                      height="24"
-                    />
+                    <LayoutDashboard width="24" height="24" />
                   </span>
-                  <a href="/dashboard">Dashboard</a>
+                  Dashboard
                 </li>
-                <li className="menu-item flex items-center gap-[10px]">
+                <li
+                  onClick={() => navigate("/products")}
+                  className="menu-item flex items-center gap-[10px]"
+                >
                   <span>
-                    <Icon icon="dashicons:products" width="20" height="20" />
+                    <Package width="24" height="24" />
                   </span>
-                  <a href="/products">Products</a>
+                  Products
                 </li>
-                <li className="menu-item active flex items-center gap-[10px]">
+                <li
+                  onClick={() => navigate("/stock")}
+                  className="menu-item active flex items-center gap-[10px]"
+                >
                   <span>
-                    <Icon
-                      icon="lsicon:management-stockout-filled"
-                      width="24"
-                      height="24"
-                    />
+                    <Database width="24" height="24" />
                   </span>
-                  <a href="/stock">Stock</a>
+                  Stock
                 </li>
-                <li className="menu-item flex items-center gap-[10px]">
+                <li
+                  onClick={() => navigate("/sales")}
+                  className="menu-item flex items-center gap-[10px]"
+                >
                   <span>
-                    <Icon icon="carbon:sales-ops" width="24" height="24" />
+                    <ShoppingCart width="24" height="24" />
                   </span>
-                  <a href="/sales">Sales</a>
+                  Sales
                 </li>
-                <li className="menu-item flex items-center gap-[10px]">
+                <li
+                  onClick={() => navigate("/credit")}
+                  className="menu-item flex items-center gap-[10px]"
+                >
                   <span>
                     <CoinsIcon height="24" width="24" />
                   </span>
-                  <a href="/credit">Credit</a>
+                  Credit
+                </li>
+                <li
+                  onClick={() => navigate("/invoice")}
+                  className="menu-item flex items-center gap-[10px]"
+                >
+                  <span>
+                    <Receipt height="24" width="24" />
+                  </span>
+                  Invoices
                 </li>
                 {isAdmin && (
                   <>
-                    <li className="menu-item flex items-center gap-[10px]">
+                    <li
+                      onClick={() => navigate("/summary")}
+                      className="menu-item flex items-center gap-[10px]"
+                    >
                       <span>
-                        <Icon
-                          icon="garden:file-spreadsheet-fill-12"
-                          width="24"
-                          height="24"
-                        />
+                        <BarChart3 width="24" height="24" />
                       </span>
-                      <a href="/summary">Reports</a>
+                      Reports
                     </li>
-                    <li className="menu-item flex items-center gap-[10px]">
+                    <li
+                      onClick={() => navigate("/staff")}
+                      className="menu-item flex items-center gap-[10px]"
+                    >
                       <span>
-                        <Icon icon="fa:users" width="24" height="24" />
+                        <Users width="24" height="24" />
                       </span>
-                      <a href="/staff">Staff</a>
+                      Staff
                     </li>
-                    <li className="menu-item flex items-center gap-[10px]">
+                    <li
+                      onClick={() => navigate("/subscription")}
+                      className="menu-item flex items-center gap-[10px]"
+                    >
                       <span>
-                        {" "}
-                        <Icon icon="ri:heart-add-fill" width="24" height="24" />
+                        <HeartPlus width="24" height="24" />
                       </span>
-                      <a href="/subscription">Subscription</a>
+                      Subscription
                     </li>
                   </>
                 )}
@@ -418,7 +454,7 @@ const StockPage = () => {
                     }}
                   >
                     <span>
-                      <Icon icon="si:add-fill" width="20" height="20" />
+                      <Plus width="20" height="20" />
                     </span>
                     Add
                   </button>
@@ -518,18 +554,29 @@ const StockPage = () => {
                             />
                           </div>
                           <div className="form-input">
-                            <label htmlFor="price">Unit Price</label>
+                            <label htmlFor="buyingPrice">Buying Price</label>
                             <input
                               type="number"
-                              name="price"
-                              placeholder="Enter unit price(Ksh)"
-                              value={formData.price}
+                              name="buyingPrice"
+                              placeholder="Enter buying price(Ksh)"
+                              value={formData.buyingPrice}
                               onChange={handleChange}
                               required
                             />
                           </div>
                         </div>
                         <div className="flex">
+                        <div className="form-input">
+                            <label htmlFor="price">Selling Price</label>
+                            <input
+                              type="number"
+                              name="price"
+                              placeholder="Enter selling price(Ksh)"
+                              value={formData.price}
+                              onChange={handleChange}
+                              required
+                            />
+                          </div>
                           <div className="form-input">
                             <label htmlFor="units">Metric Units</label>
                             <select
@@ -580,12 +627,13 @@ const StockPage = () => {
                       <th className="py-2 px-3">Category</th>
                       <th className="py-2 px-3">Item</th>
                       <th className="py-2 px-3">Total Quantity</th>
-                      <th className="py-2 px-3">Unit Price(Ksh)</th>
+                      <th className="py-2 px-3">Buying Price</th>
+                      <th className="py-2 px-3">Selling Price</th>
                       <th className="py-2 px-3">Date Added</th>
                       <th className="py-2 px-3 text-center">Action</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="text-sm">
                     {paginatedItems.length > 0 ? (
                       paginatedItems.map((stockItem, index) => (
                         <tr
@@ -600,7 +648,7 @@ const StockPage = () => {
                             {startIndex + index + 1}
                           </th>
 
-                          <td className="py-2 px-2 font-semibold uppercase text-sm text-gray-700">
+                          <td className="py-2 px-2 font-semibold uppercase text-xs text-gray-700">
                             {stockItem.category}
                           </td>
                           <td className="py-2 px-2 capitalize">
@@ -619,6 +667,9 @@ const StockPage = () => {
                             )}
                           </td>
                           <td className="py-2 px-2 font-mono uppercase">
+                            Ksh {stockItem.buyingPrice?.toLocaleString()}
+                          </td>
+                          <td className="py-2 px-2 font-mono uppercase">
                             Ksh {stockItem.price?.toLocaleString()}
                           </td>
                           <td className="py-2 px-2">
@@ -630,7 +681,9 @@ const StockPage = () => {
 
                                   return (
                                     <>
-                                      <p className="">{d.toLocaleDateString()}</p>
+                                      <p className="">
+                                        {d.toLocaleDateString()}
+                                      </p>
                                       <p className="font-semibold text-xs text-gray-600">
                                         {d.toLocaleTimeString([], {
                                           hour: "2-digit",
@@ -650,11 +703,7 @@ const StockPage = () => {
                                 onClick={() => handleEdit(stockItem)}
                               >
                                 <span>
-                                  <Icon
-                                    icon="tabler:edit"
-                                    width="20"
-                                    height="20"
-                                  />
+                                  <Pencil width="10" height="10" />
                                 </span>
                               </button>
                               <button
@@ -663,11 +712,7 @@ const StockPage = () => {
                                 onClick={() => confirmDelete(stockItem._id)}
                               >
                                 <span>
-                                  <Icon
-                                    icon="material-symbols:delete"
-                                    width="20"
-                                    height="20"
-                                  />
+                                  <Trash width="10" height="10" />
                                 </span>
                               </button>
                             </div>

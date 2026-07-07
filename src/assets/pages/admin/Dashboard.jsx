@@ -1,15 +1,25 @@
 import React from "react";
 import { useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
+import { useNavigate } from "react-router-dom";
 import api from "../../../api/axios";
 import toast from "react-hot-toast";
 import "../../styles/AdminDashboard.css";
+import {
+  LayoutDashboard,
+  Store,
+  Users,
+  HeartPlus,
+  CoinsIcon,
+  ShieldCheck,
+} from "lucide-react";
 
 const AdminDashboard = () => {
   function getTodaysDate() {
     return new Date().toLocaleDateString();
   }
 
+  const navigate = useNavigate();
   const [userName, setUserName] = useState("User");
   const [stats, setStats] = useState();
   const [recentUsers, setRecentUsers] = useState([]);
@@ -160,43 +170,47 @@ const AdminDashboard = () => {
           <div className="admin-dashboard-content-wrapper-menu">
             <div className="admin-dashboard-content-menu">
               <ul>
-                <li className="menu-item active flex items-center gap-[10px]">
+                <li onClick={() => navigate("/admin/dashboard")} className="menu-item active flex items-center gap-[10px]">
                   <span>
-                    <Icon
-                      icon="material-symbols:dashboard"
+                    <LayoutDashboard
                       width="24"
                       height="24"
                     />
                   </span>
-                  <a href="dashboard">Dashboard</a>
+                  Dashboard
                 </li>
-                <li className="menu-item flex items-center gap-[10px]">
+                <li onClick={() => navigate("/admin/users")} className="menu-item flex items-center gap-[10px]">
                   <span>
-                    <Icon icon="fa:users" width="24" height="24" />
+                    <Users icon="fa:users" width="24" height="24" />
                   </span>
-                  <a href="users">Users</a>
+                  Users
                 </li>
-                <li className="menu-item flex items-center gap-[10px]">
+                <li onClick={() => navigate("/admin/businesses")} className="menu-item flex items-center gap-[10px]">
                   <span>
-                    <Icon
-                      icon="material-symbols:add-business-rounded"
+                    <Store
                       width="24"
                       height="24"
                     />
                   </span>
-                  <a href="businesses">Businesses</a>
+                  Businesses
                 </li>
-                <li className="menu-item flex items-center gap-[10px]">
+                <li onClick={() => navigate("/admin/subscription")} className="menu-item flex items-center gap-[10px]">
                   <span>
-                    <Icon icon="ri:heart-add-fill" width="24" height="24" />
+                    <CoinsIcon icon="ri:heart-add-fill" width="24" height="24" />
                   </span>
-                  <a href="subscription">Subscription</a>
+                  Subscription
                 </li>
-                <li className="menu-item flex items-center gap-[10px]">
+                <li onClick={() => navigate("/admin/invites")} className="menu-item flex items-center gap-[10px]">
                   <span>
-                    <Icon icon="carbon:sales-ops" width="24" height="24" />
+                    <HeartPlus width="24" height="24" />
                   </span>
-                  <a href="invites">Invites</a>
+                  Invites
+                </li>
+                <li onClick={() => navigate("/admin/integration")} className="menu-item flex items-center gap-[10px]">
+                  <span>
+                    <ShieldCheck width="24" height="24" />
+                  </span>
+                  Integration
                 </li>
               </ul>
             </div>
@@ -273,16 +287,16 @@ const AdminDashboard = () => {
                   <h4 className="font-bold py-2 uppercase">New Users</h4>
                   <table className="table-auto w-full text-left">
                     <thead>
-                      <tr>
+                      <tr className="text-sm">
                         <th className="py-2 px-3">#</th>
                         <th className="py-2 px-3">Name</th>
                         <th className="py-2 px-3">Business</th>
                         <th className="py-2 px-3">Phone</th>
                         <th className="py-2 px-3">Role</th>
-                        <th className="py-2 px-3">Status</th>
+                        {/* <th className="py-2 px-3">Status</th> */}
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="text-sm">
                       {users.length === 0 ? (
                         <tr>
                           <td colSpan="6" className="text-center py-4">
@@ -293,7 +307,7 @@ const AdminDashboard = () => {
                         users.slice(0, 5).map((u, index) => (
                           <tr key={u._id} className="border-b hover:bg-gray-50">
                             <td className="py-2 px-3"> {index + 1}</td>
-                            <td className="py-2 px-3 capitalize">
+                            <td className="py-2 px-3 uppercase font-semibold text-gray-800 text-xs">
                               {u.fname} {u.lname}
                             </td>
                             <td className="py-2 px-3">
@@ -302,15 +316,15 @@ const AdminDashboard = () => {
                             </td>
                             <td className="py-2 px-3 capitalize">{u.phone}</td>
                             <td className="py-2 px-3 capitalize">{u.role}</td>
-                            <td className="py-2 px-3">
+                            {/* <td className="py-2 px-3">
                               <span
                                 className={`px-2 py-1 rounded text-xs ${
-                                  u.isActive ? "bg-green-200" : "bg-red-200"
+                                  u.status ? "bg-green-200" : "bg-red-200"
                                 }`}
                               >
-                                {u.isActive ? "Active" : "Inactive"}
+                                {u.status ? "Active" : "Inactive"}
                               </span>
-                            </td>
+                            </td> */}
                           </tr>
                         ))
                       )}

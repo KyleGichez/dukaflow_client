@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
 
@@ -7,6 +8,7 @@ const Subscription = ({ onClose }) => {
   const [selectedPlan, setSelectedPlan] = useState("monthly");
   const [phoneNumber, setPhoneNumber] = useState("254");
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   // Define pricing logic
   const price = selectedPlan === "monthly" ? 2500 : 27000;
@@ -17,7 +19,7 @@ const Subscription = ({ onClose }) => {
       const token = localStorage.getItem("token");
       const response = await axios.post(
         "https://dukaflow-server.onrender.com/api/payments/stk-push",
-        { phone: phoneNumber, amount: price, plan: selectedPlan },
+        { phone: phoneNumber, amount: price, plan: selectedPlan, isSubscription: true, businessId: ""},
         { headers: { Authorization: `Bearer ${token}` } }
       );
       toast.success(
@@ -109,7 +111,7 @@ const Subscription = ({ onClose }) => {
           {/* Phone Number Input */}
           <div className="mb-6">
             <label className="block text-sm font-bold text-gray-700 mb-2">
-              M-Pesa Phone Number
+              M-pesa Phone Number
             </label>
             <div className="relative">
               <input
@@ -149,15 +151,15 @@ const Subscription = ({ onClose }) => {
                   <span>Waiting for PIN...</span>
                 </>
               ) : (
-                <span className="text-lg">Pay with M-Pesa</span>
+                <span className="text-lg">Pay with M-pesa</span>
               )}
             </button>
             <button
-              onClick={onClose}
+              onClick={() => navigate("/staff")}
               disabled={loading}
-              className="w-full py-2 text-gray-500 hover:text-gray-700 font-medium transition-colors"
+              className="w-full py-2 text-gray-500 hover:text-gray-700 font-medium transition-colors cursor-pointer"
             >
-              Cancel Payment
+              Go Back
             </button>
           </div>
         </div>

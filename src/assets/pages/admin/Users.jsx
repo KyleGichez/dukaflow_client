@@ -4,6 +4,18 @@ import { Icon } from "@iconify/react";
 import toast from "react-hot-toast";
 import "../../styles/Users.css";
 import api from "../../../api/axios";
+import { useNavigate } from "react-router-dom";
+import {
+  LayoutDashboard,
+  CircleUserRound,
+  HeartPlus,
+  CoinsIcon,
+  ShieldCheck,
+  Store,
+  Pencil,
+  Trash,
+  Plus,
+} from "lucide-react";
 
 const Users = () => {
   const initialFormState = {
@@ -23,6 +35,7 @@ const Users = () => {
   const userString = localStorage.getItem("user");
   const user = userString ? JSON.parse(userString) : null;
 
+  const navigate = useNavigate();
   const [formData, setFormData] = useState(initialFormState);
   const [showPassword, setShowPassword] = useState(false);
   const [users, setUsers] = useState([]);
@@ -46,6 +59,7 @@ const Users = () => {
         _id: u.businessId._id,
         businessName: u.businessId.businessName,
         city: u.city || u.businessId.city || "",
+        status: u.status || u.businessId.status || "",
       };
     }
     return acc;
@@ -172,7 +186,7 @@ const Users = () => {
             _id: res.data.businessId || "",
             businessName: formData.businessName,
           },
-          isActive: true,
+          status: "active",
         };
 
         setUsers((prevUsers) => [...prevUsers, newUser]);
@@ -257,43 +271,63 @@ const Users = () => {
           <div className="users-content-wrapper-menu">
             <div className="users-content-menu">
               <ul>
-                <li className="menu-item flex items-center gap-[10px]">
+                <li
+                  onClick={() => navigate("/admin/dashboard")}
+                  className="menu-item flex items-center gap-[10px]"
+                >
                   <span>
-                    <Icon
-                      icon="material-symbols:dashboard"
+                    <LayoutDashboard width="24" height="24" />
+                  </span>
+                  Dashboard
+                </li>
+                <li
+                  onClick={() => navigate("/admin/users")}
+                  className="menu-item active flex items-center gap-[10px]"
+                >
+                  <span>
+                    <CircleUserRound width="24" height="24" />
+                  </span>
+                  Users
+                </li>
+                <li
+                  onClick={() => navigate("/admin/businesses")}
+                  className="menu-item flex items-center gap-[10px]"
+                >
+                  <span>
+                    <Store width="24" height="24" />
+                  </span>
+                  Businesses
+                </li>
+                <li
+                  onClick={() => navigate("/admin/subscription")}
+                  className="menu-item flex items-center gap-[10px]"
+                >
+                  <span>
+                    <CoinsIcon
+                      icon="ri:heart-add-fill"
                       width="24"
                       height="24"
                     />
                   </span>
-                  <a href="dashboard">Dashboard</a>
+                  Subscription
                 </li>
-                <li className="menu-item active flex items-center gap-[10px]">
+                <li
+                  onClick={() => navigate("/admin/invites")}
+                  className="menu-item flex items-center gap-[10px]"
+                >
                   <span>
-                    <Icon icon="fa:users" width="24" height="24" />
+                    <HeartPlus width="24" height="24" />
                   </span>
-                  <a href="users">Users</a>
+                  Invites
                 </li>
-                <li className="menu-item flex items-center gap-[10px]">
+                <li
+                  onClick={() => navigate("/admin/integration")}
+                  className="menu-item flex items-center gap-[10px]"
+                >
                   <span>
-                    <Icon
-                      icon="material-symbols:add-business-rounded"
-                      width="24"
-                      height="24"
-                    />
+                    <ShieldCheck width="24" height="24" />
                   </span>
-                  <a href="businesses">Businesses</a>
-                </li>
-                <li className="menu-item flex items-center gap-[10px]">
-                  <span>
-                    <Icon icon="ri:heart-add-fill" width="24" height="24" />
-                  </span>
-                  <a href="subscription">Subscription</a>
-                </li>
-                <li className="menu-item flex items-center gap-[10px]">
-                  <span>
-                    <Icon icon="carbon:sales-ops" width="24" height="24" />
-                  </span>
-                  <a href="invites">Invites</a>
+                  Integration
                 </li>
               </ul>
             </div>
@@ -365,7 +399,7 @@ const Users = () => {
                     }}
                   >
                     <span>
-                      <Icon icon="si:add-fill" width="20" height="20" />
+                      <Plus width="20" height="20" />
                     </span>
                     Add
                   </button>
@@ -582,18 +616,17 @@ const Users = () => {
                 </div>
                 <table className="table-auto w-full text-left">
                   <thead>
-                    <tr>
+                    <tr className="text-sm">
                       <th className="py-2 px-3">#</th>
                       <th className="py-2 px-3">Name</th>
-                      {/* <th className="py-2 px-3">Email</th> */}
-                      <th className="py-2 px-3">Phone</th>
-                      <th className="py-2 px-3">Business</th>
+                      <th className="py-2 px-3">Contact</th>
                       <th className="py-2 px-3">Role</th>
-                      <th className="py-2 px-3">Status</th>
+                      <th className="py-2 px-3">Business</th>
+                      {/* <th className="py-2 px-3">Status</th> */}
                       <th className="py-2 px-3 text-center">Action</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="text-sm">
                     {filteredUsers.length === 0 ? (
                       <tr>
                         <td colSpan="8" className="text-center py-4">
@@ -604,25 +637,29 @@ const Users = () => {
                       filteredUsers.map((user, index) => (
                         <tr key={user._id}>
                           <td className="py-2 px-3">{index + 1}</td>
-                          <td className="py-2 px-3 capitalize">
+                          <td className="py-2 px-3 uppercase text-xs text-gray-800 font-semibold">
                             {user.fname} {user.lname}
                           </td>
-                          {/* <td className="py-2 px-3">{user.email}</td> */}
-                          <td className="py-2 px-3">{user.phone}</td>
+                          <td className="py-2 px-3">
+                            {user.email}
+                            <p className="text-xs text-gray-800 font-semibold">
+                              {user.phone}
+                            </p>
+                          </td>
+                          <td className="py-2 px-3 capitalize">{user.role}</td>
                           <td className="py-2 px-3 capitalize">
                             {user.businessId?.businessName ||
                               "No Business Linked"}
                           </td>
-                          <td className="py-2 px-3 capitalize">{user.role}</td>
-                          <td className="py-2 px-3">
+                          {/* <td className="py-2 px-3">
                             <span
                               className={`px-2 py-1 rounded text-xs ${
-                                user.isActive ? "bg-green-200" : "bg-red-200"
+                                user.status ? "bg-green-200" : "bg-red-200"
                               }`}
                             >
-                              {user.isActive ? "Active" : "Inactive"}
+                              {user.status ? "Active" : "Inactive"}
                             </span>
-                          </td>
+                          </td> */}
                           <td className="py-3 px-2">
                             <div className="action-btn flex gap-[5px]">
                               <button
@@ -630,10 +667,9 @@ const Users = () => {
                                 className="edit-btn flex items-center gap-[5px]"
                                 onClick={() => handleEdit(user)}
                               >
-                                <Icon
-                                  icon="tabler:edit"
-                                  width="20"
-                                  height="20"
+                                <Pencil
+                                  width="10"
+                                  height="10"
                                 />
                               </button>
 
@@ -642,10 +678,9 @@ const Users = () => {
                                 className="delete-btn flex items-center gap-[5px]"
                                 onClick={() => confirmDelete(user._id)}
                               >
-                                <Icon
-                                  icon="material-symbols:delete"
-                                  width="20"
-                                  height="20"
+                                <Trash
+                                  width="10"
+                                  height="10"
                                 />
                               </button>
                             </div>

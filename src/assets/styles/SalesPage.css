@@ -84,7 +84,7 @@
 }
 
 .status-badge.partial {
-  background: #f59e0b;
+  background: var(--warning-color);
 }
 
 @media print {

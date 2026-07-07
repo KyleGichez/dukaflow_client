@@ -1,0 +1,50 @@
+/* ==========================================================================
+   DukaFlow Invoice View & Native Print Media Styles
+   ========================================================================== */
+
+/* Clean rendering adjustments for thermal or standard desktop sheet prints */
+@media print {
+    /* Hide interactive page navigation, settings, and standard chrome bars */
+    .no-print,
+    nav,
+    footer,
+    sidebar,
+    button {
+      display: none !important;
+    }
+  
+    /* Strip body margins and container drop-shadows to fit standard margins */
+    body {
+      background-color: #ffffff !important;
+      color: #000000 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+  
+    .max-w-3xl {
+      max-width: 100% !important;
+      width: 100% !important;
+      box-shadow: none !important;
+      border: none !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+  
+    /* Force background accent tags (like the Status Pill) to preserve color on paper */
+    * {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+  }
+  
+  /* Subtle interface transitions for screen viewing */
+  .invoice-container {
+    transition: all 0.2s ease-in-out;
+  }
+  
+  /* Clean, fixed alignment for financial balance tallies */
+  .financial-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
