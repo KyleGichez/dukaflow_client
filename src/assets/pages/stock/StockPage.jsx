@@ -722,7 +722,7 @@ const StockPage = () => {
                     ) : (
                       /* Empty State / No Results Found */
                       <tr>
-                        <td colSpan="7" className="py-20 text-center">
+                        <td colSpan="8" className="py-20 text-center">
                           <div className="flex flex-col items-center justify-center text-gray-500">
                             <Icon
                               icon="material-symbols:search-off-rounded"

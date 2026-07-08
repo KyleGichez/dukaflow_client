@@ -465,7 +465,7 @@ const ProductPage = () => {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan="6" className="py-20 text-center">
+                          <td colSpan="7" className="py-20 text-center">
                             <div className="flex flex-col items-center justify-center text-gray-500">
                               <Icon
                                 icon="fluent:box-search-24-regular"
@@ -659,7 +659,7 @@ const ProductPage = () => {
                       Metric Units
                     </label>
                     <select
-                      className="py-2 px-2 border rounded bg-white w-auto"
+                      className="py-3 px-2 border rounded bg-white w-auto"
                       name="units"
                       value={formData.units}
                       onChange={handleChange}

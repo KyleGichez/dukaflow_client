@@ -42,7 +42,7 @@ const ReportsPage = () => {
     creditIssued: 0,
   });
 
-  // 📊 Live Backend Metrics State 
+  // 📊 Live Backend Metrics State
   const [liveMetrics, setLiveMetrics] = useState({
     trueGrossRevenue: 0,
     rangeProfit: 0,
@@ -116,16 +116,17 @@ const ReportsPage = () => {
             trueRealizedRevenue: analyticsRes.data.trueRealizedRevenue || 0,
 
             // 🌟 FIXED: Map card values to direct sales totals returned by the clean backend variables
-            finalCashTotal: analyticsRes.data.directCashSales || 0,
+            finalCashTotal: analyticsRes.data.finalCashTotal || 0,
             directCashSales: analyticsRes.data.directCashSales || 0,
             cashRepayments: analyticsRes.data.cashRepayments || 0,
 
-            finalMpesaTotal: analyticsRes.data.directMpesaSales || 0,
+            finalMpesaTotal: analyticsRes.data.finalMpesaTotal || 0,
             directMpesaSales: analyticsRes.data.directMpesaSales || 0,
-            creditInitialPaymentsCollected: analyticsRes.data.creditInitialPaymentsCollected || 0,
+            creditInitialPaymentsCollected:
+              analyticsRes.data.creditInitialPaymentsCollected || 0,
             mpesaRepayments: analyticsRes.data.mpesaRepayments || 0,
 
-            finalBankTotal: analyticsRes.data.directBankSales || 0,
+            finalBankTotal: analyticsRes.data.finalBankTotal || 0,
             directBankSales: analyticsRes.data.directBankSales || 0,
             bankRepayments: analyticsRes.data.bankRepayments || 0,
 
@@ -134,7 +135,8 @@ const ReportsPage = () => {
             last7DaysProfits: analyticsRes.data.last7DaysProfits || 0,
             avgDailyProfit: analyticsRes.data.avgDailyProfit || 0,
             lastWeekProductivity: analyticsRes.data.lastWeekProductivity || 0,
-            currentWeekProductivity: analyticsRes.data.currentWeekProductivity || 0,
+            currentWeekProductivity:
+              analyticsRes.data.currentWeekProductivity || 0,
             last7DaysProgressMap: analyticsRes.data.progressMap || [],
           });
         }
@@ -195,7 +197,10 @@ const ReportsPage = () => {
   }, []);
 
   const recentSales = [...sales]
-    .sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt))
+    .sort(
+      (a, b) =>
+        new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt)
+    )
     .slice(0, 10);
 
   const {
@@ -595,18 +600,16 @@ const ReportsPage = () => {
               )}
 
               {/* TOTAL COLLECTIONS CARD */}
-              <div className="summary-card bg-slate-50/50 border border-dashed border-gray-200">
-                <h2 className="font-bold uppercase text-xs text-gray-400">
-                  Total{" "}
-                  {paymentFilter && paymentFilter !== "All"
-                    ? `(${paymentFilter})`
-                    : ""}{" "}
-                  Collections
-                </h2>
-                <p className="py-[10px] text-lg font-bold text-green-600">
-                  Ksh {totalCollections.toLocaleString()}
-                </p>
-              </div>
+              {(!paymentFilter || paymentFilter === "All") && (
+                <div className="summary-card bg-slate-50/50 border border-dashed border-gray-200">
+                  <h2 className="font-bold uppercase text-xs text-gray-400">
+                    Total Collections
+                  </h2>
+                  <p className="py-[10px] text-lg font-bold text-green-600">
+                    Ksh {totalCollections.toLocaleString()}
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Items & Transactions Row */}
