@@ -220,7 +220,7 @@ const StaffPage = () => {
                   </span>
                   Credit
                 </li>
-                <li
+                {/* <li
                   onClick={() => navigate("/invoice")}
                   className="menu-item flex items-center gap-[10px]"
                 >
@@ -228,7 +228,7 @@ const StaffPage = () => {
                     <Receipt height="24" width="24" />
                   </span>
                   Invoices
-                </li>
+                </li> */}
                 {isAdmin && (
                   <>
                     <li

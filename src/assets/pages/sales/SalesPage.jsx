@@ -258,7 +258,7 @@ const SalesPage = () => {
 
         setTimeout(() => {
           window.location.reload();
-        }, 2500);
+        }, 3000);
       } catch (err) {
         console.error("Cloud processing error:", err);
         toast.error("Cloud saving failed. Keeping items in basket.");
@@ -535,7 +535,7 @@ const SalesPage = () => {
                   </span>
                   Credit
                 </li>
-                <li
+                {/* <li
                   onClick={() => navigate("/invoice")}
                   className="menu-item flex items-center gap-[10px]"
                 >
@@ -543,7 +543,7 @@ const SalesPage = () => {
                     <Receipt height="24" width="24" />
                   </span>
                   Invoices
-                </li>
+                </li> */}
                 {isAdmin && (
                   <>
                     <li

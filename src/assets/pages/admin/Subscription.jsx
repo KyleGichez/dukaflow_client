@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Icon } from "@iconify/react";
 import api from "../../../api/axios";
 import { toast } from "react-hot-toast";
 import "../../styles/Subscription.css";
@@ -20,7 +19,6 @@ const Subscription = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTown, setSelectedTown] = useState("");
 
-  // Wrapped in useCallback so it can be invoked safely from inside active event trigger cycles
   const fetchSubscriptions = useCallback(async () => {
     try {
       setLoading(true);
@@ -60,18 +58,19 @@ const Subscription = () => {
     ),
   ];
 
-  const handleActivateLifetime = async (businessId) => {
+  const handleUpdateSubscription = async (businessId, targetPlan) => {
     if (!businessId) {
-      return toast.error("Cannot activate access: Missing workspace relationship mapping key.");
+      return toast.error("Cannot modify access: Missing workspace relationship mapping key.");
     }
+    if (!targetPlan) return;
 
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
 
       const res = await api.put(
-        `admin/lifetimeaccess/${businessId}`,
-        {},
+        `admin/activate-subscription/${businessId}`,
+        { plan: targetPlan },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -80,8 +79,7 @@ const Subscription = () => {
       );
 
       if (res.data.success) {
-        toast.success("Lifetime access provisioned successfully!");
-        // Triggers instant local redraw without causing severe layout flicker from a full hard reload
+        toast.success(res.data.message || "Plan updated successfully!");
         await fetchSubscriptions();
       }
     } catch (error) {
@@ -89,6 +87,20 @@ const Subscription = () => {
       toast.error(errorMsg);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Helper utility to supply theme badges for active pricing tiers
+  const getPlanBadgeStyles = (plan) => {
+    switch (plan?.toLowerCase()) {
+      case "lifetime":
+        return "bg-purple-100 text-purple-700 border-purple-200";
+      case "yearly":
+        return "bg-indigo-100 text-indigo-700 border-indigo-200";
+      case "monthly":
+        return "bg-blue-100 text-blue-700 border-blue-200";
+      default:
+        return "bg-gray-100 text-gray-700 border-gray-200";
     }
   };
 
@@ -172,7 +184,7 @@ const Subscription = () => {
                       <th className="py-3 px-3">Subscription</th>
                       <th className="py-3 px-3">Status</th>
                       <th className="py-3 px-3">Expiry Date</th>
-                      <th className="py-3 px-3 text-center">Action Bar</th>
+                      <th className="py-3 px-3 text-center">Update Subscription Plan</th>
                     </tr>
                   </thead>
                   <tbody className="text-xs font-medium text-gray-700">
@@ -184,8 +196,9 @@ const Subscription = () => {
                       </tr>
                     ) : filteredSubscriptions.length > 0 ? (
                       filteredSubscriptions.map((sub, index) => {
-                        const isLifetimePlan = sub.plan === "lifetime" || sub.businessId?.subscriptionPlan === "lifetime";
-                        
+                        const currentPlan = sub.plan || sub.businessId?.subscriptionPlan || "";
+                        const isLifetimePlan = currentPlan === "lifetime";
+
                         return (
                           <tr key={sub._id || index} className="border-b border-gray-50 hover:bg-gray-50/80 transition-colors">
                             <td className="py-4 px-3 text-gray-400 font-mono">{index + 1}</td>
@@ -200,10 +213,8 @@ const Subscription = () => {
                               {sub.businessId?.ownerId?.city || "N/A"}
                             </td>
                             <td className="py-4 px-3">
-                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
-                                isLifetimePlan ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"
-                              }`}>
-                                {sub.plan || "No subscription attached"}
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${getPlanBadgeStyles(currentPlan)}`}>
+                                {currentPlan || "None"}
                               </span>
                             </td>
                             <td className="py-4 px-3">
@@ -221,23 +232,22 @@ const Subscription = () => {
                               ) : sub.expiryDate ? (
                                 new Date(sub.expiryDate).toLocaleDateString()
                               ) : sub.trialEndDate ? (
-                                new Date(sub.trialEndDate).toLocaleDateString()
+                                `${new Date(sub.trialEndDate).toLocaleDateString()} (Trial)`
                               ) : (
                                 <span className="text-gray-400 font-normal italic">Unspecified</span>
                               )}
                             </td>
                             <td className="py-4 px-3 text-center">
-                              <button
-                                className={`text-xs font-bold tracking-tight px-3 py-1.5 rounded-lg border transition-all duration-150 cursor-pointer ${
-                                  isLifetimePlan
-                                    ? "bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed"
-                                    : "bg-emerald-600 border-emerald-700 text-white hover:bg-emerald-700 shadow-sm"
-                                }`}
-                                disabled={isLifetimePlan}
-                                onClick={() => handleActivateLifetime(sub.businessId?._id)}
+                              <select
+                                className="text-xs font-bold border rounded-lg px-2 py-1 bg-white border-gray-300 text-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                                value={currentPlan}
+                                onChange={(e) => handleUpdateSubscription(sub.businessId?._id, e.target.value)}
                               >
-                                {isLifetimePlan ? "Lifetime Active" : "Activate Lifetime Access"}
-                              </button>
+                                <option value="">Select Tier Type...</option>
+                                <option value="monthly">Monthly Access</option>
+                                <option value="yearly">Yearly Access</option>
+                                <option value="lifetime">Lifetime Access</option>
+                              </select>
                             </td>
                           </tr>
                         );

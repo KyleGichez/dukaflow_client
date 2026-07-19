@@ -190,8 +190,11 @@ const DashboardPage = () => {
   const productsRemaining = products.filter(
     (p) => Number(p.qty || 0) > 0
   ).length;
+
+  const LOW_STOCK_THRESHOLD = user?.lowStockThreshold ?? 5;
+
   const lowStockCount = products.filter(
-    (p) => Number(p.qty || 0) > 0 && Number(p.qty || 0) <= 20
+    (p) => Number(p.qty || 0) > 0 && Number(p.qty || 0) <= LOW_STOCK_THRESHOLD
   ).length;
 
   const emptyCategories = uniqueCategories.filter((cat) =>
@@ -404,7 +407,7 @@ const DashboardPage = () => {
                   </span>
                   Credit
                 </li>
-                <li
+                {/* <li
                   onClick={() => navigate("/invoice")}
                   className="menu-item flex items-center gap-[10px]"
                 >
@@ -412,7 +415,7 @@ const DashboardPage = () => {
                     <Receipt height="24" width="24" />
                   </span>
                   Invoices
-                </li>
+                </li> */}
                 {isAdmin && (
                   <>
                     <li

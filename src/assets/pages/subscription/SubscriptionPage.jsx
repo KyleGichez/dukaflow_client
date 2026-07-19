@@ -4,22 +4,41 @@ import axios from "axios";
 import toast from "react-hot-toast";
 
 const Subscription = ({ onClose }) => {
-  // 1. New State for Plan Selection
+  // 1. Updated State for Plan Selection to include 'custom'
   const [selectedPlan, setSelectedPlan] = useState("monthly");
+  const [customAmount, setCustomAmount] = useState(1000);
   const [phoneNumber, setPhoneNumber] = useState("254");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Define pricing logic
-  const price = selectedPlan === "monthly" ? 2500 : 27000;
+  // Dynamic pricing calculation helper
+  const getPrice = () => {
+    if (selectedPlan === "monthly") return 2500;
+    if (selectedPlan === "yearly") return 27000;
+    return Number(customAmount);
+  };
+
+  const price = getPrice();
 
   const handlePayment = async () => {
+    if (selectedPlan === "custom" && price < 1000) {
+      return toast.error(
+        "The minimum custom subscription allowed is Ksh 1,000"
+      );
+    }
+
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
       const response = await axios.post(
         "https://dukaflow-server.onrender.com/api/payments/stk-push",
-        { phone: phoneNumber, amount: price, plan: selectedPlan, isSubscription: true, businessId: ""},
+        {
+          phone: phoneNumber,
+          amount: price,
+          plan: selectedPlan,
+          isSubscription: true,
+          businessId: "",
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       toast.success(
@@ -62,44 +81,92 @@ const Subscription = ({ onClose }) => {
         </div>
 
         <div className="p-6">
-          {/* 2. Plan Selection UI */}
-          <div className="mb-6">
+          {/* Plan Selection UI */}
+          <div className="mb-4">
             <h2 className="text-gray-500 text-xs uppercase tracking-widest font-bold mb-3 text-center">
               Select Your Plan
             </h2>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-2">
               <button
                 onClick={() => setSelectedPlan("monthly")}
-                className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center ${
+                className={`p-2 rounded-xl border-2 transition-all flex flex-col items-center ${
                   selectedPlan === "monthly"
                     ? "border-[#49aa47] bg-green-50"
-                    : "border-gray-100 hover:border-gray-200"
+                    : "border-gray-100"
                 }`}
               >
-                <span className="text-sm font-bold">Monthly</span>
-                <span className="text-lg font-mono font-black text-gray-800">
-                  2,500
-                </span>
+                <span className="text-xs font-bold">Monthly</span>
+                <span className="text-sm font-black text-gray-800">2,500</span>
               </button>
+
               <button
                 onClick={() => setSelectedPlan("yearly")}
-                className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center relative ${
+                className={`p-2 rounded-xl border-2 transition-all flex flex-col items-center relative ${
                   selectedPlan === "yearly"
                     ? "border-[#49aa47] bg-green-50"
-                    : "border-gray-100 hover:border-gray-200"
+                    : "border-gray-100"
                 }`}
               >
-                <span className="absolute -top-2 bg-red-500 text-white text-[9px] px-2 py-0.5 rounded-full uppercase font-bold">
-                  10% Discount
+                <span className="absolute -top-2 bg-red-500 text-white text-[7px] px-1.5 py-0.5 rounded-full uppercase font-bold">
+                  10% Off
                 </span>
-                <span className="text-sm font-bold">Yearly</span>
-                <span className="text-lg font-mono font-black text-gray-800">
-                  27,000
-                </span>
+                <span className="text-xs font-bold">Yearly</span>
+                <span className="text-sm font-black text-gray-800">27,000</span>
+              </button>
+
+              <button
+                onClick={() => setSelectedPlan("custom")}
+                className={`p-2 rounded-xl border-2 transition-all flex flex-col items-center ${
+                  selectedPlan === "custom"
+                    ? "border-[#49aa47] bg-green-50"
+                    : "border-gray-100"
+                }`}
+              >
+                <span className="text-xs font-bold">Custom</span>
+                <span className="text-sm font-black text-gray-800">Flex</span>
               </button>
             </div>
           </div>
-          <div className="mb-6 p-4 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+
+          {/* Conditional Custom Amount Range Input */}
+          {selectedPlan === "custom" && (
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-xl">
+              <div className="flex justify-between items-center mb-1">
+                <label className="block text-xs font-bold text-blue-700">
+                  Custom Amount (Min Ksh 1,000)
+                </label>
+
+                {/* ⚡ REAL-TIME PRO-RATA PREVIEW DAYS LABEL */}
+                {customAmount >= 1000 ? (
+                  <span className="text-xs bg-blue-600 text-white font-mono px-2 py-0.5 rounded animate-pulse">
+                    ⏳ {Math.floor(Number(customAmount) / (2500 / 30))} Days
+                    Access
+                  </span>
+                ) : (
+                  <span className="text-[10px] text-red-500 font-bold">
+                    Amount too low
+                  </span>
+                )}
+              </div>
+
+              <input
+                type="number"
+                min="1000"
+                max="2500"
+                value={customAmount}
+                onChange={(e) => setCustomAmount(e.target.value)}
+                className="w-full p-2 border border-blue-300 rounded-lg outline-none font-mono text-base"
+                placeholder="e.g. 1500"
+              />
+
+              <p className="text-[10px] text-blue-500 mt-1 italic">
+                Calculated at Ksh 83 per day based on the premium package
+                value.
+              </p>
+            </div>
+          )}
+
+          <div className="mb-4 p-4 bg-gray-50 rounded-xl border border-dashed border-gray-200">
             <div className="flex justify-between items-center">
               <span className="text-gray-600 font-medium">Total Amount:</span>
               <span className="text-xl font-mono font-bold text-[#49aa47]">
@@ -138,12 +205,9 @@ const Subscription = ({ onClose }) => {
             <button
               onClick={handlePayment}
               disabled={loading}
-              className={`
-                w-full flex items-center justify-center gap-3 py-4 
-                bg-[#49aa47] hover:bg-[#3d8e3b] text-white font-bold rounded-xl 
-                transition-all transform active:scale-95 shadow-md
-                ${loading ? "opacity-70 cursor-not-allowed" : ""}
-              `}
+              className={`w-full flex items-center justify-center gap-3 py-4 bg-[#49aa47] hover:bg-[#3d8e3b] text-white font-bold rounded-xl transition-all transform active:scale-95 shadow-md ${
+                loading ? "opacity-70 cursor-not-allowed" : ""
+              }`}
             >
               {loading ? (
                 <>
@@ -162,24 +226,6 @@ const Subscription = ({ onClose }) => {
               Go Back
             </button>
           </div>
-        </div>
-
-        <div className="bg-gray-50 p-3 text-center border-t border-gray-100">
-          <p className="text-[10px] text-gray-400 flex items-center justify-center gap-1 uppercase tracking-tighter">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-3 w-3"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fillRule="evenodd"
-                d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-                clipRule="evenodd"
-              />
-            </svg>
-            Secure Payment Gateway
-          </p>
         </div>
       </div>
     </div>

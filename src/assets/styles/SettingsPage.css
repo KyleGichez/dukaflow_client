@@ -1,10 +1,13 @@
 .settings-wrapper {
+  width: 100%;
   min-height: 100vh;
 }
 
 .settings-content{
-    padding-top: 15%;
+    padding-top: 5%;
     margin-bottom: 30px;
+    width: 70%;
+    margin: 0 auto;
 }
 
 .form-input {

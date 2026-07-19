@@ -459,7 +459,7 @@ const CreditSalesTable = () => {
                   </span>
                   Credit
                 </li>
-                <li
+                {/* <li
                   onClick={() => navigate("/invoice")}
                   className="menu-item flex items-center gap-[10px]"
                 >
@@ -467,7 +467,7 @@ const CreditSalesTable = () => {
                     <Receipt height="24" width="24" />
                   </span>
                   Invoices
-                </li>
+                </li> */}
                 {isAdmin && (
                   <>
                     <li

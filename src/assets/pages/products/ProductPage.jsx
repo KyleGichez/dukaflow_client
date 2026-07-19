@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import {
@@ -11,7 +11,7 @@ import {
   Users,
   HeartPlus,
   CoinsIcon,
-  Plus, Pencil, Trash
+  Plus, Pencil, Trash, Download, Upload
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../../../api/axios";
@@ -32,10 +32,11 @@ const ProductPage = () => {
 
   const unitOptions = ["pieces", "kgs", "bags", "packets", "meters", "litres"];
   const ITEMS_PER_PAGE = 10;
-  const LOW_STOCK_THRESHOLD = 20;
+  const LOW_STOCK_THRESHOLD = user?.lowStockThreshold ?? 5;
 
   const navigate = useNavigate();
   const location = useLocation();
+  const fileInputRef = useRef(null);
 
   // Component States
   const [formData, setFormData] = useState(initialFormState);
@@ -58,7 +59,7 @@ const ProductPage = () => {
   const categoryFilter = queryParams.get("category");
 
   // Fetch initial products
-  useEffect(() => {
+  const fetchProducts = () => {
     setIsLoading(true);
     api
       .get("/products")
@@ -72,6 +73,10 @@ const ProductPage = () => {
         }
       })
       .finally(() => setIsLoading(false));
+  };
+
+  useEffect(() => {
+    fetchProducts();
   }, []);
 
   // Sync Categories uniquely using useMemo
@@ -142,7 +147,7 @@ const ProductPage = () => {
       .then((res) => {
         if (isEditing) {
           setProducts(
-            products.map((p) => (p._id || p.id === editId ? res.data : p))
+            products.map((p) => ((p._id || p.id) === editId ? res.data : p))
           );
           toast.success("Product updated successfully!");
         } else {
@@ -170,7 +175,7 @@ const ProductPage = () => {
       price: product.price,
       units: product.units,
     });
-    setEditId(product._id || product.id); // <-- Fix here
+    setEditId(product._id || product.id);
     setIsEditing(true);
     setShowModal(true);
   };
@@ -179,7 +184,6 @@ const ProductPage = () => {
     api
       .delete(`/products/${id}`)
       .then(() => {
-        // Fix filtering logic here to handle fallback fields
         setProducts(
           products.filter((product) => (product._id || product.id) !== id)
         );
@@ -225,6 +229,123 @@ const ProductPage = () => {
     );
   };
 
+  // --- Export Functionality ---
+  const handleExportCSV = () => {
+    if (products.length === 0) {
+      toast.error("No inventory data to export.");
+      return;
+    }
+
+    const headers = ["Product Name", "Category", "Quantity", "Units", "Buying Price", "Selling Price"];
+    const rows = products.map(p => [
+      `"${p.name?.replace(/"/g, '""') || ''}"`,
+      `"${p.category?.replace(/"/g, '""') || ''}"`,
+      p.quantity || 0,
+      `"${p.units || ''}"`,
+      p.buyingPrice || p.buying_price || 0,
+      p.price || 0
+    ]);
+
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `DukaFlow_Inventory_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Inventory exported successfully!");
+  };
+
+  // --- Import Functionality ---
+  const handleImportCSV = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const text = event.target.result;
+      const lines = text.split("\n").map(line => line.trim()).filter(Boolean);
+      
+      if (lines.length <= 1) {
+        toast.error("The CSV file is empty or missing data rows.");
+        return;
+      }
+
+      // Helper function to handle commas cleanly within quotes
+      const parseCSVLine = (text) => {
+        let p = '', r = [];
+        let q = false;
+        for (let i = 0; i < text.length; i++) {
+          let c = text.charAt(i);
+          if (c === '"') {
+            q = !q;
+          } else if (c === ',' && !q) {
+            r.push(p.trim());
+            p = '';
+          } else {
+            p += c;
+          }
+        }
+        r.push(p.trim());
+        return r;
+      };
+
+      const importedItems = [];
+      
+      // Loop through lines, skipping header row (index 0)
+      for (let i = 1; i < lines.length; i++) {
+        const columns = parseCSVLine(lines[i]);
+        if (columns.length < 6) continue;
+
+        const [name, category, quantity, units, buyingPrice, price] = columns;
+
+        if (!name || !price) continue; // Basic fallback rules validation
+
+        importedItems.push({
+          name: name.replace(/^"|"$/g, ''),
+          category: category.replace(/^"|"$/g, '') || "Unconfirmed",
+          quantity: Number(quantity) || 0,
+          units: units.replace(/^"|"$/g, '') || "pieces",
+          buyingPrice: Number(buyingPrice) || 0,
+          price: Number(price) || 0
+        });
+      }
+
+      if (importedItems.length === 0) {
+        toast.error("No valid product data found in the CSV.");
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        // Send batch entries sequentially or let backend handle them
+        try {
+          let importedCount = 0;
+          for (const item of importedItems) {
+            await api.post("/products", item);
+            importedCount++;
+          }
+          toast.success(`Successfully imported ${importedCount} items!`);
+          fetchProducts(); 
+        } catch (err) {
+          console.error(err);
+          toast.error("Import interrupted. Please verify your backend server is running.");
+        }
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to import some database entries.");
+      } finally {
+        setIsLoading(false);
+        if (fileInputRef.current) fileInputRef.current.value = ""; // Clear file selector
+      }
+    };
+
+    reader.readAsText(file);
+  };
+
   return (
     <div className="product-wrapper">
       <div className="product-content">
@@ -234,88 +355,34 @@ const ProductPage = () => {
           <div className="product-content-wrapper-menu">
             <div className="product-content-menu">
               <ul>
-                <li
-                  onClick={() => navigate("/dashboard")}
-                  className="menu-item flex items-center gap-[10px]"
-                >
-                  <span>
-                    <LayoutDashboard width="24" height="24" />
-                  </span>
-                  Dashboard
+                <li onClick={() => navigate("/dashboard")} className="menu-item flex items-center gap-[10px]">
+                  <span><LayoutDashboard width="24" height="24" /></span> Dashboard
                 </li>
-                <li
-                  onClick={() => navigate("/products")}
-                  className="menu-item active flex items-center gap-[10px]"
-                >
-                  <span>
-                    <Package width="24" height="24" />
-                  </span>
-                  Products
+                <li onClick={() => navigate("/products")} className="menu-item active flex items-center gap-[10px]">
+                  <span><Package width="24" height="24" /></span> Products
                 </li>
-                <li
-                  onClick={() => navigate("/stock")}
-                  className="menu-item flex items-center gap-[10px]"
-                >
-                  <span>
-                    <Database width="24" height="24" />
-                  </span>
-                  Stock
+                <li onClick={() => navigate("/stock")} className="menu-item flex items-center gap-[10px]">
+                  <span><Database width="24" height="24" /></span> Stock
                 </li>
-                <li
-                  onClick={() => navigate("/sales")}
-                  className="menu-item flex items-center gap-[10px]"
-                >
-                  <span>
-                    <ShoppingCart width="24" height="24" />
-                  </span>
-                  Sales
+                <li onClick={() => navigate("/sales")} className="menu-item flex items-center gap-[10px]">
+                  <span><ShoppingCart width="24" height="24" /></span> Sales
                 </li>
-                <li
-                  onClick={() => navigate("/credit")}
-                  className="menu-item flex items-center gap-[10px]"
-                >
-                  <span>
-                    <CoinsIcon height="24" width="24" />
-                  </span>
-                  Credit
+                <li onClick={() => navigate("/credit")} className="menu-item flex items-center gap-[10px]">
+                  <span><CoinsIcon height="24" width="24" /></span> Credit
                 </li>
-                <li
-                  onClick={() => navigate("/invoice")}
-                  className="menu-item flex items-center gap-[10px]"
-                >
-                  <span>
-                    <Receipt height="24" width="24" />
-                  </span>
-                  Invoices
-                </li>
+                {/* <li onClick={() => navigate("/invoice")} className="menu-item flex items-center gap-[10px]">
+                  <span><Receipt height="24" width="24" /></span> Invoices
+                </li> */}
                 {isAdmin && (
                   <>
-                    <li
-                      onClick={() => navigate("/summary")}
-                      className="menu-item flex items-center gap-[10px]"
-                    >
-                      <span>
-                        <BarChart3 width="24" height="24" />
-                      </span>
-                      Reports
+                    <li onClick={() => navigate("/summary")} className="menu-item flex items-center gap-[10px]">
+                      <span><BarChart3 width="24" height="24" /></span> Reports
                     </li>
-                    <li
-                      onClick={() => navigate("/staff")}
-                      className="menu-item flex items-center gap-[10px]"
-                    >
-                      <span>
-                        <Users width="24" height="24" />
-                      </span>
-                      Staff
+                    <li onClick={() => navigate("/staff")} className="menu-item flex items-center gap-[10px]">
+                      <span><Users width="24" height="24" /></span> Staff
                     </li>
-                    <li
-                      onClick={() => navigate("/subscription")}
-                      className="menu-item flex items-center gap-[10px]"
-                    >
-                      <span>
-                        <HeartPlus width="24" height="24" />
-                      </span>
-                      Subscription
+                    <li onClick={() => navigate("/subscription")} className="menu-item flex items-center gap-[10px]">
+                      <span><HeartPlus width="24" height="24" /></span> Subscription
                     </li>
                   </>
                 )}
@@ -332,11 +399,7 @@ const ProductPage = () => {
                     <div className="flex flex-wrap sm:flex-nowrap gap-4 items-center w-full sm:w-auto">
                       <div className="relative w-full sm:w-auto">
                         <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
-                          <Icon
-                            icon="material-symbols:search"
-                            width="20"
-                            height="20"
-                          />
+                          <Icon icon="material-symbols:search" width="20" height="20" />
                         </span>
                         <input
                           type="text"
@@ -353,9 +416,7 @@ const ProductPage = () => {
                       >
                         <option value="All">All Categories</option>
                         {categories.map((cat, index) => (
-                          <option key={index} value={cat}>
-                            {cat}
-                          </option>
+                          <option key={index} value={cat}>{cat}</option>
                         ))}
                       </select>
                     </div>
@@ -371,19 +432,50 @@ const ProductPage = () => {
                       </button>
                     )}
                   </div>
-                  <button
-                    type="button"
-                    className="add-product-btn flex items-center gap-[5px] sm:ml-auto"
-                    onClick={() => {
-                      setIsEditing(false);
-                      setEditId(null);
-                      setFormData(initialFormState);
-                      setShowModal(true);
-                    }}
-                  >
-                    <Plus width="20" height="20" />
-                    Add
-                  </button>
+
+                  {/* Actions Area: Export, Import, Add */}
+                  <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                    <button
+                      type="button"
+                      title="Export Inventory to CSV"
+                      onClick={handleExportCSV}
+                      className="flex items-center gap-1 px-3 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition text-sm font-medium"
+                    >
+                      <Download width="18" height="18" />
+                      <span>Export</span>
+                    </button>
+
+                    <input 
+                      type="file" 
+                      ref={fileInputRef} 
+                      onChange={handleImportCSV} 
+                      accept=".csv" 
+                      className="hidden" 
+                    />
+                    <button
+                      type="button"
+                      title="Import Inventory from CSV"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex items-center gap-1 px-3 py-2 bg-orange-50 text-orange-700 rounded-lg hover:bg-orange-100 transition text-sm font-medium"
+                    >
+                      <Upload width="18" height="18" />
+                      <span>Import</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      className="add-product-btn flex items-center gap-[5px]"
+                      onClick={() => {
+                        setIsEditing(false);
+                        setEditId(null);
+                        setFormData(initialFormState);
+                        setShowModal(true);
+                      }}
+                    >
+                      <Plus width="20" height="20" />
+                      Add
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -411,11 +503,7 @@ const ProductPage = () => {
                         paginatedProducts.map((product, index) => (
                           <tr
                             key={product._id || product.id}
-                            className={
-                              product.quantity < LOW_STOCK_THRESHOLD
-                                ? "bg-red-100"
-                                : ""
-                            }
+                            className={product.quantity < LOW_STOCK_THRESHOLD ? "bg-red-100" : ""}
                           >
                             <th className="py-2 px-2" scope="row">
                               {startIndex + index + 1}
@@ -427,8 +515,7 @@ const ProductPage = () => {
                               {product.category || "unconfirmed"}
                             </td>
                             <td className="py-3 px-2">
-                              {product.quantity?.toLocaleString()}{" "}
-                              {product.units}
+                              {product.quantity?.toLocaleString()} {product.units}
                               {product.quantity < LOW_STOCK_THRESHOLD && (
                                 <span className="text-left ml-2 text-red-600 font-semibold">
                                   ⚠ low stock
@@ -453,9 +540,7 @@ const ProductPage = () => {
                                 <button
                                   type="button"
                                   className="delete-btn flex items-center gap-[5px]"
-                                  onClick={() =>
-                                    confirmDelete(product._id || product.id)
-                                  }
+                                  onClick={() => confirmDelete(product._id || product.id)}
                                 >
                                   <Trash width="10" height="10" />
                                 </button>
@@ -498,9 +583,7 @@ const ProductPage = () => {
               {!isLoading && allFilteredProducts.length > ITEMS_PER_PAGE && (
                 <div className="flex justify-between items-center mt-5 flex-wrap gap-3">
                   <p className="text-sm text-gray-600">
-                    Showing {startIndex + 1} -{" "}
-                    {Math.min(endIndex, allFilteredProducts.length)} of{" "}
-                    {allFilteredProducts.length} items
+                    Showing {startIndex + 1} - {Math.min(endIndex, allFilteredProducts.length)} of {allFilteredProducts.length} items
                   </p>
                   <div className="flex items-center gap-2 flex-wrap">
                     <button
@@ -531,7 +614,7 @@ const ProductPage = () => {
                       );
                     })}
                     <button
-                      onClick={() => setCurrentPage((prev) => prev + 1)}
+                      onClick={() => setCurrentPage((prev) => prev - 1)}
                       disabled={currentPage === totalPages}
                       className={`px-4 py-2 rounded-md border transition ${
                         currentPage === totalPages
@@ -562,10 +645,7 @@ const ProductPage = () => {
             <div className="modal-content">
               <h1 className="text-xl font-bold uppercase mb-[20px] flex justify-between items-center">
                 {isEditing ? "Edit Product" : "Add Product"}
-                <span
-                  className="cursor-pointer"
-                  onClick={() => setShowModal(false)}
-                >
+                <span className="cursor-pointer" onClick={() => setShowModal(false)}>
                   <Icon icon="material-symbols:cancel" width="30" height="30" />
                 </span>
               </h1>
@@ -640,7 +720,7 @@ const ProductPage = () => {
                   </div>
                 </div>
                 <div className="flex">
-                <div className="form-input">
+                  <div className="form-input">
                     <label className="text-sm font-semibold" htmlFor="price">
                       Selling Price
                     </label>
@@ -680,11 +760,7 @@ const ProductPage = () => {
                     type="submit"
                     disabled={isSubmitting}
                   >
-                    {isSubmitting
-                      ? "Processing..."
-                      : isEditing
-                      ? "Save"
-                      : "Add"}
+                    {isSubmitting ? "Processing..." : isEditing ? "Save" : "Add"}
                   </button>
                   <button
                     className="modal-close-btn py-2 px-4 bg-gray-200 rounded"

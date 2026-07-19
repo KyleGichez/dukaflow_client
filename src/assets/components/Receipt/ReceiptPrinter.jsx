@@ -4,18 +4,30 @@ import "../../styles/ReceiptPrinter.css";
 const ReceiptPrinter = ({ sale, businessData, onClose }) => {
   if (!sale) return null;
 
-  // 1. Get the current logged-in user's phone number as a fallback
+  // 1. Get the current logged-in user's data from localStorage to read active settings
   const loggedInUser = JSON.parse(localStorage.getItem("user"));
   const userPhone = loggedInUser?.phone || loggedInUser?.telephone;
   const servedBy =
-    `${loggedInUser?.fname || ""}`.trim() ||
-    loggedInUser?.name ||
-    "Staff";
+    `${loggedInUser?.fname || ""}`.trim() || loggedInUser?.name || "Staff";
 
-  const businessName = businessData?.businessName || "Frozen Bites Hotel";
-  const city = businessData?.city || "Nakuru";
+  // 2. Prioritize user-configured store data, fall back to businessData or hardcoded strings
+  const businessName =
+    loggedInUser?.businessName ||
+    businessData?.businessName ||
+    "DukaFlow Retail";
+  const location = loggedInUser?.storeLocation || businessData?.city || "Kenya";
+  const poBox = loggedInUser?.poBox || "";
+  const taxPin = loggedInUser?.taxPin || "";
+  const phone =
+    loggedInUser?.phone ||
+    businessData?.phone ||
+    userPhone ||
+    "No Phone Contact";
 
-  const phone = businessData?.phone || userPhone || "No Phone Contact";
+  // Custom receipt footer message configured in settings
+  const headerMessage =
+    loggedInUser?.receiptDescription ||
+    "Thank you customer for shopping with us!";
 
   const incomingItems = sale.items || sale.products;
 
@@ -60,30 +72,52 @@ const ReceiptPrinter = ({ sale, businessData, onClose }) => {
     day: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-    hour12: true, // Set to false if you prefer 24-hour military format (e.g. 14:30)
+    hour12: true,
   });
 
   return (
     <div
       id="receipt-print-area"
-      className="p-4 bg-white border border-gray-300 max-w-[320px] mx-auto font-mono shadow-md print:shadow-none print:border-none print:p-0"
+      className="p-4 bg-white border border-gray-300 max-w-[320px] mx-auto font-mono shadow-md print:shadow-none print:border-none print:p-0 text-black"
     >
-      {/* Header Info */}
+      {/* Dynamic Header Info from Store Settings */}
       <div className="text-center mb-2">
-        <h2 className="font-bold text-sm uppercase">{businessName}</h2>
-        <p className="text-[10px] font-semibold">Location: {city}</p>
-        <p className="text-[10px] font-semibold">Tel: {phone}</p>
+        <h2 className="font-bold text-sm uppercase tracking-wide">
+          {businessName}
+        </h2>
+        {/* Dynamic Custom Welcome Note */}
+        <div className="text-center mt-2 text-[9px] border-t border-dotted border-gray-400 pt-2 break-words">
+          <p className="font-semibold whitespace-pre-line uppercase mb-[5px]">
+            {headerMessage}
+          </p>
+          {location && (
+            <p className="text-[9px] font-semibold uppercase mb-[5px]">
+              {poBox}, {location}
+            </p>
+          )}
+          {/* {poBox && <p className="text-[10px] font-semibold">{poBox}</p>} */}
+          <p className="text-[9px] font-semibold mb-[5px]">Tel: {phone}</p>
+        </div>
+
+        {/* Render KRA Tax PIN if available */}
+        {/* <div>
+        {taxPin && (
+          <p className="text-[9px] font-bold mt-0.5 uppercase border border-black border-dotted inline-block px-1">
+            PIN: {taxPin}
+          </p>
+        )}
+        </div> */}
       </div>
 
-      <div className="border-b border-dashed border-black my-1"></div>
+      <div className="border-b border-dotted border-black my-1"></div>
 
       {/* Receipt Info */}
       <div className="text-[10px] mb-2 text-black">
-        <div>Receipt: #{receiptId}</div>
+        <div>Receipt No: #{receiptId}</div>
         <div>Date: {dateString}</div>
       </div>
 
-      <div className="border-b border-dashed border-black my-1"></div>
+      <div className="border-b border-dotted border-black my-1"></div>
 
       {/* Items Table */}
       <table className="w-full text-left text-[11px] mb-2">
@@ -111,31 +145,33 @@ const ReceiptPrinter = ({ sale, businessData, onClose }) => {
         </tbody>
       </table>
 
-      <div className="border-b border-dashed border-black my-1"></div>
+      <div className="border-b border-dotted border-black my-1"></div>
 
       {/* Totals */}
       <div className="text-[11px] font-bold text-right space-y-1">
         <div className="mb-[10px]">Total: KSh {totalAmount.toFixed(2)}</div>
-        <div className="font-semibold text-[10px]">Payment Method: {paymentMethod}</div>
-        <div className="font-semibold text-[10px]">You were served by: {servedBy}</div>
+        <div className="font-semibold text-[10px]">
+          Payment Method: {paymentMethod}
+        </div>
+        <div className="font-semibold text-[10px]">Served by: {servedBy}</div>
       </div>
 
-      <div className="text-center mt-4 text-[9px]">
-        <p className="font-semibold">Thank you customer for shopping with us!</p>
+      <div className="footer-note mt-[20px]">
+        <p className="font-semibold text-gray-700 text-center text-xs">Thank you customer for shopping with us!</p>
       </div>
 
       {/* Action panel UI */}
       <div className="mt-4 flex gap-2 justify-center print:hidden">
         <button
           onClick={() => window.print()}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded text-xs font-semibold shadow transition-colors"
+          className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded text-xs font-semibold shadow transition-colors cursor-pointer"
         >
           Print Receipt
         </button>
         {onClose && (
           <button
             onClick={onClose}
-            className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded text-xs font-semibold transition-colors"
+            className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded text-xs font-semibold transition-colors cursor-pointer"
           >
             Close
           </button>

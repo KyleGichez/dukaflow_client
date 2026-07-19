@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../../../api/axios";
+import jsPDF from "jspdf";
 import "../../styles/invoiceDetails.css";
 
 const InvoiceViewPage = () => {
@@ -89,6 +90,175 @@ const InvoiceViewPage = () => {
     }
   };
 
+  const downloadInvoice = () => {
+    try {
+      const pdf = new jsPDF("p", "mm", "a4");
+  
+      let y = 20;
+  
+      // ===========================
+      // HEADER
+      // ===========================
+      pdf.setFontSize(20);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("INVOICE REPORT", 105, y, { align: "center" });
+  
+      y += 10;
+  
+      pdf.setFontSize(11);
+      pdf.setFont("helvetica", "normal");
+  
+      pdf.text(`Invoice No: ${invoice.invoiceNumber}`, 15, y);
+
+      pdf.text(
+        `Date Issued: ${new Date(invoice.createdAt).toLocaleDateString("en-KE")}`,
+        130,
+        y
+      );
+      
+      y += 8;
+      
+      pdf.text(
+        `Due Date: ${
+          invoice.dueDate
+            ? new Date(invoice.dueDate).toLocaleDateString("en-KE")
+            : "N/A"
+        }`,
+        130,
+        y
+      );
+      
+      pdf.text(
+        `Customer: ${invoice.customerName || "Walk-in Customer"}`,
+        15,
+        y
+      );
+      
+      y += 8;
+      
+      pdf.text(`Status: ${invoice.status}`, 15, y);
+      
+      y += 15;
+      // ===========================
+      // TABLE HEADER
+      // ===========================
+  
+      pdf.setFont("helvetica", "bold");
+  
+      pdf.text("PRODUCT ITEM", 15, y);
+      pdf.text("QTY", 110, y);
+      pdf.text("PRICE", 135, y);
+      pdf.text("TOTAL", 170, y);
+  
+      y += 3;
+  
+      pdf.line(15, y, 195, y);
+  
+      y += 7;
+  
+      pdf.setFont("helvetica", "normal");
+  
+      invoice.items.forEach((item) => {
+        const name =
+          item.productName ||
+          item.name ||
+          "Unknown Item";
+  
+        const qty = item.quantity || item.quantitySold || 0;
+  
+        const price = Number(
+          item.price || item.unitPrice || 0
+        );
+  
+        const total = Number(
+          item.total ||
+            item.totalPrice ||
+            qty * price
+        );
+  
+        pdf.text(name, 15, y);
+        pdf.text(String(qty), 112, y);
+        pdf.text(price.toLocaleString(), 135, y);
+        pdf.text(total.toLocaleString(), 170, y);
+  
+        y += 8;
+  
+        // New page if needed
+        if (y > 250) {
+          pdf.addPage();
+          y = 20;
+        }
+      });
+  
+      y += 8;
+  
+      pdf.line(120, y, 195, y);
+  
+      y += 10;
+  
+      pdf.setFont("helvetica", "bold");
+  
+      pdf.text(
+        `Total: KES ${Number(invoice.totalAmount).toLocaleString()}`,
+        120,
+        y
+      );
+  
+      y += 8;
+  
+      pdf.text(
+        `Paid: KES ${Number(invoice.amountPaid).toLocaleString()}`,
+        120,
+        y
+      );
+  
+      y += 8;
+  
+      pdf.text(
+        `Balance: KES ${Number(invoice.balance).toLocaleString()}`,
+        120,
+        y
+      );
+  
+      y += 20;
+  
+      // ===========================
+      // PAYMENT HISTORY
+      // ===========================
+  
+      pdf.setFontSize(13);
+      pdf.text("PAYMENT HISTORY", 15, y);
+  
+      y += 10;
+  
+      pdf.setFontSize(10);
+      pdf.setFont("helvetica", "normal");
+  
+      if (payments.length === 0) {
+        pdf.text("No payments recorded.", 15, y);
+      } else {
+        payments.forEach((payment) => {
+          pdf.text(
+            `${payment.paymentDate.substring(0,10)} | ${payment.method} | ${payment.reference || "CASH"} | KES ${Number(payment.amount).toLocaleString()}`,
+            15,
+            y
+          );
+  
+          y += 7;
+  
+          if (y > 270) {
+            pdf.addPage();
+            y = 20;
+          }
+        });
+      }
+  
+      pdf.save(`Invoice-${invoice.invoiceNumber}.pdf`);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   if (loading)
     return (
       <div className="p-6 text-center font-medium text-gray-500">
@@ -126,6 +296,13 @@ const InvoiceViewPage = () => {
               💰 Pay
             </button>
           )}
+
+          <button
+            onClick={downloadInvoice}
+            className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 transition-all font-medium text-sm flex items-center gap-2"
+          >
+            📥 Download
+          </button>
 
           <button
             onClick={() => window.print()}
@@ -217,7 +394,7 @@ const InvoiceViewPage = () => {
             <p className="text-gray-500 italic">Walk-in Retail Customer</p>
           )}
         </div>
-        <div className="flex justify-between bg-gray-50 p-4 rounded-md border border-gray-100">
+        {/* <div className="flex justify-between bg-gray-50 p-4 rounded-md border border-gray-100">
           <div>
             <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">
               Pay Via M-pesa Paybill
@@ -231,7 +408,7 @@ const InvoiceViewPage = () => {
               </p>
             </>
           </div>
-          {/* <div>
+          <div>
             <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">
               Pay Via Bank Transfer
             </h3>
@@ -243,8 +420,8 @@ const InvoiceViewPage = () => {
                 Account: {invoice.invoiceNumber}
               </p>
             </>
-          </div> */}
-        </div>
+          </div>
+        </div> */}
         <div></div>
       </div>
 
@@ -453,7 +630,7 @@ const InvoiceViewPage = () => {
                     Bank Transfer (EFT/RTGS)
                   </option>
                   <option value="Cheque">Commercial Cheque</option>
-                  <option value="Cash">Cash (Physical Till)</option>
+                  <option value="Cash">Cash (Liquid Cash)</option>
                 </select>
               </div>
 
@@ -473,7 +650,7 @@ const InvoiceViewPage = () => {
                     placeholder={
                       paymentMethod === "M-pesa Paybill"
                         ? "e.g. SJD48FHK92"
-                        : "e.g. CHQ-005612"
+                        : "e.g. 005612"
                     }
                     className="w-full p-2 border rounded font-mono text-sm uppercase focus:outline-none focus:ring-1 focus:ring-green-500"
                   />

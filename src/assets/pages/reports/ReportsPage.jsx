@@ -209,9 +209,15 @@ const ReportsPage = () => {
     remainingActiveCredit,
     trueRealizedRevenue,
     finalCashTotal,
+    directCashSales,
+    cashRepayments,
     totalCollections,
     finalMpesaTotal,
+    directMpesaSales,
+    mpesaRepayments,
     finalBankTotal,
+    directBankSales,
+    bankRepayments,
     last7DaysProfits,
     avgDailyProfit,
     lastWeekProductivity,
@@ -381,7 +387,7 @@ const ReportsPage = () => {
                   </span>
                   Credit
                 </li>
-                <li
+                {/* <li
                   onClick={() => navigate("/invoice")}
                   className="menu-item flex items-center gap-[10px]"
                 >
@@ -389,7 +395,7 @@ const ReportsPage = () => {
                     <Receipt height="24" width="24" />
                   </span>
                   Invoices
-                </li>
+                </li> */}
                 {isAdmin && (
                   <>
                     <li
@@ -550,7 +556,7 @@ const ReportsPage = () => {
 
             {/* Collected Methods Breakdown */}
             <h3 className="font-bold uppercase text-sm text-gray-600 mb-[10px] tracking-wider">
-              Revenue Collection
+              Revenue Collection(Sales + Repayments)
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-[30px]">
@@ -565,7 +571,7 @@ const ReportsPage = () => {
                   <p className="py-[10px] text-lg font-medium text-gray-800">
                     Ksh {finalCashTotal.toLocaleString()}
                   </p>
-                  {/* <span className="text-gray-500 text-xs">Sales: {directCashSales} | Repayments: {cashRepayments}</span> */}
+                  <span className="text-gray-500 text-xs">Sales:{directCashSales.toLocaleString()} | Repayments:{cashRepayments.toLocaleString()}</span>
                 </div>
               )}
 
@@ -580,7 +586,7 @@ const ReportsPage = () => {
                   <p className="py-[10px] text-lg font-medium text-gray-800">
                     Ksh {finalMpesaTotal.toLocaleString()}
                   </p>
-                  {/* <span className="text-gray-500 text-xs">Sales: {directMpesaSales} | Repayments: {mpesaRepayments}</span> */}
+                  <span className="text-gray-500 text-xs">Sales:{directMpesaSales.toLocaleString()} | Repayments:{mpesaRepayments.toLocaleString()}</span>
                 </div>
               )}
 
@@ -595,7 +601,7 @@ const ReportsPage = () => {
                   <p className="py-[10px] text-lg font-medium text-gray-800">
                     Ksh {finalBankTotal.toLocaleString()}
                   </p>
-                  {/* <span className="text-gray-500 text-xs">Sales: {directBankSales} | Repayments: {bankRepayments}</span> */}
+                  <span className="text-gray-500 text-xs">Sales:{directBankSales.toLocaleString()} | Repayments:{bankRepayments.toLocaleString()}</span>
                 </div>
               )}
 

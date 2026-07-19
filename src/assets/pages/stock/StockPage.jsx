@@ -47,7 +47,7 @@ const StockPage = () => {
 
   const categories = [...new Set(stockItems.map((s) => s.category))];
 
-  const LOW_STOCK_THRESHOLD = 20;
+  const LOW_STOCK_THRESHOLD = user?.lowStockThreshold ?? 5;
 
   const filteredItems = useMemo(() => {
     return stockItems.filter((item) => {
@@ -346,7 +346,7 @@ const StockPage = () => {
                   </span>
                   Credit
                 </li>
-                <li
+                {/* <li
                   onClick={() => navigate("/invoice")}
                   className="menu-item flex items-center gap-[10px]"
                 >
@@ -354,7 +354,7 @@ const StockPage = () => {
                     <Receipt height="24" width="24" />
                   </span>
                   Invoices
-                </li>
+                </li> */}
                 {isAdmin && (
                   <>
                     <li
